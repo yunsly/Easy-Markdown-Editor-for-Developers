@@ -1,0 +1,24 @@
+{
+  "name": "visual-markdown-editor",
+  "displayName": "Visual Markdown Editor",
+  "description": "Edit Markdown visually inside VS Code.",
+  "version": "0.0.1",
+  "publisher": "yunsly",
+  "private": true,
+  "engines": {
+    "vscode": "^1.125.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@types/vscode": "1.125.0",
+    "typescript": "6.0.3"
+  }
+}
