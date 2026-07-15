@@ -8,13 +8,18 @@ import type {
   WebviewPanel,
 } from 'vscode';
 
+import {
+  isWebviewToExtensionMessage,
+  type ExtensionToWebviewMessage,
+} from '../shared/messages';
+
 export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
   public static readonly viewType = 'visualMarkdown.editor';
 
   public constructor(private readonly extensionUri: Uri) {}
 
   public resolveCustomTextEditor(
-    _document: TextDocument,
+    document: TextDocument,
     webviewPanel: WebviewPanel,
     _token: CancellationToken,
   ): void {
@@ -31,6 +36,33 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
     const scriptUri = webview.asWebviewUri(Uri.joinPath(webviewRoot, 'main.js'));
     const styleUri = webview.asWebviewUri(Uri.joinPath(webviewRoot, 'main.css'));
     const nonce = randomBytes(16).toString('base64');
+    let didSendInitialDocument = false;
+
+    const messageSubscription = webview.onDidReceiveMessage(
+      (message: unknown) => {
+        if (
+          !isWebviewToExtensionMessage(message) ||
+          message.type !== 'ready' ||
+          didSendInitialDocument
+        ) {
+          return;
+        }
+
+        didSendInitialDocument = true;
+
+        const initialDocument: ExtensionToWebviewMessage = {
+          type: 'initDocument',
+          text: document.getText(),
+          version: document.version,
+        };
+
+        void webview.postMessage(initialDocument);
+      },
+    );
+
+    webviewPanel.onDidDispose(() => {
+      messageSubscription.dispose();
+    });
 
     webview.html = `<!DOCTYPE html>
 <html lang="ko">

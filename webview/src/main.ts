@@ -1,6 +1,9 @@
 import './styles.css';
 
-import { postMessageToExtension } from './vscodeApi';
+import {
+  onMessageFromExtension,
+  postMessageToExtension,
+} from './vscodeApi';
 
 const container = document.querySelector<HTMLElement>('#app');
 
@@ -9,5 +12,15 @@ if (container === null) {
 }
 
 container.textContent = 'Visual Markdown Editor Webview';
+
+const disposeMessageListener = onMessageFromExtension((message) => {
+  if (message.type === 'initDocument') {
+    container.textContent = message.text;
+  }
+});
+
+window.addEventListener('unload', () => disposeMessageListener(), {
+  once: true,
+});
 
 postMessageToExtension({ type: 'ready' });

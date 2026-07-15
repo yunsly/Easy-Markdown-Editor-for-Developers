@@ -1,4 +1,8 @@
-import type { WebviewToExtensionMessage } from '../../src/shared/messages';
+import {
+  isExtensionToWebviewMessage,
+  type ExtensionToWebviewMessage,
+  type WebviewToExtensionMessage,
+} from '../../src/shared/messages';
 
 interface VsCodeApi {
   postMessage(message: WebviewToExtensionMessage): void;
@@ -12,4 +16,18 @@ export function postMessageToExtension(
   message: WebviewToExtensionMessage,
 ): void {
   vscodeApi.postMessage(message);
+}
+
+export function onMessageFromExtension(
+  listener: (message: ExtensionToWebviewMessage) => void,
+): () => void {
+  const handleMessage = (event: MessageEvent<unknown>): void => {
+    if (isExtensionToWebviewMessage(event.data)) {
+      listener(event.data);
+    }
+  };
+
+  window.addEventListener('message', handleMessage);
+
+  return () => window.removeEventListener('message', handleMessage);
 }
