@@ -28,8 +28,10 @@
   },
   "main": "./dist/extension.js",
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint \"src/**/*.ts\"",
+    "typecheck:extension": "tsc --noEmit -p tsconfig.json",
+    "typecheck:webview": "tsc --noEmit -p webview/tsconfig.json",
+    "typecheck": "npm run typecheck:extension && npm run typecheck:webview",
+    "lint": "eslint \"src/**/*.ts\" \"webview/src/**/*.ts\"",
     "build:extension": "node esbuild.mjs",
     "build:webview": "vite build --config webview/vite.config.ts",
     "build": "npm run typecheck && npm run build:extension && npm run build:webview"
