@@ -1,0 +1,21 @@
+# AI Agent Instructions
+AGENTS.local.md       # Ignore personal local overrides (Recommended)
+.cursor/rules/        # Ignore local IDE agent rules
+.claude/              # Ignore local Claude Code instance rules
+
+AGENTS.md
+
+# Dependencies
+node_modules/
+
+# Generated build, test, and package output
+dist/
+coverage/
+.vscode-test/
+*.vsix
+
+# Local caches and logs
+.eslintcache
+*.tsbuildinfo
+*.log
+.DS_Store
