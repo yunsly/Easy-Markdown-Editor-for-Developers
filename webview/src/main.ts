@@ -11,11 +11,14 @@ if (container === null) {
   throw new Error('Missing Webview root element: #app');
 }
 
-container.textContent = 'Visual Markdown Editor Webview';
+const documentPreview = document.createElement('pre');
+documentPreview.className = 'document-preview';
+documentPreview.textContent = 'Visual Markdown Editor Webview';
+container.replaceChildren(documentPreview);
 
 const disposeMessageListener = onMessageFromExtension((message) => {
   if (message.type === 'initDocument') {
-    container.textContent = message.text;
+    documentPreview.textContent = message.text;
   }
 });
 

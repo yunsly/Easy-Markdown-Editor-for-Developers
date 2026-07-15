@@ -15,3 +15,10 @@ body {
   min-height: 100vh;
   padding: 24px;
 }
+
+.document-preview {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-family: var(--vscode-editor-font-family);
+}
