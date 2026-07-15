@@ -14,11 +14,14 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build:extension": "node esbuild.mjs",
+    "build": "npm run typecheck && npm run build:extension"
   },
   "devDependencies": {
     "@types/node": "24.13.3",
     "@types/vscode": "1.125.0",
+    "esbuild": "0.28.1",
     "typescript": "6.0.3"
   }
 }
