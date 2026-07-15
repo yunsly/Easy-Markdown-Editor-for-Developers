@@ -1,4 +1,8 @@
-import { Crepe } from '@milkdown/crepe';
+import {
+  Crepe,
+  CrepeFeature,
+  type CrepeConfig,
+} from '@milkdown/crepe';
 
 import './styles.css';
 
@@ -39,6 +43,17 @@ window.addEventListener('unload', () => disposeMessageListener(), {
   once: true,
 });
 
+const features = {
+  [CrepeFeature.AI]: false,
+  [CrepeFeature.BlockEdit]: false,
+  [CrepeFeature.ImageBlock]: false,
+  [CrepeFeature.Latex]: false,
+  [CrepeFeature.LinkTooltip]: false,
+  [CrepeFeature.Table]: false,
+  [CrepeFeature.Toolbar]: false,
+  [CrepeFeature.TopBar]: false,
+} satisfies NonNullable<CrepeConfig['features']>;
+
 const crepe = new Crepe({
   root: editorRoot,
   defaultValue: [
@@ -49,16 +64,7 @@ const crepe = new Crepe({
     '- Render Markdown as a document',
     '- Edit content visually',
   ].join('\n'),
-  features: {
-    [Crepe.Feature.AI]: false,
-    [Crepe.Feature.BlockEdit]: false,
-    [Crepe.Feature.ImageBlock]: false,
-    [Crepe.Feature.Latex]: false,
-    [Crepe.Feature.LinkTooltip]: false,
-    [Crepe.Feature.Table]: false,
-    [Crepe.Feature.Toolbar]: false,
-    [Crepe.Feature.TopBar]: false,
-  },
+  features,
 });
 
 void crepe
