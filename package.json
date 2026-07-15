@@ -12,6 +12,20 @@
     "Other"
   ],
   "activationEvents": [],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "visualMarkdown.editor",
+        "displayName": "Visual Markdown Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          }
+        ],
+        "priority": "option"
+      }
+    ]
+  },
   "main": "./dist/extension.js",
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
