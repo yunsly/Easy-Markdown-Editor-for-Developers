@@ -8,7 +8,9 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "types": [],
+    "types": [
+      "vite/client"
+    ],
     "strict": true,
     "noEmit": true,
     "isolatedModules": true,

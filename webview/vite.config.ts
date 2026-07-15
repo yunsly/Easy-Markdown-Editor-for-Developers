@@ -12,6 +12,8 @@ export default defineConfig({
       input: fileURLToPath(new URL('./src/main.ts', import.meta.url)),
       output: {
         entryFileNames: 'main.js',
+        chunkFileNames: '[name].js',
+        assetFileNames: '[name][extname]',
       },
     },
   },

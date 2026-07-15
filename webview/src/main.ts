@@ -1,3 +1,5 @@
+import './styles.css';
+
 const container = document.querySelector<HTMLElement>('#app');
 
 if (container === null) {
