@@ -1,5 +1,7 @@
 import './styles.css';
 
+import { postMessageToExtension } from './vscodeApi';
+
 const container = document.querySelector<HTMLElement>('#app');
 
 if (container === null) {
@@ -7,3 +9,5 @@ if (container === null) {
 }
 
 container.textContent = 'Visual Markdown Editor Webview';
+
+postMessageToExtension({ type: 'ready' });
