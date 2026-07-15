@@ -33,16 +33,6 @@ const showError = (message: string): void => {
   errorBanner.hidden = false;
 };
 
-const disposeMessageListener = onMessageFromExtension((message) => {
-  if (message.type === 'showError') {
-    showError(message.message);
-  }
-});
-
-window.addEventListener('unload', () => disposeMessageListener(), {
-  once: true,
-});
-
 const features = {
   [CrepeFeature.AI]: false,
   [CrepeFeature.BlockEdit]: false,
@@ -54,26 +44,32 @@ const features = {
   [CrepeFeature.TopBar]: false,
 } satisfies NonNullable<CrepeConfig['features']>;
 
-const crepe = new Crepe({
-  root: editorRoot,
-  defaultValue: [
-    '# Visual Markdown Editor',
-    '',
-    'Milkdown Crepe is ready.',
-    '',
-    '- Render Markdown as a document',
-    '- Edit content visually',
-  ].join('\n'),
-  features,
-});
+const initializeEditor = (markdown: string): void => {
+  const crepe = new Crepe({
+    root: editorRoot,
+    defaultValue: markdown,
+    features,
+  });
 
-void crepe
-  .create()
-  .then(() => postMessageToExtension({ type: 'ready' }))
-  .catch((error: unknown) => {
+  void crepe.create().catch((error: unknown) => {
     const message =
       error instanceof Error ? error.message : 'Failed to create Milkdown Crepe.';
 
     showError(message);
     postMessageToExtension({ type: 'reportError', message });
   });
+};
+
+const disposeMessageListener = onMessageFromExtension((message) => {
+  if (message.type === 'initDocument') {
+    initializeEditor(message.text);
+  } else if (message.type === 'showError') {
+    showError(message.message);
+  }
+});
+
+window.addEventListener('unload', () => disposeMessageListener(), {
+  once: true,
+});
+
+postMessageToExtension({ type: 'ready' });
