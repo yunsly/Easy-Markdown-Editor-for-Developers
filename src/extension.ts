@@ -1,5 +1,16 @@
-import type { ExtensionContext } from 'vscode';
+import { window, type ExtensionContext } from 'vscode';
 
-export function activate(_context: ExtensionContext): void {}
+import { VisualMarkdownEditorProvider } from './editor/VisualMarkdownEditorProvider';
+
+export function activate(context: ExtensionContext): void {
+  const provider = new VisualMarkdownEditorProvider();
+
+  context.subscriptions.push(
+    window.registerCustomEditorProvider(
+      VisualMarkdownEditorProvider.viewType,
+      provider,
+    ),
+  );
+}
 
 export function deactivate(): void {}
