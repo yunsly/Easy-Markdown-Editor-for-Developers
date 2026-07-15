@@ -34,7 +34,9 @@
     "lint": "eslint \"src/**/*.ts\" \"webview/src/**/*.ts\"",
     "build:extension": "node esbuild.mjs",
     "build:webview": "vite build --config webview/vite.config.ts",
-    "build": "npm run typecheck && npm run build:extension && npm run build:webview"
+    "build": "npm run typecheck && npm run build:extension && npm run build:webview",
+    "watch:extension": "node esbuild.mjs --watch",
+    "watch:webview": "node webview/watch.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

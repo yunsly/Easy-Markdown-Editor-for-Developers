@@ -1,6 +1,6 @@
-import { build } from 'esbuild';
+import { build, context } from 'esbuild';
 
-await build({
+const buildOptions = {
   entryPoints: ['src/extension.ts'],
   bundle: true,
   platform: 'node',
@@ -11,4 +11,11 @@ await build({
   sourcemap: true,
   sourcesContent: false,
   logLevel: 'info',
-});
+};
+
+if (process.argv.includes('--watch')) {
+  const buildContext = await context(buildOptions);
+  await buildContext.watch();
+} else {
+  await build(buildOptions);
+}
