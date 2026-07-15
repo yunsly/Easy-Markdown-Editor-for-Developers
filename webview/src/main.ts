@@ -44,32 +44,79 @@ const features = {
   [CrepeFeature.TopBar]: false,
 } satisfies NonNullable<CrepeConfig['features']>;
 
-const initializeEditor = (markdown: string): void => {
-  const crepe = new Crepe({
+let crepe: Crepe | undefined;
+let isCreatingEditor = false;
+let isDisposed = false;
+
+const reportEditorError = (error: unknown, fallback: string): void => {
+  const message = error instanceof Error ? error.message : fallback;
+
+  showError(message);
+  postMessageToExtension({ type: 'reportError', message });
+};
+
+const destroyEditor = async (editor: Crepe): Promise<void> => {
+  try {
+    await editor.destroy();
+  } catch (error: unknown) {
+    reportEditorError(error, 'Failed to destroy Milkdown Crepe.');
+  }
+};
+
+const initializeEditor = async (markdown: string): Promise<void> => {
+  if (isDisposed || isCreatingEditor || crepe !== undefined) {
+    return;
+  }
+
+  isCreatingEditor = true;
+
+  const editor = new Crepe({
     root: editorRoot,
     defaultValue: markdown,
     features,
   });
+  crepe = editor;
 
-  void crepe.create().catch((error: unknown) => {
-    const message =
-      error instanceof Error ? error.message : 'Failed to create Milkdown Crepe.';
+  try {
+    await editor.create();
+  } catch (error: unknown) {
+    if (crepe === editor) {
+      crepe = undefined;
+    }
 
-    showError(message);
-    postMessageToExtension({ type: 'reportError', message });
-  });
+    reportEditorError(error, 'Failed to create Milkdown Crepe.');
+    await destroyEditor(editor);
+  } finally {
+    isCreatingEditor = false;
+
+    if (isDisposed && crepe === editor) {
+      crepe = undefined;
+      await destroyEditor(editor);
+    }
+  }
 };
 
 const disposeMessageListener = onMessageFromExtension((message) => {
   if (message.type === 'initDocument') {
-    initializeEditor(message.text);
+    void initializeEditor(message.text);
   } else if (message.type === 'showError') {
     showError(message.message);
   }
 });
 
-window.addEventListener('unload', () => disposeMessageListener(), {
-  once: true,
-});
+window.addEventListener(
+  'unload',
+  () => {
+    isDisposed = true;
+    disposeMessageListener();
+
+    if (!isCreatingEditor && crepe !== undefined) {
+      const editor = crepe;
+      crepe = undefined;
+      void destroyEditor(editor);
+    }
+  },
+  { once: true },
+);
 
 postMessageToExtension({ type: 'ready' });
