@@ -1,3 +1,6 @@
+@import '@milkdown/crepe/theme/common/style.css';
+@import '@milkdown/crepe/theme/frame.css';
+
 html,
 body {
   min-height: 100%;
@@ -13,11 +16,15 @@ body {
 #app {
   box-sizing: border-box;
   min-height: 100vh;
-  padding: 24px;
+}
+
+.editor-root,
+.editor-root .milkdown {
+  min-height: 100vh;
 }
 
 .error-message {
-  margin: 0 0 16px;
+  margin: 16px 24px 0;
   padding: 8px 12px;
   color: var(--vscode-errorForeground);
   background: var(--vscode-inputValidation-errorBackground);
@@ -26,11 +33,4 @@ body {
 
 .error-message[hidden] {
   display: none;
-}
-
-.document-preview {
-  margin: 0;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-  font-family: var(--vscode-editor-font-family);
 }
