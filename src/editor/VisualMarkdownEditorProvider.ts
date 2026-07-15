@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
-import { Uri } from 'vscode';
+import { Uri, window } from 'vscode';
 import type {
   CancellationToken,
   CustomTextEditorProvider,
@@ -40,11 +40,27 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
 
     const messageSubscription = webview.onDidReceiveMessage(
       (message: unknown) => {
-        if (
-          !isWebviewToExtensionMessage(message) ||
-          message.type !== 'ready' ||
-          didSendInitialDocument
-        ) {
+        if (!isWebviewToExtensionMessage(message)) {
+          const errorMessage =
+            'Visual Markdown Editor received an invalid Webview message.';
+          const showErrorMessage: ExtensionToWebviewMessage = {
+            type: 'showError',
+            message: errorMessage,
+          };
+
+          void window.showErrorMessage(errorMessage);
+          void webview.postMessage(showErrorMessage);
+          return;
+        }
+
+        if (message.type === 'reportError') {
+          void window.showErrorMessage(
+            `Visual Markdown Editor Webview: ${message.message}`,
+          );
+          return;
+        }
+
+        if (message.type !== 'ready' || didSendInitialDocument) {
           return;
         }
 
@@ -56,7 +72,20 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
           version: document.version,
         };
 
-        void webview.postMessage(initialDocument);
+        void webview.postMessage(initialDocument).then(
+          (didPost) => {
+            if (!didPost) {
+              void window.showErrorMessage(
+                'Visual Markdown Editor could not send the initial document.',
+              );
+            }
+          },
+          () => {
+            void window.showErrorMessage(
+              'Visual Markdown Editor could not send the initial document.',
+            );
+          },
+        );
       },
     );
 

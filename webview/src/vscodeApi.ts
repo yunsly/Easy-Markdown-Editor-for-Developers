@@ -22,9 +22,15 @@ export function onMessageFromExtension(
   listener: (message: ExtensionToWebviewMessage) => void,
 ): () => void {
   const handleMessage = (event: MessageEvent<unknown>): void => {
-    if (isExtensionToWebviewMessage(event.data)) {
-      listener(event.data);
+    if (!isExtensionToWebviewMessage(event.data)) {
+      postMessageToExtension({
+        type: 'reportError',
+        message: 'Webview received an invalid Extension Host message.',
+      });
+      return;
     }
+
+    listener(event.data);
   };
 
   window.addEventListener('message', handleMessage);
