@@ -31,15 +31,17 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint \"src/**/*.ts\"",
     "build:extension": "node esbuild.mjs",
-    "build": "npm run typecheck && npm run build:extension"
+    "build:webview": "vite build --config webview/vite.config.ts",
+    "build": "npm run typecheck && npm run build:extension && npm run build:webview"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "24.13.3",
     "@types/vscode": "1.125.0",
-    "eslint": "10.7.0",
     "esbuild": "0.28.1",
+    "eslint": "10.7.0",
+    "typescript": "6.0.3",
     "typescript-eslint": "8.64.0",
-    "typescript": "6.0.3"
+    "vite": "8.1.4"
   }
 }
