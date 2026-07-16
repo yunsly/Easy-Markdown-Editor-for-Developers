@@ -76,7 +76,7 @@ const features = {
   [CrepeFeature.Latex]: false,
   [CrepeFeature.LinkTooltip]: true,
   [CrepeFeature.Placeholder]: true,
-  [CrepeFeature.Table]: false,
+  [CrepeFeature.Table]: true,
   [CrepeFeature.Toolbar]: false,
   [CrepeFeature.TopBar]: false,
 } satisfies NonNullable<CrepeConfig['features']>;

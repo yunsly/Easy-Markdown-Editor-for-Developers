@@ -38,6 +38,10 @@
   fill: currentColor;
 }
 
+.editor-root .milkdown .milkdown-table-block {
+  --crepe-color-outline: var(--vscode-editor-foreground);
+}
+
 .editor-root .milkdown ::selection {
   color: var(
     --vscode-editor-selectionForeground,
