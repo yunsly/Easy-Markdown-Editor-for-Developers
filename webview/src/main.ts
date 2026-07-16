@@ -18,7 +18,11 @@ import {
   onMessageFromExtension,
   postMessageToExtension,
 } from './vscodeApi';
-import { createEditorToolbar } from './editor/editorToolbar/createEditorToolbar';
+import {
+  createEditorToolbar,
+  type EditorToolbarAction,
+} from './editor/editorToolbar/createEditorToolbar';
+import { runEditorToolbarAction } from './editor/editorToolbar/editorToolbarActions';
 import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
@@ -56,7 +60,7 @@ errorBanner.hidden = true;
 
 const editorRoot = document.createElement('div');
 editorRoot.className = 'editor-root';
-const editorToolbar = createEditorToolbar();
+const editorToolbar = createEditorToolbar(handleEditorToolbarAction);
 container.replaceChildren(errorBanner, editorToolbar.element, editorRoot);
 
 const showError = (message: string): void => {
@@ -105,6 +109,24 @@ const reportEditorError = (error: unknown, fallback: string): void => {
   showError(message);
   postMessageToExtension({ type: 'reportError', message });
 };
+
+function handleEditorToolbarAction(action: EditorToolbarAction): void {
+  if (
+    isDisposed ||
+    isCreatingEditor ||
+    isComposing ||
+    isReplacingDocument ||
+    crepe === undefined
+  ) {
+    return;
+  }
+
+  try {
+    runEditorToolbarAction(crepe.editor, action);
+  } catch (error: unknown) {
+    reportEditorError(error, 'Failed to run editor toolbar action.');
+  }
+}
 
 const destroyEditor = async (editor: Crepe): Promise<void> => {
   try {
@@ -396,6 +418,8 @@ const initializeEditor = async (
 
   try {
     await editor.create();
+    editorToolbar.buttons.get('paragraph')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('heading-1')?.removeAttribute('disabled');
   } catch (error: unknown) {
     if (crepe === editor) {
       crepe = undefined;
@@ -456,6 +480,7 @@ window.addEventListener(
   () => {
     isDisposed = true;
     disposeMessageListener();
+    editorToolbar.destroy();
     editorRoot.removeEventListener(
       'compositionstart',
       handleCompositionStart,

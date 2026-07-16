@@ -20,6 +20,7 @@ interface ToolbarButtonDefinition {
 
 export interface EditorToolbar {
   buttons: ReadonlyMap<EditorToolbarAction, HTMLButtonElement>;
+  destroy: () => void;
   element: HTMLElement;
 }
 
@@ -38,6 +39,7 @@ const toolbarButtons: readonly ToolbarButtonDefinition[] = [
 
 const createToolbarButton = (
   definition: ToolbarButtonDefinition,
+  runAction: (action: EditorToolbarAction) => void,
 ): HTMLButtonElement => {
   const button = document.createElement('button');
   button.className = 'editor-toolbar__button';
@@ -47,11 +49,25 @@ const createToolbarButton = (
   button.dataset.action = definition.action;
   button.setAttribute('aria-label', definition.label);
   button.textContent = definition.text;
+  button.addEventListener('mousedown', (event) => {
+    event.preventDefault();
+    runAction(definition.action);
+  });
+  button.addEventListener('click', (event) => {
+    if (event.detail !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    runAction(definition.action);
+  });
 
   return button;
 };
 
-export const createEditorToolbar = (): EditorToolbar => {
+export const createEditorToolbar = (
+  runAction: (action: EditorToolbarAction) => void,
+): EditorToolbar => {
   const toolbar = document.createElement('div');
   const buttons = new Map<EditorToolbarAction, HTMLButtonElement>();
   toolbar.className = 'editor-toolbar';
@@ -60,10 +76,14 @@ export const createEditorToolbar = (): EditorToolbar => {
   toolbar.setAttribute('aria-orientation', 'horizontal');
 
   for (const definition of toolbarButtons) {
-    const button = createToolbarButton(definition);
+    const button = createToolbarButton(definition, runAction);
     buttons.set(definition.action, button);
     toolbar.append(button);
   }
 
-  return { buttons, element: toolbar };
+  return {
+    buttons,
+    destroy: () => toolbar.replaceChildren(),
+    element: toolbar,
+  };
 };
