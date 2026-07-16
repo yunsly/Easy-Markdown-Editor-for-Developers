@@ -50,9 +50,9 @@
   background: var(--vscode-toolbar-activeBackground);
 }
 
-.floating-toolbar__button:focus-visible {
-  outline: 1px solid var(--vscode-focusBorder);
-  outline-offset: 1px;
+.floating-toolbar__button:focus {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: -2px;
 }
 
 .floating-toolbar__button.is-active {

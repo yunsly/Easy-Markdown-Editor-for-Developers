@@ -234,13 +234,17 @@ class FloatingToolbarView implements PluginView {
 
   readonly #handleEditorKeydown = (event: KeyboardEvent): void => {
     const { doc, selection } = this.#view.state;
+    const eventTarget = event.target;
+    const isEditorTarget =
+      eventTarget instanceof Node &&
+      this.#view.dom.contains(eventTarget);
 
     if (
       event.key !== 'Tab' ||
       event.altKey ||
       event.ctrlKey ||
       event.metaKey ||
-      !this.#view.hasFocus() ||
+      !isEditorTarget ||
       !(selection instanceof TextSelection) ||
       selection.empty ||
       doc.textBetween(selection.from, selection.to).length === 0
@@ -262,7 +266,7 @@ class FloatingToolbarView implements PluginView {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
-    target.focus();
+    target.focus({ preventScroll: true });
   };
 
   readonly #handleToolbarKeydown = (event: KeyboardEvent): void => {
