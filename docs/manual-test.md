@@ -352,3 +352,26 @@ Inline Code 활성 상태 표시, 키보드만 사용한 버튼 실행과 백틱
 ### 이번 검증에서 제외한 항목
 
 상대 경로와 anchor URL, 잘못된 URL scheme, 빈 선택에서 URL 자체를 링크 텍스트로 삽입하는 흐름은 확인하지 않았다.
+
+## Floating Toolbar 키보드 접근성 Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] 텍스트 선택 후 `Tab`, `Shift+Tab` 및 `Alt+F10`으로 Toolbar에 진입할 수 있다.
+- [x] `Tab`과 `Shift+Tab`으로 활성화된 버튼 사이를 이동하고 양 끝에서 순환할 수 있다.
+- [x] `Enter`와 `Space`로 포커스된 서식 버튼을 실행할 수 있다.
+- [x] 버튼 실행 후 선택 영역과 Toolbar 버튼의 키보드 포커스가 유지된다.
+- [x] `Escape`로 Toolbar를 닫고 Editor로 포커스를 돌려보낼 수 있다.
+- [x] 키보드 포커스 테두리가 명확하게 표시된다.
+- [x] 키보드로 적용한 서식 결과가 Markdown으로 저장된다.
+- [x] 키보드 조작과 저장 과정에서 오류 알림이 나타나지 않는다.
+
+### 이번 검증에서 제외한 항목
+
+VoiceOver 등 실제 스크린 리더를 사용한 `aria-label` 및 `aria-pressed` 음성 안내는 확인하지 않았다.
