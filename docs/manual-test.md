@@ -470,3 +470,23 @@ CodeMirror가 런타임에 생성한 기본 레이아웃 CSS가 Webview CSP에 �
 - [x] 코드 블록 언어 목록 항목에 키보드 포커스 테두리가 표시된다.
 - [x] 라이트·다크 테마에서 포커스 테두리를 구분할 수 있다.
 - [x] 마우스 클릭에는 불필요한 포커스 테두리가 남지 않는다.
+
+## 표 Toolbar 상태 갱신 회귀 테스트
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 GFM 표
+- 편집기: Visual Markdown Editor
+- 결과: 수정 후 통과
+
+### 확인 항목
+
+- [x] 표 밖에 커서가 있으면 `Table` 버튼이 활성화되고 `Delete Table` 버튼이 비활성화된다.
+- [x] 표 셀을 처음 클릭하면 `Table` 버튼이 비활성화되고 `Delete Table` 버튼이 즉시 활성화된다.
+- [x] `Delete Table` 버튼을 활성화하기 위해 같은 셀을 두 번 클릭할 필요가 없다.
+- [x] 표 밖으로 selection을 옮기면 두 버튼의 활성 상태가 원래대로 돌아온다.
+- [x] 상태가 갱신된 뒤에도 선택한 표 셀을 계속 편집할 수 있다.
+
+### 재검증 메모
+
+최초 구현은 Milkdown의 `selectionUpdated` 처리 중 아직 이전 `editorView.state`를 읽어 Toolbar 상태가 selection보다 한 단계 늦게 반영됐다. ProseMirror transaction이 View에 적용된 다음 microtask에서 최신 selection을 읽도록 변경한 뒤 첫 클릭 동작을 재검증해 통과했다.
