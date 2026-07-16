@@ -68,6 +68,7 @@ const features = {
   [CrepeFeature.ImageBlock]: false,
   [CrepeFeature.Latex]: false,
   [CrepeFeature.LinkTooltip]: true,
+  [CrepeFeature.Placeholder]: true,
   [CrepeFeature.Table]: false,
   [CrepeFeature.Toolbar]: false,
   [CrepeFeature.TopBar]: false,
@@ -76,6 +77,10 @@ const features = {
 const featureConfigs = {
   [CrepeFeature.CodeMirror]: {
     extensions: [CodeMirrorView.cspNonce.of(styleNonce)],
+  },
+  [CrepeFeature.Placeholder]: {
+    mode: 'doc',
+    text: '내용을 입력하세요…',
   },
 } satisfies NonNullable<CrepeConfig['featureConfigs']>;
 
