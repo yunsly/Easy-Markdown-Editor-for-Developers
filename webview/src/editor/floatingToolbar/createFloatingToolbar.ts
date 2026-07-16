@@ -51,6 +51,8 @@ type ToolbarAction =
   | 'link'
   | 'strikethrough';
 
+type ToolbarActionTrigger = 'keyboard' | 'pointer';
+
 const toolbarButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'bold', label: '굵게', text: 'B' },
   { action: 'italic', label: '기울임', text: 'I' },
@@ -64,7 +66,10 @@ const floatingToolbarTooltip = tooltipFactory(
 );
 
 const createToolbarContent = (
-  runAction: (action: ToolbarAction) => void,
+  runAction: (
+    action: ToolbarAction,
+    trigger: ToolbarActionTrigger,
+  ) => void,
 ): ToolbarContent => {
   const toolbar = document.createElement('div');
   const buttons = new Map<ToolbarAction, HTMLButtonElement>();
@@ -90,7 +95,7 @@ const createToolbarContent = (
 
       button.addEventListener('mousedown', (event) => {
         event.preventDefault();
-        runAction(action);
+        runAction(action, 'pointer');
       });
       button.addEventListener('click', (event) => {
         if (event.detail !== 0) {
@@ -98,7 +103,7 @@ const createToolbarContent = (
         }
 
         event.preventDefault();
-        runAction(action);
+        runAction(action, 'keyboard');
       });
     }
 
@@ -162,7 +167,7 @@ class FloatingToolbarView implements PluginView {
   constructor(context: Ctx, view: EditorView) {
     this.#context = context;
     this.#view = view;
-    const toolbarContent = createToolbarContent((action) => {
+    const toolbarContent = createToolbarContent((action, trigger) => {
       if (action === 'bold') {
         context.get(commandsCtx).call(toggleStrongCommand.key);
       } else if (action === 'italic') {
@@ -180,7 +185,7 @@ class FloatingToolbarView implements PluginView {
         context.get(commandsCtx).call(toggleLinkCommand.key);
       }
 
-      if (action !== 'link') {
+      if (action !== 'link' && trigger === 'pointer') {
         view.focus();
       }
     });
@@ -271,6 +276,40 @@ class FloatingToolbarView implements PluginView {
   }
 
   readonly #handleToolbarKeydown = (event: KeyboardEvent): void => {
+    const isTabNavigation =
+      event.key === 'Tab' &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey;
+
+    if (isTabNavigation) {
+      const enabledButtons = [...this.#buttons.values()].filter(
+        (button) => !button.disabled,
+      );
+      const currentIndex = enabledButtons.findIndex(
+        (button) => button === event.target,
+      );
+      const isForwardBoundary =
+        currentIndex >= 0 &&
+        !event.shiftKey &&
+        currentIndex === enabledButtons.length - 1;
+      const isBackwardBoundary = event.shiftKey && currentIndex === 0;
+
+      if (isForwardBoundary || isBackwardBoundary) {
+        const target = event.shiftKey
+          ? enabledButtons.at(-1)
+          : enabledButtons.at(0);
+
+        if (target !== undefined) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          target.focus({ preventScroll: true });
+          return;
+        }
+      }
+    }
+
     if (event.key !== 'Escape') {
       return;
     }
