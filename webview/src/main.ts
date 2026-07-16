@@ -441,7 +441,13 @@ const initializeEditor = async (
       syncEditorToolbarState(context);
     });
     listener.selectionUpdated((context) => {
-      syncEditorToolbarState(context);
+      queueMicrotask(() => {
+        if (isDisposed || crepe !== editor) {
+          return;
+        }
+
+        syncEditorToolbarState(context);
+      });
     });
     listener.markdownUpdated((_context, updatedMarkdown, previousMarkdown) => {
       queueMarkdownUpdate(editor, updatedMarkdown, previousMarkdown);
