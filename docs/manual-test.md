@@ -20,4 +20,28 @@
 
 ### 이번 검증에서 제외한 항목
 
-현재 Crepe 편집 결과를 VS Code `TextDocument`에 반영하는 동기화가 구현되지 않았으므로 dirty 상태, 저장, Undo/Redo 및 외부 변경 반영은 검증하지 않았다. 이 항목들은 문서 동기화 구현 후 별도로 확인한다.
+이 테스트 당시에는 Crepe 편집 결과를 VS Code `TextDocument`에 반영하는 동기화가 구현되지 않아 dirty 상태와 저장을 확인하지 않았다. 해당 항목은 아래 문서 동기화 Smoke Test에서 별도로 확인했다. Undo/Redo와 외부 변경 반영은 아직 검증하지 않았다.
+
+## 문서 동기화 Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일 및 `fixtures/code-block.md`
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] 편집 후 debounce가 끝나면 VS Code 탭의 닫기 표시가 dirty 상태를 나타내는 원형 표시로 바뀐다.
+- [x] dirty 상태에서는 아직 저장하지 않은 Markdown이 디스크 파일에 기록되지 않는다.
+- [x] `Cmd+S`로 저장하면 dirty 표시가 해제된다.
+- [x] 저장 후 입력한 한글 문자열이 실제 Markdown 파일에 기록된다.
+- [x] 동기화 및 저장 과정에서 오류 알림이 나타나지 않는다.
+
+### 관찰 사항
+
+코드 블록 뒤에 새 문단을 추가했을 때 Crepe 직렬화 결과에 `<br />`가 함께 추가됐다. 저장 동작 자체는 성공했지만 이 표현의 의미 보존 여부와 허용 가능성은 Markdown round-trip 검증에서 별도로 판단한다.
+
+### 이번 검증에서 제외한 항목
+
+Undo/Redo, 외부 파일 변경 반영, 충돌 처리와 읽기 전용 문서 오류는 확인하지 않았다.
