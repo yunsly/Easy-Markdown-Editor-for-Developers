@@ -1,8 +1,14 @@
 import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
 import type { Editor } from '@milkdown/kit/core';
+import { wrapIn } from '@milkdown/kit/prose/commands';
+import type {
+  NodeType,
+  ResolvedPos,
+} from '@milkdown/kit/prose/model';
 import {
   bulletListSchema,
   liftListItemCommand,
+  listItemSchema,
   orderedListSchema,
   turnIntoTextCommand,
   wrapInBulletListCommand,
@@ -11,6 +17,19 @@ import {
 } from '@milkdown/kit/preset/commonmark';
 
 import type { EditorToolbarAction } from './createEditorToolbar';
+
+const findAncestorDepth = (
+  position: ResolvedPos,
+  nodeTypes: readonly NodeType[],
+): number | undefined => {
+  for (let depth = position.depth; depth > 0; depth -= 1) {
+    if (nodeTypes.includes(position.node(depth).type)) {
+      return depth;
+    }
+  }
+
+  return undefined;
+};
 
 export const runEditorToolbarAction = (
   editor: Editor,
@@ -35,18 +54,18 @@ export const runEditorToolbarAction = (
       const isBulletList = action === 'bullet-list';
       const bulletListType = bulletListSchema.type(context);
       const orderedListType = orderedListSchema.type(context);
+      const listItemType = listItemSchema.type(context);
       const listType = isBulletList ? bulletListType : orderedListType;
       const { $from } = view.state.selection;
-      let currentListDepth: number | undefined;
-
-      for (let depth = $from.depth; depth > 0; depth -= 1) {
-        const nodeType = $from.node(depth).type;
-
-        if (nodeType === bulletListType || nodeType === orderedListType) {
-          currentListDepth = depth;
-          break;
-        }
-      }
+      const currentListDepth = findAncestorDepth(
+        $from,
+        [bulletListType, orderedListType],
+      );
+      const listItemDepth = findAncestorDepth($from, [listItemType]);
+      const listItem = listItemDepth === undefined
+        ? undefined
+        : $from.node(listItemDepth);
+      const isTaskItem = listItem?.attrs.checked != null;
 
       if (currentListDepth === undefined) {
         commands.call(
@@ -54,15 +73,71 @@ export const runEditorToolbarAction = (
             ? wrapInBulletListCommand.key
             : wrapInOrderedListCommand.key,
         );
-      } else if ($from.node(currentListDepth).type === listType) {
+      } else if (
+        $from.node(currentListDepth).type === listType &&
+        !isTaskItem
+      ) {
         commands.call(liftListItemCommand.key);
       } else {
-        view.dispatch(
-          view.state.tr.setNodeMarkup(
+        let transaction = view.state.tr;
+
+        if (isTaskItem && listItemDepth !== undefined && listItem) {
+          transaction = transaction.setNodeMarkup(
+            $from.before(listItemDepth),
+            undefined,
+            { ...listItem.attrs, checked: null },
+          );
+        }
+
+        if ($from.node(currentListDepth).type !== listType) {
+          transaction = transaction.setNodeMarkup(
             $from.before(currentListDepth),
             listType,
+          );
+        }
+
+        view.dispatch(transaction);
+      }
+    } else if (action === 'task-list') {
+      const bulletListType = bulletListSchema.type(context);
+      const listItemType = listItemSchema.type(context);
+      const { $from } = view.state.selection;
+      const listItemDepth = findAncestorDepth($from, [listItemType]);
+      const listItem = listItemDepth === undefined
+        ? undefined
+        : $from.node(listItemDepth);
+
+      if (listItem?.attrs.checked != null) {
+        commands.call(liftListItemCommand.key);
+      } else if (listItemDepth !== undefined && listItem) {
+        view.dispatch(
+          view.state.tr.setNodeMarkup(
+            $from.before(listItemDepth),
+            undefined,
+            { ...listItem.attrs, checked: false },
           ),
         );
+      } else {
+        wrapIn(bulletListType)(view.state, (transaction) => {
+          const wrappedPosition = transaction.selection.$from;
+          const wrappedItemDepth = findAncestorDepth(
+            wrappedPosition,
+            [listItemType],
+          );
+
+          if (wrappedItemDepth === undefined) {
+            return;
+          }
+
+          const wrappedItem = wrappedPosition.node(wrappedItemDepth);
+          view.dispatch(
+            transaction.setNodeMarkup(
+              wrappedPosition.before(wrappedItemDepth),
+              undefined,
+              { ...wrappedItem.attrs, checked: false },
+            ),
+          );
+        });
       }
     }
 

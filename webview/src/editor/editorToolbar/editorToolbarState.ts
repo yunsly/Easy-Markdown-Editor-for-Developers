@@ -3,6 +3,7 @@ import { editorViewCtx } from '@milkdown/kit/core';
 import {
   bulletListSchema,
   headingSchema,
+  listItemSchema,
   orderedListSchema,
   paragraphSchema,
 } from '@milkdown/kit/preset/commonmark';
@@ -48,22 +49,34 @@ const getActiveTextBlockAction = (
   return undefined;
 };
 
-const isSelectionInList = (
-  context: Ctx,
-  action: 'bullet-list' | 'ordered-list',
-): boolean => {
+interface SelectionListState {
+  action: 'bullet-list' | 'ordered-list' | undefined;
+  isTask: boolean;
+}
+
+const getSelectionListState = (context: Ctx): SelectionListState => {
   const { $from } = context.get(editorViewCtx).state.selection;
-  const listType = action === 'bullet-list'
-    ? bulletListSchema.type(context)
-    : orderedListSchema.type(context);
+  const bulletListType = bulletListSchema.type(context);
+  const orderedListType = orderedListSchema.type(context);
+  const listItemType = listItemSchema.type(context);
+  let action: SelectionListState['action'];
+  let isTask = false;
 
   for (let depth = $from.depth; depth > 0; depth -= 1) {
-    if ($from.node(depth).type === listType) {
-      return true;
+    const node = $from.node(depth);
+
+    if (node.type === listItemType) {
+      isTask = node.attrs.checked != null;
+    } else if (node.type === bulletListType) {
+      action = 'bullet-list';
+      break;
+    } else if (node.type === orderedListType) {
+      action = 'ordered-list';
+      break;
     }
   }
 
-  return false;
+  return { action, isTask };
 };
 
 const updateButtonState = (
@@ -81,6 +94,7 @@ export const updateEditorToolbarState = (
   toolbar: EditorToolbar,
 ): void => {
   const activeAction = getActiveTextBlockAction(context);
+  const listState = getSelectionListState(context);
 
   for (const action of textBlockActions) {
     updateButtonState(toolbar, action, action === activeAction);
@@ -89,11 +103,12 @@ export const updateEditorToolbarState = (
   updateButtonState(
     toolbar,
     'bullet-list',
-    isSelectionInList(context, 'bullet-list'),
+    !listState.isTask && listState.action === 'bullet-list',
   );
   updateButtonState(
     toolbar,
     'ordered-list',
-    isSelectionInList(context, 'ordered-list'),
+    !listState.isTask && listState.action === 'ordered-list',
   );
+  updateButtonState(toolbar, 'task-list', listState.isTask);
 };
