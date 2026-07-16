@@ -29,7 +29,10 @@ import {
   tableSchema,
 } from '@milkdown/kit/preset/gfm';
 
-import type { EditorToolbarAction } from './createEditorToolbar';
+import type {
+  EditorToolbarAction,
+  EditorToolbarActionOptions,
+} from './createEditorToolbar';
 
 const findAncestorDepth = (
   position: ResolvedPos,
@@ -47,6 +50,7 @@ const findAncestorDepth = (
 export const runEditorToolbarAction = (
   editor: Editor,
   action: EditorToolbarAction,
+  options: EditorToolbarActionOptions = {},
 ): void => {
   editor.action((context) => {
     const commands = context.get(commandsCtx);
@@ -178,7 +182,10 @@ export const runEditorToolbarAction = (
         selection.node.type === tableSchema.type(context);
 
       if (!isInTable(view.state) && !isTableSelected) {
-        commands.call(insertTableCommand.key, { row: 3, col: 3 });
+        commands.call(
+          insertTableCommand.key,
+          options.tableSize ?? { row: 3, col: 3 },
+        );
       }
     } else if (action === 'delete-table') {
       const { selection } = view.state;

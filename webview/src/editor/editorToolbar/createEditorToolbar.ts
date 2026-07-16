@@ -13,6 +13,13 @@ export type EditorToolbarAction =
   | 'table'
   | 'task-list';
 
+export interface EditorToolbarActionOptions {
+  tableSize?: {
+    col: number;
+    row: number;
+  };
+}
+
 interface ToolbarButtonDefinition {
   action: EditorToolbarAction;
   label: string;
@@ -41,7 +48,10 @@ const toolbarButtons: readonly ToolbarButtonDefinition[] = [
 
 const createToolbarButton = (
   definition: ToolbarButtonDefinition,
-  runAction: (action: EditorToolbarAction) => void,
+  runAction: (
+    action: EditorToolbarAction,
+    options?: EditorToolbarActionOptions,
+  ) => void,
 ): HTMLButtonElement => {
   const button = document.createElement('button');
   button.className = 'editor-toolbar__button';
@@ -68,7 +78,10 @@ const createToolbarButton = (
 };
 
 export const createEditorToolbar = (
-  runAction: (action: EditorToolbarAction) => void,
+  runAction: (
+    action: EditorToolbarAction,
+    options?: EditorToolbarActionOptions,
+  ) => void,
 ): EditorToolbar => {
   const toolbar = document.createElement('div');
   const buttons = new Map<EditorToolbarAction, HTMLButtonElement>();

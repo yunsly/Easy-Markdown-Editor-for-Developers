@@ -23,6 +23,7 @@ import {
 import {
   createEditorToolbar,
   type EditorToolbarAction,
+  type EditorToolbarActionOptions,
 } from './editor/editorToolbar/createEditorToolbar';
 import { runEditorToolbarAction } from './editor/editorToolbar/editorToolbarActions';
 import { updateEditorToolbarState } from './editor/editorToolbar/editorToolbarState';
@@ -113,7 +114,10 @@ const reportEditorError = (error: unknown, fallback: string): void => {
   postMessageToExtension({ type: 'reportError', message });
 };
 
-function handleEditorToolbarAction(action: EditorToolbarAction): void {
+function handleEditorToolbarAction(
+  action: EditorToolbarAction,
+  options?: EditorToolbarActionOptions,
+): void {
   if (
     isDisposed ||
     isCreatingEditor ||
@@ -125,7 +129,7 @@ function handleEditorToolbarAction(action: EditorToolbarAction): void {
   }
 
   try {
-    runEditorToolbarAction(crepe.editor, action);
+    runEditorToolbarAction(crepe.editor, action, options);
   } catch (error: unknown) {
     reportEditorError(error, 'Failed to run editor toolbar action.');
   }
