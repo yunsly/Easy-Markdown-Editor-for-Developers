@@ -3,7 +3,11 @@ import {
   CrepeFeature,
   type CrepeConfig,
 } from '@milkdown/crepe';
-import { replaceAll } from '@milkdown/kit/utils';
+import {
+  redoCommand,
+  undoCommand,
+} from '@milkdown/kit/plugin/history';
+import { callCommand, replaceAll } from '@milkdown/kit/utils';
 
 import './styles.css';
 
@@ -277,8 +281,41 @@ const handleCompositionEnd = (): void => {
   }
 };
 
+const handleHistoryKeydown = (event: KeyboardEvent): void => {
+  const key = event.key.toLowerCase();
+  const hasPrimaryModifier = event.metaKey || event.ctrlKey;
+  const isUndo = hasPrimaryModifier && key === 'z' && !event.shiftKey;
+  const isRedo =
+    hasPrimaryModifier &&
+    (key === 'y' || (key === 'z' && event.shiftKey));
+
+  if (event.altKey || (!isUndo && !isRedo)) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+
+  if (
+    isDisposed ||
+    isCreatingEditor ||
+    isComposing ||
+    isReplacingDocument ||
+    crepe === undefined
+  ) {
+    return;
+  }
+
+  const command = isRedo ? redoCommand : undoCommand;
+  crepe.editor.action(callCommand(command.key));
+};
+
 editorRoot.addEventListener('compositionstart', handleCompositionStart);
 editorRoot.addEventListener('compositionend', handleCompositionEnd);
+editorRoot.addEventListener('keydown', handleHistoryKeydown, {
+  capture: true,
+});
 
 const initializeEditor = async (
   markdown: string,
@@ -378,6 +415,9 @@ window.addEventListener(
       'compositionend',
       handleCompositionEnd,
     );
+    editorRoot.removeEventListener('keydown', handleHistoryKeydown, {
+      capture: true,
+    });
     isComposing = false;
     isReplacingDocument = false;
     clearPendingMarkdownUpdate();
