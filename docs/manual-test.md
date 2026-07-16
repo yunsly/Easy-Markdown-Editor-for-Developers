@@ -242,3 +242,23 @@ Bullet list와 task list는 `-` 대신 `*` marker로 직렬화됐다. 목록 의
 ### 이번 검증에서 제외한 항목
 
 Bold 활성 상태 표시, 키보드만 사용한 버튼 실행과 여러 문단에 걸친 선택은 확인하지 않았다.
+
+## Floating Toolbar Italic Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] 한글 텍스트 선택에서 Italic 버튼으로 기울임을 적용·해제할 수 있다.
+- [x] Italic 버튼을 눌러도 선택 영역이 유지된다.
+- [x] 기울임을 해제한 최종 상태가 일반 Markdown 문단으로 저장된다.
+- [x] 같은 문서에서 Bold 버튼을 적용한 문단이 `**…**`로 저장된다.
+- [x] 적용·해제 및 저장 과정에서 오류 알림이 나타나지 않는다.
+
+### 이번 검증에서 제외한 항목
+
+Italic 활성 상태 표시, 키보드만 사용한 버튼 실행과 Bold·Italic 중첩 선택은 확인하지 않았다.
