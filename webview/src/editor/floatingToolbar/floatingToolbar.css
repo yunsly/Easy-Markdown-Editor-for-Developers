@@ -30,3 +30,15 @@
 .floating-toolbar__button:disabled {
   color: var(--vscode-disabledForeground);
 }
+
+.floating-toolbar__button:not(:disabled) {
+  cursor: pointer;
+}
+
+.floating-toolbar__button:not(:disabled):hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.floating-toolbar__button:not(:disabled):active {
+  background: var(--vscode-toolbar-activeBackground);
+}
