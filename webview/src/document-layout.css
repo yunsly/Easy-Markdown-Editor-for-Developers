@@ -1,0 +1,7 @@
+.editor-root .milkdown .ProseMirror {
+  width: 100%;
+  max-width: 960px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: clamp(32px, 6vw, 60px) clamp(20px, 8vw, 80px) 96px;
+}

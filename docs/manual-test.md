@@ -416,3 +416,20 @@ VoiceOver 등 실제 스크린 리더를 사용한 `aria-label` 및 `aria-presse
 ### 재검증 메모
 
 최초 테스트에서는 Milkdown이 `Cmd+B`를 처리한 뒤 같은 키 이벤트가 VS Code Workbench까지 전달되어 Explorer도 함께 닫혔다. ProseMirror에서 시작된 Bold 단축키의 버블링을 Webview 안에서 종료하도록 수정한 뒤 재검증해 통과했다.
+
+## 반응형 문서 레이아웃 Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] 넓은 Editor Group에서 본문이 중앙에 배치되고 읽기 좋은 최대 폭을 유지한다.
+- [x] 좁은 Editor Group에서 좌우 여백이 줄어들어 본문 영역을 확보한다.
+- [x] 문단, 목록 및 코드 블록이 창 크기 변경 중 잘리거나 겹치지 않는다.
+- [x] 창 크기를 변경하면 Editor를 다시 열지 않아도 레이아웃이 즉시 재배치된다.
+- [x] 레이아웃 변경 후에도 Floating Toolbar가 Webview 경계 안에 표시된다.
+- [x] 창 크기 변경만으로 Markdown 내용이 수정되지 않는다.
