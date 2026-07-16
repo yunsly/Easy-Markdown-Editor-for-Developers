@@ -1,6 +1,7 @@
 import type { Ctx } from '@milkdown/kit/ctx';
 import { editorViewCtx } from '@milkdown/kit/core';
 import {
+  blockquoteSchema,
   bulletListSchema,
   headingSchema,
   listItemSchema,
@@ -89,6 +90,19 @@ const updateButtonState = (
   button?.setAttribute('aria-pressed', String(isActive));
 };
 
+const isSelectionInBlockquote = (context: Ctx): boolean => {
+  const { $from } = context.get(editorViewCtx).state.selection;
+  const blockquoteType = blockquoteSchema.type(context);
+
+  for (let depth = $from.depth; depth > 0; depth -= 1) {
+    if ($from.node(depth).type === blockquoteType) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 export const updateEditorToolbarState = (
   context: Ctx,
   toolbar: EditorToolbar,
@@ -111,4 +125,9 @@ export const updateEditorToolbarState = (
     !listState.isTask && listState.action === 'ordered-list',
   );
   updateButtonState(toolbar, 'task-list', listState.isTask);
+  updateButtonState(
+    toolbar,
+    'blockquote',
+    isSelectionInBlockquote(context),
+  );
 };

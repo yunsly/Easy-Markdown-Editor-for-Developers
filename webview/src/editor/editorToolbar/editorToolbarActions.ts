@@ -1,17 +1,19 @@
 import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
 import type { Editor } from '@milkdown/kit/core';
-import { wrapIn } from '@milkdown/kit/prose/commands';
+import { lift, wrapIn } from '@milkdown/kit/prose/commands';
 import type {
   NodeType,
   ResolvedPos,
 } from '@milkdown/kit/prose/model';
 import {
+  blockquoteSchema,
   bulletListSchema,
   liftListItemCommand,
   listItemSchema,
   orderedListSchema,
   turnIntoTextCommand,
   wrapInBulletListCommand,
+  wrapInBlockquoteCommand,
   wrapInHeadingCommand,
   wrapInOrderedListCommand,
 } from '@milkdown/kit/preset/commonmark';
@@ -138,6 +140,16 @@ export const runEditorToolbarAction = (
             ),
           );
         });
+      }
+    } else if (action === 'blockquote') {
+      const blockquoteType = blockquoteSchema.type(context);
+      const { $from } = view.state.selection;
+      const blockquoteDepth = findAncestorDepth($from, [blockquoteType]);
+
+      if (blockquoteDepth === undefined) {
+        commands.call(wrapInBlockquoteCommand.key);
+      } else {
+        commands.inline(lift);
       }
     }
 
