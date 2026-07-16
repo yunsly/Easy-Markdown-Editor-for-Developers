@@ -1,6 +1,10 @@
 import type { Ctx } from '@milkdown/kit/ctx';
 import type { Editor } from '@milkdown/kit/core';
-import { commandsCtx } from '@milkdown/kit/core';
+import {
+  commandsCtx,
+  editorCtx,
+  EditorStatus,
+} from '@milkdown/kit/core';
 import type {
   EditorState,
   PluginView,
@@ -103,6 +107,10 @@ const isActionActive = (
   context: Ctx,
   action: ToolbarAction,
 ): boolean => {
+  if (context.get(editorCtx).status !== EditorStatus.Created) {
+    return false;
+  }
+
   const commands = context.get(commandsCtx);
 
   if (action === 'bold') {
