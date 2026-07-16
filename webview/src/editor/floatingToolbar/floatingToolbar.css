@@ -16,6 +16,13 @@
   display: none;
 }
 
+.milkdown:has(
+  .milkdown-link-edit[data-show='true'],
+  .milkdown-link-preview[data-show='true']
+) .floating-toolbar {
+  display: none;
+}
+
 .floating-toolbar__button {
   min-width: 30px;
   height: 30px;

@@ -1,3 +1,4 @@
+import { toggleLinkCommand } from '@milkdown/kit/component/link-tooltip';
 import type { Ctx } from '@milkdown/kit/ctx';
 import type { Editor } from '@milkdown/kit/core';
 import {
@@ -19,6 +20,7 @@ import {
   emphasisSchema,
   inlineCodeSchema,
   isMarkSelectedCommand,
+  linkSchema,
   strongSchema,
   toggleEmphasisCommand,
   toggleInlineCodeCommand,
@@ -46,6 +48,7 @@ type ToolbarAction =
   | 'bold'
   | 'inlineCode'
   | 'italic'
+  | 'link'
   | 'strikethrough';
 
 const toolbarButtons: readonly ToolbarButtonDefinition[] = [
@@ -53,7 +56,7 @@ const toolbarButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'italic', label: '기울임', text: 'I' },
   { action: 'strikethrough', label: '취소선', text: 'S' },
   { action: 'inlineCode', label: '인라인 코드', text: '</>' },
-  { label: '링크', text: 'Link' },
+  { action: 'link', label: '링크', text: 'Link' },
 ];
 
 const floatingToolbarTooltip = tooltipFactory(
@@ -134,9 +137,16 @@ const isActionActive = (
     );
   }
 
+  if (action === 'inlineCode') {
+    return commands.call(
+      isMarkSelectedCommand.key,
+      inlineCodeSchema.type(context),
+    );
+  }
+
   return commands.call(
     isMarkSelectedCommand.key,
-    inlineCodeSchema.type(context),
+    linkSchema.type(context),
   );
 };
 
@@ -164,9 +174,13 @@ class FloatingToolbarView implements PluginView {
         )
       ) {
         context.get(commandsCtx).call(toggleInlineCodeCommand.key);
+      } else if (action === 'link') {
+        context.get(commandsCtx).call(toggleLinkCommand.key);
       }
 
-      view.focus();
+      if (action !== 'link') {
+        view.focus();
+      }
     });
     this.#buttons = toolbarContent.buttons;
     this.#content = toolbarContent.element;

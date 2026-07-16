@@ -56,7 +56,7 @@ const features = {
   [CrepeFeature.BlockEdit]: false,
   [CrepeFeature.ImageBlock]: false,
   [CrepeFeature.Latex]: false,
-  [CrepeFeature.LinkTooltip]: false,
+  [CrepeFeature.LinkTooltip]: true,
   [CrepeFeature.Table]: false,
   [CrepeFeature.Toolbar]: false,
   [CrepeFeature.TopBar]: false,
