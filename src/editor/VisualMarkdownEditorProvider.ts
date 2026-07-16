@@ -11,7 +11,14 @@ import type {
 import {
   isWebviewToExtensionMessage,
   type ExtensionToWebviewMessage,
+  type WebviewToExtensionMessage,
 } from '../shared/messages';
+import { applyDocumentChange } from './documentSync';
+
+type DocumentChangedMessage = Extract<
+  WebviewToExtensionMessage,
+  { type: 'documentChanged' }
+>;
 
 export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
   public static readonly viewType = 'visualMarkdown.editor';
@@ -37,19 +44,100 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
     const styleUri = webview.asWebviewUri(Uri.joinPath(webviewRoot, 'main.css'));
     const nonce = randomBytes(16).toString('base64');
     let didSendInitialDocument = false;
+    let isApplyingDocumentChange = false;
+    let isDisposed = false;
+
+    const reportError = (errorMessage: string): void => {
+      const showErrorMessage: ExtensionToWebviewMessage = {
+        type: 'showError',
+        message: errorMessage,
+      };
+
+      void window.showErrorMessage(errorMessage);
+      void webview.postMessage(showErrorMessage);
+    };
+
+    const handleDocumentChanged = async (
+      message: DocumentChangedMessage,
+    ): Promise<void> => {
+      if (isDisposed) {
+        return;
+      }
+
+      if (isApplyingDocumentChange) {
+        reportError(
+          'Visual Markdown Editor received overlapping document changes.',
+        );
+        return;
+      }
+
+      isApplyingDocumentChange = true;
+
+      try {
+        const result = await applyDocumentChange(
+          document,
+          message.text,
+          message.baseVersion,
+        );
+
+        if (isDisposed) {
+          return;
+        }
+
+        if (result.status === 'documentClosed') {
+          reportError('Visual Markdown Editor document is already closed.');
+          return;
+        }
+
+        if (result.status === 'versionMismatch') {
+          reportError(
+            `Visual Markdown Editor rejected an outdated change. Expected document version ${message.baseVersion}, but found ${result.actualVersion}.`,
+          );
+          return;
+        }
+
+        if (result.status === 'applyFailed') {
+          reportError(
+            'Visual Markdown Editor could not apply the document change.',
+          );
+          return;
+        }
+
+        if (result.status === 'contentMismatch') {
+          reportError(
+            `Visual Markdown Editor detected a document conflict at version ${result.actualVersion}.`,
+          );
+          return;
+        }
+
+        const appliedMessage: ExtensionToWebviewMessage = {
+          type: 'documentApplied',
+          changeId: message.changeId,
+          version: result.version,
+        };
+        const didPost = await webview.postMessage(appliedMessage);
+
+        if (!didPost && !isDisposed) {
+          void window.showErrorMessage(
+            'Visual Markdown Editor could not confirm the document change.',
+          );
+        }
+      } catch (error: unknown) {
+        const detail = error instanceof Error ? ` ${error.message}` : '';
+        reportError(
+          `Visual Markdown Editor failed to update the document.${detail}`,
+        );
+      } finally {
+        isApplyingDocumentChange = false;
+      }
+    };
 
     const messageSubscription = webview.onDidReceiveMessage(
       (message: unknown) => {
         if (!isWebviewToExtensionMessage(message)) {
           const errorMessage =
             'Visual Markdown Editor received an invalid Webview message.';
-          const showErrorMessage: ExtensionToWebviewMessage = {
-            type: 'showError',
-            message: errorMessage,
-          };
-
-          void window.showErrorMessage(errorMessage);
-          void webview.postMessage(showErrorMessage);
+          reportError(errorMessage);
           return;
         }
 
@@ -57,6 +145,11 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
           void window.showErrorMessage(
             `Visual Markdown Editor Webview: ${message.message}`,
           );
+          return;
+        }
+
+        if (message.type === 'documentChanged') {
+          void handleDocumentChanged(message);
           return;
         }
 
@@ -90,6 +183,7 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
     );
 
     webviewPanel.onDidDispose(() => {
+      isDisposed = true;
       messageSubscription.dispose();
     });
 
