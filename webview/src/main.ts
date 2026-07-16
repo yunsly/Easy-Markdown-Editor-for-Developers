@@ -13,6 +13,11 @@ import {
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
 
+interface PendingDocumentChange {
+  changeId: number;
+  markdown: string;
+}
+
 const container = document.querySelector<HTMLElement>('#app');
 
 if (container === null) {
@@ -50,6 +55,9 @@ let crepe: Crepe | undefined;
 let latestMarkdown: string | undefined;
 let pendingMarkdownUpdate: string | undefined;
 let markdownUpdateTimer: number | undefined;
+let documentVersion: number | undefined;
+let pendingDocumentChange: PendingDocumentChange | undefined;
+let nextChangeId = 1;
 let isCreatingEditor = false;
 let isComposing = false;
 let isDisposed = false;
@@ -82,6 +90,53 @@ const clearPendingMarkdownUpdate = (): void => {
   pendingMarkdownUpdate = undefined;
 };
 
+const sendLatestMarkdownUpdate = (): void => {
+  if (
+    isDisposed ||
+    documentVersion === undefined ||
+    latestMarkdown === undefined ||
+    pendingDocumentChange !== undefined
+  ) {
+    return;
+  }
+
+  const changeId = nextChangeId;
+  nextChangeId += 1;
+  pendingDocumentChange = {
+    changeId,
+    markdown: latestMarkdown,
+  };
+
+  postMessageToExtension({
+    type: 'documentChanged',
+    text: latestMarkdown,
+    baseVersion: documentVersion,
+    changeId,
+  });
+};
+
+const handleDocumentApplied = (
+  changeId: number,
+  version: number,
+): void => {
+  const appliedChange = pendingDocumentChange;
+
+  if (appliedChange === undefined || appliedChange.changeId !== changeId) {
+    reportEditorError(
+      new Error('Received an unexpected documentApplied message.'),
+      'Failed to confirm the latest document change.',
+    );
+    return;
+  }
+
+  pendingDocumentChange = undefined;
+  documentVersion = version;
+
+  if (latestMarkdown !== appliedChange.markdown) {
+    sendLatestMarkdownUpdate();
+  }
+};
+
 const schedulePendingMarkdownUpdate = (editor: Crepe): void => {
   clearMarkdownUpdateTimer();
 
@@ -109,6 +164,7 @@ const schedulePendingMarkdownUpdate = (editor: Crepe): void => {
     }
 
     latestMarkdown = markdownToRecord;
+    sendLatestMarkdownUpdate();
   }, MARKDOWN_UPDATE_DEBOUNCE_MS);
 };
 
@@ -160,7 +216,10 @@ const handleCompositionEnd = (): void => {
 editorRoot.addEventListener('compositionstart', handleCompositionStart);
 editorRoot.addEventListener('compositionend', handleCompositionEnd);
 
-const initializeEditor = async (markdown: string): Promise<void> => {
+const initializeEditor = async (
+  markdown: string,
+  version: number,
+): Promise<void> => {
   if (isDisposed || isCreatingEditor || crepe !== undefined) {
     return;
   }
@@ -181,6 +240,9 @@ const initializeEditor = async (markdown: string): Promise<void> => {
 
   crepe = editor;
   latestMarkdown = markdown;
+  documentVersion = version;
+  pendingDocumentChange = undefined;
+  nextChangeId = 1;
 
   try {
     await editor.create();
@@ -188,6 +250,8 @@ const initializeEditor = async (markdown: string): Promise<void> => {
     if (crepe === editor) {
       crepe = undefined;
       latestMarkdown = undefined;
+      documentVersion = undefined;
+      pendingDocumentChange = undefined;
       isComposing = false;
       clearPendingMarkdownUpdate();
     }
@@ -200,6 +264,8 @@ const initializeEditor = async (markdown: string): Promise<void> => {
     if (isDisposed && crepe === editor) {
       crepe = undefined;
       latestMarkdown = undefined;
+      documentVersion = undefined;
+      pendingDocumentChange = undefined;
       isComposing = false;
       clearPendingMarkdownUpdate();
       await destroyEditor(editor);
@@ -209,7 +275,9 @@ const initializeEditor = async (markdown: string): Promise<void> => {
 
 const disposeMessageListener = onMessageFromExtension((message) => {
   if (message.type === 'initDocument') {
-    void initializeEditor(message.text);
+    void initializeEditor(message.text, message.version);
+  } else if (message.type === 'documentApplied') {
+    handleDocumentApplied(message.changeId, message.version);
   } else if (message.type === 'showError') {
     showError(message.message);
   }
@@ -235,6 +303,8 @@ window.addEventListener(
       const editor = crepe;
       crepe = undefined;
       latestMarkdown = undefined;
+      documentVersion = undefined;
+      pendingDocumentChange = undefined;
       void destroyEditor(editor);
     }
   },
