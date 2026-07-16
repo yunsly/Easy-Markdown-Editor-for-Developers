@@ -11,6 +11,8 @@ import {
   postMessageToExtension,
 } from './vscodeApi';
 
+const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
+
 const container = document.querySelector<HTMLElement>('#app');
 
 if (container === null) {
@@ -46,6 +48,8 @@ const features = {
 
 let crepe: Crepe | undefined;
 let latestMarkdown: string | undefined;
+let pendingMarkdownUpdate: string | undefined;
+let markdownUpdateTimer: number | undefined;
 let isCreatingEditor = false;
 let isDisposed = false;
 
@@ -64,7 +68,16 @@ const destroyEditor = async (editor: Crepe): Promise<void> => {
   }
 };
 
-const recordMarkdownUpdate = (
+const clearPendingMarkdownUpdate = (): void => {
+  if (markdownUpdateTimer !== undefined) {
+    window.clearTimeout(markdownUpdateTimer);
+    markdownUpdateTimer = undefined;
+  }
+
+  pendingMarkdownUpdate = undefined;
+};
+
+const queueMarkdownUpdate = (
   editor: Crepe,
   markdown: string,
   previousMarkdown: string,
@@ -72,13 +85,41 @@ const recordMarkdownUpdate = (
   if (
     isDisposed ||
     crepe !== editor ||
-    markdown === previousMarkdown ||
-    markdown === latestMarkdown
+    markdown === previousMarkdown
   ) {
     return;
   }
 
-  latestMarkdown = markdown;
+  if (markdown === latestMarkdown) {
+    clearPendingMarkdownUpdate();
+    return;
+  }
+
+  if (markdown === pendingMarkdownUpdate) {
+    return;
+  }
+
+  pendingMarkdownUpdate = markdown;
+
+  if (markdownUpdateTimer !== undefined) {
+    window.clearTimeout(markdownUpdateTimer);
+  }
+
+  markdownUpdateTimer = window.setTimeout(() => {
+    markdownUpdateTimer = undefined;
+    const markdownToRecord = pendingMarkdownUpdate;
+    pendingMarkdownUpdate = undefined;
+
+    if (
+      isDisposed ||
+      crepe !== editor ||
+      markdownToRecord === undefined
+    ) {
+      return;
+    }
+
+    latestMarkdown = markdownToRecord;
+  }, MARKDOWN_UPDATE_DEBOUNCE_MS);
 };
 
 const initializeEditor = async (markdown: string): Promise<void> => {
@@ -96,7 +137,7 @@ const initializeEditor = async (markdown: string): Promise<void> => {
 
   editor.on((listener) => {
     listener.markdownUpdated((_context, updatedMarkdown, previousMarkdown) => {
-      recordMarkdownUpdate(editor, updatedMarkdown, previousMarkdown);
+      queueMarkdownUpdate(editor, updatedMarkdown, previousMarkdown);
     });
   });
 
@@ -109,6 +150,7 @@ const initializeEditor = async (markdown: string): Promise<void> => {
     if (crepe === editor) {
       crepe = undefined;
       latestMarkdown = undefined;
+      clearPendingMarkdownUpdate();
     }
 
     reportEditorError(error, 'Failed to create Milkdown Crepe.');
@@ -119,6 +161,7 @@ const initializeEditor = async (markdown: string): Promise<void> => {
     if (isDisposed && crepe === editor) {
       crepe = undefined;
       latestMarkdown = undefined;
+      clearPendingMarkdownUpdate();
       await destroyEditor(editor);
     }
   }
@@ -137,6 +180,7 @@ window.addEventListener(
   () => {
     isDisposed = true;
     disposeMessageListener();
+    clearPendingMarkdownUpdate();
 
     if (!isCreatingEditor && crepe !== undefined) {
       const editor = crepe;
