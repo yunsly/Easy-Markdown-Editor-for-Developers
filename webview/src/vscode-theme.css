@@ -30,6 +30,14 @@
   caret-color: var(--vscode-editorCursor-foreground);
 }
 
+.editor-root .milkdown .milkdown-list-item-block li .label-wrapper {
+  color: var(--vscode-editor-foreground);
+}
+
+.editor-root .milkdown .milkdown-list-item-block li .label-wrapper svg {
+  fill: currentColor;
+}
+
 .editor-root .milkdown ::selection {
   color: var(
     --vscode-editor-selectionForeground,
