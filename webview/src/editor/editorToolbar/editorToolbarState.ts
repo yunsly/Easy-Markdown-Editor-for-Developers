@@ -1,5 +1,6 @@
 import type { Ctx } from '@milkdown/kit/ctx';
 import { editorViewCtx } from '@milkdown/kit/core';
+import type { EditorState } from '@milkdown/kit/prose/state';
 import {
   blockquoteSchema,
   bulletListSchema,
@@ -24,8 +25,9 @@ const textBlockActions = [
 
 const getActiveTextBlockAction = (
   context: Ctx,
+  state: EditorState,
 ): EditorToolbarAction | undefined => {
-  const { selection } = context.get(editorViewCtx).state;
+  const { selection } = state;
   const node = selection.$from.parent;
 
   if (node.type === paragraphSchema.type(context)) {
@@ -56,8 +58,11 @@ interface SelectionListState {
   isTask: boolean;
 }
 
-const getSelectionListState = (context: Ctx): SelectionListState => {
-  const { $from } = context.get(editorViewCtx).state.selection;
+const getSelectionListState = (
+  context: Ctx,
+  state: EditorState,
+): SelectionListState => {
+  const { $from } = state.selection;
   const bulletListType = bulletListSchema.type(context);
   const orderedListType = orderedListSchema.type(context);
   const listItemType = listItemSchema.type(context);
@@ -91,8 +96,11 @@ const updateButtonState = (
   button?.setAttribute('aria-pressed', String(isActive));
 };
 
-const isSelectionInBlockquote = (context: Ctx): boolean => {
-  const { $from } = context.get(editorViewCtx).state.selection;
+const isSelectionInBlockquote = (
+  context: Ctx,
+  state: EditorState,
+): boolean => {
+  const { $from } = state.selection;
   const blockquoteType = blockquoteSchema.type(context);
 
   for (let depth = $from.depth; depth > 0; depth -= 1) {
@@ -108,8 +116,15 @@ export const updateEditorToolbarState = (
   context: Ctx,
   toolbar: EditorToolbar,
 ): void => {
-  const activeAction = getActiveTextBlockAction(context);
-  const listState = getSelectionListState(context);
+  const editorView = context.get(editorViewCtx);
+
+  if (!('state' in editorView)) {
+    return;
+  }
+
+  const { state } = editorView;
+  const activeAction = getActiveTextBlockAction(context, state);
+  const listState = getSelectionListState(context, state);
 
   for (const action of textBlockActions) {
     updateButtonState(toolbar, action, action === activeAction);
@@ -129,12 +144,12 @@ export const updateEditorToolbarState = (
   updateButtonState(
     toolbar,
     'blockquote',
-    isSelectionInBlockquote(context),
+    isSelectionInBlockquote(context, state),
   );
   updateButtonState(
     toolbar,
     'code-block',
-    context.get(editorViewCtx).state.selection.$from.parent.type ===
+    state.selection.$from.parent.type ===
       codeBlockSchema.type(context),
   );
 };
