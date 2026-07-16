@@ -1,0 +1,39 @@
+.editor-root .milkdown {
+  --crepe-color-background: var(--vscode-editor-background);
+  --crepe-color-on-background: var(--vscode-editor-foreground);
+  --crepe-color-surface: var(--vscode-editorWidget-background);
+  --crepe-color-surface-low: var(--vscode-input-background);
+  --crepe-color-on-surface: var(--vscode-editorWidget-foreground);
+  --crepe-color-on-surface-variant: var(--vscode-descriptionForeground);
+  --crepe-color-outline: var(
+    --vscode-editorWidget-border,
+    var(--vscode-contrastBorder, var(--vscode-editor-foreground))
+  );
+  --crepe-color-primary: var(--vscode-textLink-foreground);
+  --crepe-color-secondary: var(--vscode-button-secondaryBackground);
+  --crepe-color-on-secondary: var(--vscode-button-secondaryForeground);
+  --crepe-color-inverse: var(--vscode-button-background);
+  --crepe-color-on-inverse: var(--vscode-button-foreground);
+  --crepe-color-inline-code: var(--vscode-textPreformat-foreground);
+  --crepe-color-error: var(--vscode-errorForeground);
+  --crepe-color-hover: var(--vscode-toolbar-hoverBackground);
+  --crepe-color-selected: var(--vscode-editor-selectionBackground);
+  --crepe-color-inline-area: var(--vscode-textPreformat-background);
+  --crepe-font-title: var(--vscode-editor-font-family);
+  --crepe-font-default: var(--vscode-editor-font-family);
+  --crepe-font-code: var(--vscode-editor-font-family);
+  --crepe-shadow-1: 0 2px 8px var(--vscode-widget-shadow);
+  --crepe-shadow-2: 0 4px 16px var(--vscode-widget-shadow);
+}
+
+.editor-root .milkdown .ProseMirror {
+  caret-color: var(--vscode-editorCursor-foreground);
+}
+
+.editor-root .milkdown ::selection {
+  color: var(
+    --vscode-editor-selectionForeground,
+    var(--vscode-editor-foreground)
+  );
+  background: var(--vscode-editor-selectionBackground);
+}

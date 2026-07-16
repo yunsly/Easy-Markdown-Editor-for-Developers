@@ -10,6 +10,7 @@ import {
 import { callCommand, replaceAll } from '@milkdown/kit/utils';
 
 import './styles.css';
+import './vscode-theme.css';
 
 import {
   onMessageFromExtension,
