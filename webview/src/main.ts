@@ -313,11 +313,33 @@ const handleHistoryKeydown = (event: KeyboardEvent): void => {
   crepe.editor.action(callCommand(command.key));
 };
 
+const handleWorkbenchShortcutKeydown = (event: KeyboardEvent): void => {
+  const isBoldShortcut =
+    (event.metaKey || event.ctrlKey) &&
+    !event.altKey &&
+    !event.shiftKey &&
+    event.key.toLowerCase() === 'b';
+  const editorElement = editorRoot.querySelector<HTMLElement>('.ProseMirror');
+
+  if (
+    !isBoldShortcut ||
+    editorElement === null ||
+    !event.composedPath().includes(editorElement)
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+};
+
 editorRoot.addEventListener('compositionstart', handleCompositionStart);
 editorRoot.addEventListener('compositionend', handleCompositionEnd);
 editorRoot.addEventListener('keydown', handleHistoryKeydown, {
   capture: true,
 });
+editorRoot.addEventListener('keydown', handleWorkbenchShortcutKeydown);
 
 const initializeEditor = async (
   markdown: string,
@@ -421,6 +443,7 @@ window.addEventListener(
     editorRoot.removeEventListener('keydown', handleHistoryKeydown, {
       capture: true,
     });
+    editorRoot.removeEventListener('keydown', handleWorkbenchShortcutKeydown);
     isComposing = false;
     isReplacingDocument = false;
     clearPendingMarkdownUpdate();

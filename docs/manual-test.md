@@ -396,3 +396,23 @@ VoiceOver 등 실제 스크린 리더를 사용한 `aria-label` 및 `aria-presse
 ### 이번 검증에서 제외한 항목
 
 고대비 테마와 사용자가 직접 정의한 모든 색상 조합은 확인하지 않았다.
+
+## Bold 단축키 충돌 회귀 테스트
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 수정 후 통과
+
+### 확인 항목
+
+- [x] 텍스트 선택 후 `Cmd+B`로 Bold를 적용할 수 있다.
+- [x] 같은 선택에서 `Cmd+B`로 Bold를 해제할 수 있다.
+- [x] `Cmd+B`를 실행해도 VS Code Explorer가 닫히지 않는다.
+- [x] Bold 단축키 사용 후에도 `Cmd+Z` Undo가 동작한다.
+- [x] 단축키 사용 과정에서 오류 알림이 나타나지 않는다.
+
+### 재검증 메모
+
+최초 테스트에서는 Milkdown이 `Cmd+B`를 처리한 뒤 같은 키 이벤트가 VS Code Workbench까지 전달되어 Explorer도 함께 닫혔다. ProseMirror에서 시작된 Bold 단축키의 버블링을 Webview 안에서 종료하도록 수정한 뒤 재검증해 통과했다.
