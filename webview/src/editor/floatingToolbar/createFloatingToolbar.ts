@@ -71,6 +71,7 @@ const createToolbarContent = (
   toolbar.className = 'floating-toolbar';
   toolbar.setAttribute('role', 'toolbar');
   toolbar.setAttribute('aria-label', '텍스트 서식');
+  toolbar.setAttribute('aria-orientation', 'horizontal');
 
   for (const definition of toolbarButtons) {
     const button = document.createElement('button');
@@ -207,6 +208,15 @@ class FloatingToolbarView implements PluginView {
     });
 
     view.dom.addEventListener('blur', this.#handleEditorBlur, true);
+    view.dom.addEventListener(
+      'keydown',
+      this.#handleEditorKeydown,
+      true,
+    );
+    this.#content.addEventListener(
+      'keydown',
+      this.#handleToolbarKeydown,
+    );
     this.update(view);
   }
 
@@ -220,6 +230,45 @@ class FloatingToolbarView implements PluginView {
         this.#provider.hide();
       }
     });
+  };
+
+  readonly #handleEditorKeydown = (event: KeyboardEvent): void => {
+    if (
+      event.key !== 'Tab' ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      this.#content.dataset.show !== 'true'
+    ) {
+      return;
+    }
+
+    const enabledButtons = [...this.#buttons.values()].filter(
+      (button) => !button.disabled,
+    );
+    const target = event.shiftKey
+      ? enabledButtons.at(-1)
+      : enabledButtons.at(0);
+
+    if (target === undefined) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    target.focus();
+  };
+
+  readonly #handleToolbarKeydown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape') {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.#provider.hide();
+    this.#view.focus();
   };
 
   update(view: EditorView, previousState?: EditorState): void {
@@ -240,6 +289,15 @@ class FloatingToolbarView implements PluginView {
 
   destroy(): void {
     this.#view.dom.removeEventListener('blur', this.#handleEditorBlur, true);
+    this.#view.dom.removeEventListener(
+      'keydown',
+      this.#handleEditorKeydown,
+      true,
+    );
+    this.#content.removeEventListener(
+      'keydown',
+      this.#handleToolbarKeydown,
+    );
     this.#provider.destroy();
     this.#content.remove();
   }
