@@ -182,3 +182,23 @@ Bullet list와 task list는 `-` 대신 `*` marker로 직렬화됐다. 목록 의
 ### 이번 검증에서 제외한 항목
 
 여러 단계 연속 Undo/Redo, 서식 및 블록 구조 변경의 Undo/Redo, Windows/Linux의 `Ctrl+Y` 조합은 확인하지 않았다.
+
+## 복사 및 붙여넣기 Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] 제어된 `text/plain` 클립보드의 원시 Markdown을 붙여넣으면 제목과 Bold가 렌더링된다.
+- [x] 한글과 여러 문단 및 이모지(`😀`)가 붙여넣기 결과에 보존된다.
+- [x] 렌더링된 Bold 텍스트를 복사해 다시 붙여넣으면 Bold 서식이 보존된다.
+- [x] 저장된 파일에 H2, 두 개의 Bold 문단, 일반 문단과 이모지가 Markdown으로 기록된다.
+- [x] 붙여넣기와 저장 과정에서 오류 알림이 나타나지 않는다.
+
+### 이번 검증에서 제외한 항목
+
+실제 웹페이지의 HTML, VS Code 코드 편집기의 전용 클립보드 데이터, 매우 큰 클립보드와 이미지는 확인하지 않았다.
