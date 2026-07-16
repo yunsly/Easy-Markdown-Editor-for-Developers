@@ -209,11 +209,6 @@ class FloatingToolbarView implements PluginView {
     });
 
     view.dom.addEventListener('blur', this.#handleEditorBlur, true);
-    view.dom.ownerDocument.addEventListener(
-      'keydown',
-      this.#handleEditorKeydown,
-      true,
-    );
     this.#content.addEventListener(
       'keydown',
       this.#handleToolbarKeydown,
@@ -233,12 +228,8 @@ class FloatingToolbarView implements PluginView {
     });
   };
 
-  readonly #handleEditorKeydown = (event: KeyboardEvent): void => {
-    const { doc, selection } = this.#view.state;
-    const eventTarget = event.target;
-    const isEditorTarget =
-      eventTarget instanceof Node &&
-      this.#view.dom.contains(eventTarget);
+  handleEditorKeydown(view: EditorView, event: KeyboardEvent): boolean {
+    const { doc, selection } = view.state;
     const isTabEntry =
       event.key === 'Tab' &&
       !event.altKey &&
@@ -253,12 +244,12 @@ class FloatingToolbarView implements PluginView {
 
     if (
       (!isTabEntry && !isToolbarShortcut) ||
-      !isEditorTarget ||
+      this.#content.dataset.show !== 'true' ||
       !(selection instanceof TextSelection) ||
       selection.empty ||
       doc.textBetween(selection.from, selection.to).length === 0
     ) {
-      return;
+      return false;
     }
 
     const enabledButtons = [...this.#buttons.values()].filter(
@@ -269,14 +260,15 @@ class FloatingToolbarView implements PluginView {
       : enabledButtons.at(0);
 
     if (target === undefined) {
-      return;
+      return false;
     }
 
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
     target.focus({ preventScroll: true });
-  };
+    return true;
+  }
 
   readonly #handleToolbarKeydown = (event: KeyboardEvent): void => {
     if (event.key !== 'Escape') {
@@ -307,11 +299,6 @@ class FloatingToolbarView implements PluginView {
 
   destroy(): void {
     this.#view.dom.removeEventListener('blur', this.#handleEditorBlur, true);
-    this.#view.dom.ownerDocument.removeEventListener(
-      'keydown',
-      this.#handleEditorKeydown,
-      true,
-    );
     this.#content.removeEventListener(
       'keydown',
       this.#handleToolbarKeydown,
@@ -324,8 +311,19 @@ class FloatingToolbarView implements PluginView {
 export const registerFloatingToolbar = (editor: Editor): void => {
   editor
     .config((context) => {
+      let toolbarView: FloatingToolbarView | undefined;
+
       context.set(floatingToolbarTooltip.key, {
-        view: (view) => new FloatingToolbarView(context, view),
+        props: {
+          handleDOMEvents: {
+            keydown: (view, event) =>
+              toolbarView?.handleEditorKeydown(view, event) ?? false,
+          },
+        },
+        view: (view) => {
+          toolbarView = new FloatingToolbarView(context, view);
+          return toolbarView;
+        },
       });
     })
     .use(floatingToolbarTooltip);
