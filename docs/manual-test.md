@@ -105,3 +105,29 @@ Undo/Redo, 충돌 처리와 읽기 전용 문서 오류는 확인하지 않았�
 ### 이번 검증에서 제외한 항목
 
 여러 서식이 중첩된 선택 영역, 여러 문단 선택 및 경계가 일부만 겹치는 선택 영역은 확인하지 않았다.
+
+## 목록과 체크리스트 Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] 일반 문단을 `Cmd+Option+8`로 bullet list 항목으로 변경할 수 있다.
+- [x] 새 list item에서 `Tab`을 사용해 중첩 bullet list를 만들 수 있다.
+- [x] 일반 문단을 `Cmd+Option+7`로 ordered list 항목으로 변경하고 다음 번호 항목을 추가할 수 있다.
+- [x] bullet list 항목 시작에서 `[ ] `를 입력해 task list로 변경할 수 있다.
+- [x] 렌더링된 체크박스를 클릭하면 checked 상태로 변경된다.
+- [x] 저장된 Markdown에 bullet, 중첩 들여쓰기, ordered numbering 및 `[x]` 상태가 보존된다.
+- [x] 목록 편집과 저장 과정에서 오류 알림이 나타나지 않는다.
+
+### 관찰 사항
+
+Bullet list와 task list는 `-` 대신 `*` marker로 직렬화됐다. 목록 의미와 중첩 구조 및 체크 상태는 보존됐다.
+
+### 이번 검증에서 제외한 항목
+
+세 단계 이상의 중첩, `Shift+Tab` 상위 이동, 빈 목록 항목 삭제와 여러 목록 사이 병합은 확인하지 않았다.
