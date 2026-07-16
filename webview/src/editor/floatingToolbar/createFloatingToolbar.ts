@@ -33,6 +33,8 @@ import {
 
 import './floatingToolbar.css';
 
+const isMacOS = navigator.userAgent.includes('Macintosh');
+
 interface ToolbarButtonDefinition {
   action?: ToolbarAction;
   label: string;
@@ -242,7 +244,7 @@ class FloatingToolbarView implements PluginView {
     if (
       event.key !== 'Tab' ||
       event.altKey ||
-      event.ctrlKey ||
+      (event.ctrlKey && !isMacOS) ||
       event.metaKey ||
       !isEditorTarget ||
       !(selection instanceof TextSelection) ||
