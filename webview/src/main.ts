@@ -45,6 +45,7 @@ const features = {
 } satisfies NonNullable<CrepeConfig['features']>;
 
 let crepe: Crepe | undefined;
+let latestMarkdown: string | undefined;
 let isCreatingEditor = false;
 let isDisposed = false;
 
@@ -63,6 +64,23 @@ const destroyEditor = async (editor: Crepe): Promise<void> => {
   }
 };
 
+const recordMarkdownUpdate = (
+  editor: Crepe,
+  markdown: string,
+  previousMarkdown: string,
+): void => {
+  if (
+    isDisposed ||
+    crepe !== editor ||
+    markdown === previousMarkdown ||
+    markdown === latestMarkdown
+  ) {
+    return;
+  }
+
+  latestMarkdown = markdown;
+};
+
 const initializeEditor = async (markdown: string): Promise<void> => {
   if (isDisposed || isCreatingEditor || crepe !== undefined) {
     return;
@@ -75,13 +93,22 @@ const initializeEditor = async (markdown: string): Promise<void> => {
     defaultValue: markdown,
     features,
   });
+
+  editor.on((listener) => {
+    listener.markdownUpdated((_context, updatedMarkdown, previousMarkdown) => {
+      recordMarkdownUpdate(editor, updatedMarkdown, previousMarkdown);
+    });
+  });
+
   crepe = editor;
+  latestMarkdown = markdown;
 
   try {
     await editor.create();
   } catch (error: unknown) {
     if (crepe === editor) {
       crepe = undefined;
+      latestMarkdown = undefined;
     }
 
     reportEditorError(error, 'Failed to create Milkdown Crepe.');
@@ -91,6 +118,7 @@ const initializeEditor = async (markdown: string): Promise<void> => {
 
     if (isDisposed && crepe === editor) {
       crepe = undefined;
+      latestMarkdown = undefined;
       await destroyEditor(editor);
     }
   }
@@ -113,6 +141,7 @@ window.addEventListener(
     if (!isCreatingEditor && crepe !== undefined) {
       const editor = crepe;
       crepe = undefined;
+      latestMarkdown = undefined;
       void destroyEditor(editor);
     }
   },
