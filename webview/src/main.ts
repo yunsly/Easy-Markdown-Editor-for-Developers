@@ -142,9 +142,14 @@ const syncEditorToolbarState = (context: Ctx): void => {
   }
 
   const tableButton = editorToolbar.buttons.get('table');
+  const deleteTableButton = editorToolbar.buttons.get('delete-table');
 
   if (tableButton !== undefined) {
     tableButton.disabled = isTableActive;
+  }
+
+  if (deleteTableButton !== undefined) {
+    deleteTableButton.disabled = !isTableActive;
   }
 };
 

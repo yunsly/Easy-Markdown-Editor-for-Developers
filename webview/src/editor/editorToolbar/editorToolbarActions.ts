@@ -6,7 +6,10 @@ import type {
   ResolvedPos,
 } from '@milkdown/kit/prose/model';
 import { NodeSelection } from '@milkdown/kit/prose/state';
-import { isInTable } from '@milkdown/kit/prose/tables';
+import {
+  deleteTable,
+  isInTable,
+} from '@milkdown/kit/prose/tables';
 import {
   blockquoteSchema,
   bulletListSchema,
@@ -176,6 +179,17 @@ export const runEditorToolbarAction = (
 
       if (!isInTable(view.state) && !isTableSelected) {
         commands.call(insertTableCommand.key, { row: 3, col: 3 });
+      }
+    } else if (action === 'delete-table') {
+      const { selection } = view.state;
+
+      if (isInTable(view.state)) {
+        commands.inline(deleteTable);
+      } else if (
+        selection instanceof NodeSelection &&
+        selection.node.type === tableSchema.type(context)
+      ) {
+        view.dispatch(view.state.tr.deleteSelection());
       }
     }
 

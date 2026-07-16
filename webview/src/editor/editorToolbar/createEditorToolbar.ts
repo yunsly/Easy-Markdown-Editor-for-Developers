@@ -4,6 +4,7 @@ export type EditorToolbarAction =
   | 'blockquote'
   | 'bullet-list'
   | 'code-block'
+  | 'delete-table'
   | 'heading-1'
   | 'heading-2'
   | 'heading-3'
@@ -35,6 +36,7 @@ const toolbarButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'blockquote', label: '인용문', text: 'Quote' },
   { action: 'code-block', label: '코드 블록', text: '</>' },
   { action: 'table', label: '표 삽입', text: 'Table' },
+  { action: 'delete-table', label: '표 삭제', text: 'Delete Table' },
 ];
 
 const createToolbarButton = (
