@@ -18,6 +18,7 @@ import {
   onMessageFromExtension,
   postMessageToExtension,
 } from './vscodeApi';
+import { createEditorToolbar } from './editor/editorToolbar/createEditorToolbar';
 import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
@@ -55,7 +56,8 @@ errorBanner.hidden = true;
 
 const editorRoot = document.createElement('div');
 editorRoot.className = 'editor-root';
-container.replaceChildren(errorBanner, editorRoot);
+const editorToolbar = createEditorToolbar();
+container.replaceChildren(errorBanner, editorToolbar, editorRoot);
 
 const showError = (message: string): void => {
   errorBanner.textContent = message;

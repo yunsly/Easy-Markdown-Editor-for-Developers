@@ -1,0 +1,34 @@
+.editor-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: 4px;
+  box-sizing: border-box;
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 6px 12px;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  border-bottom: 1px solid var(
+    --vscode-editorWidget-border,
+    var(--vscode-contrastBorder, transparent)
+  );
+}
+
+.editor-toolbar__button {
+  flex: 0 0 auto;
+  min-width: 34px;
+  height: 30px;
+  padding: 0 8px;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font: inherit;
+}
+
+.editor-toolbar__button:disabled {
+  color: var(--vscode-disabledForeground);
+}
