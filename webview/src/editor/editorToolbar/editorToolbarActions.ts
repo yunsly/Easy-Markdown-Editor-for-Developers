@@ -8,6 +8,8 @@ import type {
 import {
   blockquoteSchema,
   bulletListSchema,
+  codeBlockSchema,
+  createCodeBlockCommand,
   liftListItemCommand,
   listItemSchema,
   orderedListSchema,
@@ -151,6 +153,16 @@ export const runEditorToolbarAction = (
       } else {
         commands.inline(lift);
       }
+    } else if (action === 'code-block') {
+      const codeBlockType = codeBlockSchema.type(context);
+      const isCodeBlock = view.state.selection.$from.parent.type ===
+        codeBlockType;
+
+      commands.call(
+        isCodeBlock
+          ? turnIntoTextCommand.key
+          : createCodeBlockCommand.key,
+      );
     }
 
     view.focus();

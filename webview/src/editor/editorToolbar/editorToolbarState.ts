@@ -3,6 +3,7 @@ import { editorViewCtx } from '@milkdown/kit/core';
 import {
   blockquoteSchema,
   bulletListSchema,
+  codeBlockSchema,
   headingSchema,
   listItemSchema,
   orderedListSchema,
@@ -129,5 +130,11 @@ export const updateEditorToolbarState = (
     toolbar,
     'blockquote',
     isSelectionInBlockquote(context),
+  );
+  updateButtonState(
+    toolbar,
+    'code-block',
+    context.get(editorViewCtx).state.selection.$from.parent.type ===
+      codeBlockSchema.type(context),
   );
 };
