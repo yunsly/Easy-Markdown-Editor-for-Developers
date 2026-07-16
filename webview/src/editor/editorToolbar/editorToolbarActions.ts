@@ -18,6 +18,10 @@ export const runEditorToolbarAction = (
       commands.call(turnIntoTextCommand.key);
     } else if (action === 'heading-1') {
       commands.call(wrapInHeadingCommand.key, 1);
+    } else if (action === 'heading-2') {
+      commands.call(wrapInHeadingCommand.key, 2);
+    } else if (action === 'heading-3') {
+      commands.call(wrapInHeadingCommand.key, 3);
     }
 
     context.get(editorViewCtx).focus();

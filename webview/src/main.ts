@@ -420,6 +420,8 @@ const initializeEditor = async (
     await editor.create();
     editorToolbar.buttons.get('paragraph')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-1')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('heading-2')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('heading-3')?.removeAttribute('disabled');
   } catch (error: unknown) {
     if (crepe === editor) {
       crepe = undefined;
