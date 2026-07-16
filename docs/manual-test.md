@@ -131,3 +131,30 @@ Bullet list와 task list는 `-` 대신 `*` marker로 직렬화됐다. 목록 의
 ### 이번 검증에서 제외한 항목
 
 세 단계 이상의 중첩, `Shift+Tab` 상위 이동, 빈 목록 항목 삭제와 여러 목록 사이 병합은 확인하지 않았다.
+
+## 블록 문법 Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 제한 사항과 함께 통과
+
+### 확인 항목
+
+- [x] 문단 시작에 `> `를 입력하면 Blockquote로 변환된다.
+- [x] 문단 시작에 백틱 세 개와 공백을 입력하면 fenced Code block으로 변환된다.
+- [x] 빈 문단에 `---`를 입력하면 Horizontal rule로 변환된다.
+- [x] Blockquote와 Code block 안의 한글 내용이 저장 결과에서 보존된다.
+- [x] 저장된 Markdown에 `>`, fenced code block 및 horizontal rule marker가 기록된다.
+- [x] 입력 규칙을 사용한 편집과 저장 과정에서 오류 알림이 나타나지 않는다.
+
+### 관찰 사항
+
+- `Cmd+Shift+B`는 VS Code의 Run Build Task 명령과 충돌해 Blockquote 명령으로 사용할 수 없었다.
+- `Cmd+Option+C`도 테스트 환경에서 Code block으로 전환되지 않았다.
+- `---`로 입력한 Horizontal rule은 저장 시 의미가 같은 `***`로 직렬화됐다.
+
+### 이번 검증에서 제외한 항목
+
+언어 식별자가 있는 Code block, 여러 줄 코드의 들여쓰기, Blockquote 안의 여러 문단 및 중첩 Blockquote는 확인하지 않았다.
