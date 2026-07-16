@@ -433,3 +433,23 @@ VoiceOver 등 실제 스크린 리더를 사용한 `aria-label` 및 `aria-presse
 - [x] 창 크기를 변경하면 Editor를 다시 열지 않아도 레이아웃이 즉시 재배치된다.
 - [x] 레이아웃 변경 후에도 Floating Toolbar가 Webview 경계 안에 표시된다.
 - [x] 창 크기 변경만으로 Markdown 내용이 수정되지 않는다.
+
+## 코드 블록 CSP 스타일 회귀 테스트
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 여러 줄 fenced code block
+- 편집기: Visual Markdown Editor
+- 결과: 수정 후 통과
+
+### 확인 항목
+
+- [x] 여러 줄 코드의 줄 번호와 각 코드 줄이 같은 행에 정렬된다.
+- [x] 코드 줄을 추가하거나 삭제해도 줄 번호 정렬이 유지된다.
+- [x] 긴 코드 줄을 코드 블록 안에서 가로로 스크롤할 수 있다.
+- [x] 코드 블록을 편집한 결과가 Markdown으로 저장된다.
+- [x] 코드 블록 편집 과정에서 오류 알림이 나타나지 않는다.
+
+### 재검증 메모
+
+CodeMirror가 런타임에 생성한 기본 레이아웃 CSS가 Webview CSP에 의해 차단되어 줄 번호와 코드 열 배치가 깨졌다. Webview의 nonce를 CodeMirror `EditorView.cspNonce` 설정에 전달한 뒤 재검증해 통과했다.

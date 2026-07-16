@@ -3,6 +3,7 @@ import {
   CrepeFeature,
   type CrepeConfig,
 } from '@milkdown/crepe';
+import { EditorView as CodeMirrorView } from '@codemirror/view';
 import {
   redoCommand,
   undoCommand,
@@ -39,6 +40,14 @@ if (container === null) {
   throw new Error(errorMessage);
 }
 
+const styleNonce = container.dataset.styleNonce;
+
+if (styleNonce === undefined) {
+  const errorMessage = 'Missing Webview style nonce.';
+  postMessageToExtension({ type: 'reportError', message: errorMessage });
+  throw new Error(errorMessage);
+}
+
 const errorBanner = document.createElement('div');
 errorBanner.className = 'error-message';
 errorBanner.setAttribute('role', 'alert');
@@ -63,6 +72,12 @@ const features = {
   [CrepeFeature.Toolbar]: false,
   [CrepeFeature.TopBar]: false,
 } satisfies NonNullable<CrepeConfig['features']>;
+
+const featureConfigs = {
+  [CrepeFeature.CodeMirror]: {
+    extensions: [CodeMirrorView.cspNonce.of(styleNonce)],
+  },
+} satisfies NonNullable<CrepeConfig['featureConfigs']>;
 
 let crepe: Crepe | undefined;
 let latestMarkdown: string | undefined;
@@ -356,6 +371,7 @@ const initializeEditor = async (
     root: editorRoot,
     defaultValue: markdown,
     features,
+    featureConfigs,
   });
   registerFloatingToolbar(editor.editor);
 

@@ -255,14 +255,14 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
   <meta charset="UTF-8">
   <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'none'; font-src ${webview.cspSource}; style-src ${webview.cspSource}; script-src ${webview.cspSource} 'nonce-${nonce}';"
+    content="default-src 'none'; font-src ${webview.cspSource}; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src ${webview.cspSource} 'nonce-${nonce}';"
   >
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Visual Markdown Editor</title>
   <link rel="stylesheet" href="${styleUri.toString()}">
 </head>
 <body>
-  <main id="app"></main>
+  <main id="app" data-style-nonce="${nonce}"></main>
   <script nonce="${nonce}" type="module" src="${scriptUri.toString()}"></script>
 </body>
 </html>`;
