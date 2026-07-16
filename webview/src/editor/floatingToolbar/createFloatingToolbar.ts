@@ -6,6 +6,8 @@ import {
   editorCtx,
   EditorStatus,
 } from '@milkdown/kit/core';
+import { toggleMark } from '@milkdown/kit/prose/commands';
+import type { MarkType } from '@milkdown/kit/prose/model';
 import type {
   EditorState,
   PluginView,
@@ -22,14 +24,9 @@ import {
   isMarkSelectedCommand,
   linkSchema,
   strongSchema,
-  toggleEmphasisCommand,
   toggleInlineCodeCommand,
-  toggleStrongCommand,
 } from '@milkdown/kit/preset/commonmark';
-import {
-  strikethroughSchema,
-  toggleStrikethroughCommand,
-} from '@milkdown/kit/preset/gfm';
+import { strikethroughSchema } from '@milkdown/kit/preset/gfm';
 
 import './floatingToolbar.css';
 
@@ -52,6 +49,8 @@ type ToolbarAction =
   | 'strikethrough';
 
 type ToolbarActionTrigger = 'keyboard' | 'pointer';
+
+type ToolbarActionState = 'active' | 'inactive' | 'mixed';
 
 const toolbarButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'bold', label: '굵게', text: 'B' },
@@ -113,48 +112,100 @@ const createToolbarContent = (
   return { buttons, element: toolbar };
 };
 
-const isActionActive = (
-  context: Ctx,
-  action: ToolbarAction,
-): boolean => {
-  if (context.get(editorCtx).status !== EditorStatus.Created) {
-    return false;
+const getMarkSelectionState = (
+  state: EditorState,
+  markType: MarkType,
+): ToolbarActionState => {
+  const { doc, selection } = state;
+  let hasMarkedText = false;
+  let hasUnmarkedText = false;
+
+  doc.nodesBetween(
+    selection.from,
+    selection.to,
+    (node, position, parent) => {
+      const text = node.text;
+
+      if (
+        !node.isText ||
+        parent === null ||
+        !parent.type.allowsMarkType(markType) ||
+        typeof text !== 'string'
+      ) {
+        return;
+      }
+
+      const selectedFrom = Math.max(selection.from, position) - position;
+      const selectedTo =
+        Math.min(selection.to, position + node.nodeSize) - position;
+      const selectedText = text.slice(selectedFrom, selectedTo);
+
+      if (selectedText.trim().length === 0) {
+        return;
+      }
+
+      if (markType.isInSet(node.marks)) {
+        hasMarkedText = true;
+      } else {
+        hasUnmarkedText = true;
+      }
+    },
+  );
+
+  if (hasMarkedText && hasUnmarkedText) {
+    return 'mixed';
   }
 
-  const commands = context.get(commandsCtx);
+  return hasMarkedText ? 'active' : 'inactive';
+};
+
+const toggleMarkForSelection = (context: Ctx, markType: MarkType): void => {
+  context.get(commandsCtx).inline(
+    toggleMark(markType, null, { removeWhenPresent: false }),
+  );
+};
+
+const getActionState = (
+  context: Ctx,
+  action: ToolbarAction,
+  state: EditorState,
+): ToolbarActionState => {
+  if (context.get(editorCtx).status !== EditorStatus.Created) {
+    return 'inactive';
+  }
 
   if (action === 'bold') {
-    return commands.call(
-      isMarkSelectedCommand.key,
-      strongSchema.type(context),
-    );
+    return getMarkSelectionState(state, strongSchema.type(context));
   }
 
   if (action === 'italic') {
-    return commands.call(
-      isMarkSelectedCommand.key,
-      emphasisSchema.type(context),
-    );
+    return getMarkSelectionState(state, emphasisSchema.type(context));
   }
 
   if (action === 'strikethrough') {
-    return commands.call(
-      isMarkSelectedCommand.key,
+    return getMarkSelectionState(
+      state,
       strikethroughSchema.type(context),
     );
   }
+
+  const commands = context.get(commandsCtx);
 
   if (action === 'inlineCode') {
     return commands.call(
       isMarkSelectedCommand.key,
       inlineCodeSchema.type(context),
-    );
+    )
+      ? 'active'
+      : 'inactive';
   }
 
   return commands.call(
     isMarkSelectedCommand.key,
     linkSchema.type(context),
-  );
+  )
+    ? 'active'
+    : 'inactive';
 };
 
 class FloatingToolbarView implements PluginView {
@@ -169,11 +220,14 @@ class FloatingToolbarView implements PluginView {
     this.#view = view;
     const toolbarContent = createToolbarContent((action, trigger) => {
       if (action === 'bold') {
-        context.get(commandsCtx).call(toggleStrongCommand.key);
+        toggleMarkForSelection(context, strongSchema.type(context));
       } else if (action === 'italic') {
-        context.get(commandsCtx).call(toggleEmphasisCommand.key);
+        toggleMarkForSelection(context, emphasisSchema.type(context));
       } else if (action === 'strikethrough') {
-        context.get(commandsCtx).call(toggleStrikethroughCommand.key);
+        toggleMarkForSelection(
+          context,
+          strikethroughSchema.type(context),
+        );
       } else if (
         action === 'inlineCode' &&
         view.state.selection.$from.sameParent(
@@ -322,9 +376,17 @@ class FloatingToolbarView implements PluginView {
     this.#provider.update(view, previousState);
 
     for (const [action, button] of this.#buttons) {
-      const isActive = isActionActive(this.#context, action);
+      const actionState = getActionState(
+        this.#context,
+        action,
+        view.state,
+      );
+      const isActive = actionState === 'active';
       button.classList.toggle('is-active', isActive);
-      button.setAttribute('aria-pressed', String(isActive));
+      button.setAttribute(
+        'aria-pressed',
+        actionState === 'mixed' ? 'mixed' : String(isActive),
+      );
 
       if (action === 'inlineCode') {
         button.disabled = !view.state.selection.$from.sameParent(
