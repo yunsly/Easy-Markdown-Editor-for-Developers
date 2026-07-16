@@ -1,6 +1,7 @@
 import type { Ctx } from '@milkdown/kit/ctx';
 import { editorViewCtx } from '@milkdown/kit/core';
 import {
+  bulletListSchema,
   headingSchema,
   paragraphSchema,
 } from '@milkdown/kit/preset/commonmark';
@@ -46,16 +47,42 @@ const getActiveTextBlockAction = (
   return undefined;
 };
 
-export const updateHeadingToolbarState = (
+const isSelectionInBulletList = (context: Ctx): boolean => {
+  const { $from } = context.get(editorViewCtx).state.selection;
+  const bulletListType = bulletListSchema.type(context);
+
+  for (let depth = $from.depth; depth > 0; depth -= 1) {
+    if ($from.node(depth).type === bulletListType) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const updateButtonState = (
+  toolbar: EditorToolbar,
+  action: EditorToolbarAction,
+  isActive: boolean,
+): void => {
+  const button = toolbar.buttons.get(action);
+  button?.classList.toggle('is-active', isActive);
+  button?.setAttribute('aria-pressed', String(isActive));
+};
+
+export const updateEditorToolbarState = (
   context: Ctx,
   toolbar: EditorToolbar,
 ): void => {
   const activeAction = getActiveTextBlockAction(context);
 
   for (const action of textBlockActions) {
-    const button = toolbar.buttons.get(action);
-    const isActive = action === activeAction;
-    button?.classList.toggle('is-active', isActive);
-    button?.setAttribute('aria-pressed', String(isActive));
+    updateButtonState(toolbar, action, action === activeAction);
   }
+
+  updateButtonState(
+    toolbar,
+    'bullet-list',
+    isSelectionInBulletList(context),
+  );
 };

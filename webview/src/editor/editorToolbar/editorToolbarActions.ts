@@ -1,7 +1,10 @@
 import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
 import type { Editor } from '@milkdown/kit/core';
 import {
+  bulletListSchema,
+  liftListItemCommand,
   turnIntoTextCommand,
+  wrapInBulletListCommand,
   wrapInHeadingCommand,
 } from '@milkdown/kit/preset/commonmark';
 
@@ -13,6 +16,7 @@ export const runEditorToolbarAction = (
 ): void => {
   editor.action((context) => {
     const commands = context.get(commandsCtx);
+    const view = context.get(editorViewCtx);
 
     if (action === 'paragraph') {
       commands.call(turnIntoTextCommand.key);
@@ -22,8 +26,25 @@ export const runEditorToolbarAction = (
       commands.call(wrapInHeadingCommand.key, 2);
     } else if (action === 'heading-3') {
       commands.call(wrapInHeadingCommand.key, 3);
+    } else if (action === 'bullet-list') {
+      const bulletListType = bulletListSchema.type(context);
+      const { $from } = view.state.selection;
+      let isInBulletList = false;
+
+      for (let depth = $from.depth; depth > 0; depth -= 1) {
+        if ($from.node(depth).type === bulletListType) {
+          isInBulletList = true;
+          break;
+        }
+      }
+
+      commands.call(
+        isInBulletList
+          ? liftListItemCommand.key
+          : wrapInBulletListCommand.key,
+      );
     }
 
-    context.get(editorViewCtx).focus();
+    view.focus();
   });
 };

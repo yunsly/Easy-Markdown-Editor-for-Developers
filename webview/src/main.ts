@@ -23,7 +23,7 @@ import {
   type EditorToolbarAction,
 } from './editor/editorToolbar/createEditorToolbar';
 import { runEditorToolbarAction } from './editor/editorToolbar/editorToolbarActions';
-import { updateHeadingToolbarState } from './editor/editorToolbar/editorToolbarState';
+import { updateEditorToolbarState } from './editor/editorToolbar/editorToolbarState';
 import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
@@ -407,13 +407,13 @@ const initializeEditor = async (
 
   editor.on((listener) => {
     listener.mounted((context) => {
-      updateHeadingToolbarState(context, editorToolbar);
+      updateEditorToolbarState(context, editorToolbar);
     });
     listener.updated((context) => {
-      updateHeadingToolbarState(context, editorToolbar);
+      updateEditorToolbarState(context, editorToolbar);
     });
     listener.selectionUpdated((context) => {
-      updateHeadingToolbarState(context, editorToolbar);
+      updateEditorToolbarState(context, editorToolbar);
     });
     listener.markdownUpdated((_context, updatedMarkdown, previousMarkdown) => {
       queueMarkdownUpdate(editor, updatedMarkdown, previousMarkdown);
@@ -432,6 +432,7 @@ const initializeEditor = async (
     editorToolbar.buttons.get('heading-1')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-2')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-3')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('bullet-list')?.removeAttribute('disabled');
   } catch (error: unknown) {
     if (crepe === editor) {
       crepe = undefined;
