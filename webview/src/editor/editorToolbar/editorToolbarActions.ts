@@ -5,6 +5,8 @@ import type {
   NodeType,
   ResolvedPos,
 } from '@milkdown/kit/prose/model';
+import { NodeSelection } from '@milkdown/kit/prose/state';
+import { isInTable } from '@milkdown/kit/prose/tables';
 import {
   blockquoteSchema,
   bulletListSchema,
@@ -19,6 +21,10 @@ import {
   wrapInHeadingCommand,
   wrapInOrderedListCommand,
 } from '@milkdown/kit/preset/commonmark';
+import {
+  insertTableCommand,
+  tableSchema,
+} from '@milkdown/kit/preset/gfm';
 
 import type { EditorToolbarAction } from './createEditorToolbar';
 
@@ -163,6 +169,14 @@ export const runEditorToolbarAction = (
           ? turnIntoTextCommand.key
           : createCodeBlockCommand.key,
       );
+    } else if (action === 'table') {
+      const { selection } = view.state;
+      const isTableSelected = selection instanceof NodeSelection &&
+        selection.node.type === tableSchema.type(context);
+
+      if (!isInTable(view.state) && !isTableSelected) {
+        commands.call(insertTableCommand.key, { row: 3, col: 3 });
+      }
     }
 
     view.focus();

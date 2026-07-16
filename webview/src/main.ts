@@ -437,6 +437,7 @@ const initializeEditor = async (
     editorToolbar.buttons.get('task-list')?.removeAttribute('disabled');
     editorToolbar.buttons.get('blockquote')?.removeAttribute('disabled');
     editorToolbar.buttons.get('code-block')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('table')?.removeAttribute('disabled');
   } catch (error: unknown) {
     if (crepe === editor) {
       crepe = undefined;
