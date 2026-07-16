@@ -48,8 +48,6 @@ type ToolbarAction =
   | 'link'
   | 'strikethrough';
 
-type ToolbarActionTrigger = 'keyboard' | 'pointer';
-
 type ToolbarActionState = 'active' | 'inactive' | 'mixed';
 
 const toolbarButtons: readonly ToolbarButtonDefinition[] = [
@@ -65,10 +63,7 @@ const floatingToolbarTooltip = tooltipFactory(
 );
 
 const createToolbarContent = (
-  runAction: (
-    action: ToolbarAction,
-    trigger: ToolbarActionTrigger,
-  ) => void,
+  runAction: (action: ToolbarAction) => void,
 ): ToolbarContent => {
   const toolbar = document.createElement('div');
   const buttons = new Map<ToolbarAction, HTMLButtonElement>();
@@ -94,7 +89,7 @@ const createToolbarContent = (
 
       button.addEventListener('mousedown', (event) => {
         event.preventDefault();
-        runAction(action, 'pointer');
+        runAction(action);
       });
       button.addEventListener('click', (event) => {
         if (event.detail !== 0) {
@@ -102,7 +97,11 @@ const createToolbarContent = (
         }
 
         event.preventDefault();
-        runAction(action, 'keyboard');
+        runAction(action);
+
+        if (action !== 'link') {
+          button.focus({ preventScroll: true });
+        }
       });
     }
 
@@ -218,7 +217,7 @@ class FloatingToolbarView implements PluginView {
   constructor(context: Ctx, view: EditorView) {
     this.#context = context;
     this.#view = view;
-    const toolbarContent = createToolbarContent((action, trigger) => {
+    const toolbarContent = createToolbarContent((action) => {
       if (action === 'bold') {
         toggleMarkForSelection(context, strongSchema.type(context));
       } else if (action === 'italic') {
@@ -239,7 +238,7 @@ class FloatingToolbarView implements PluginView {
         context.get(commandsCtx).call(toggleLinkCommand.key);
       }
 
-      if (action !== 'link' && trigger === 'pointer') {
+      if (action !== 'link') {
         view.focus();
       }
     });
