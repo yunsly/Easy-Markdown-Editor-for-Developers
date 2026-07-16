@@ -202,3 +202,23 @@ Bullet list와 task list는 `-` 대신 `*` marker로 직렬화됐다. 목록 의
 ### 이번 검증에서 제외한 항목
 
 실제 웹페이지의 HTML, VS Code 코드 편집기의 전용 클립보드 데이터, 매우 큰 클립보드와 이미지는 확인하지 않았다.
+
+## Floating Toolbar 기반 요소 Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] 비어 있지 않은 텍스트 선택에서만 Toolbar가 표시된다.
+- [x] 커서만 있는 빈 선택에서는 Toolbar가 표시되지 않는다.
+- [x] Editor가 포커스를 잃으면 Toolbar가 숨겨진다.
+- [x] 문서와 화면 가장자리의 선택에서도 Toolbar가 Webview 경계 안에 표시된다.
+- [x] Editor를 닫거나 다시 열 때 중복 Toolbar가 생기지 않는다.
+
+### 이번 검증에서 제외한 항목
+
+이번 단계의 버튼은 의도적으로 비활성 상태이므로 서식 적용, 선택 유지, 활성 상태와 키보드 접근은 확인하지 않았다.
