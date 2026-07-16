@@ -44,4 +44,23 @@
 
 ### 이번 검증에서 제외한 항목
 
-Undo/Redo, 외부 파일 변경 반영, 충돌 처리와 읽기 전용 문서 오류는 확인하지 않았다.
+Undo/Redo, 충돌 처리와 읽기 전용 문서 오류는 확인하지 않았다.
+
+## 외부 문서 변경 Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] 디스크에서 Markdown 제목을 변경하면 열려 있는 Visual Editor에 자동으로 반영된다.
+- [x] 디스크에서 추가한 한글 문장이 Visual Editor에 정상적으로 표시된다.
+- [x] 외부 변경 반영 중 Crepe Editor가 반복해서 갱신되지 않는다.
+- [x] 외부 변경 반영 중 오류 알림이 나타나지 않는다.
+
+### 이번 검증에서 제외한 항목
+
+로컬 편집과 외부 변경이 동시에 발생하는 충돌 상황, Git checkout, 파일 삭제 및 여러 Visual Editor panel 간 동기화는 확인하지 않았다.
