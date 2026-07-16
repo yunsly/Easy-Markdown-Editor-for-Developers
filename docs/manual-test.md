@@ -281,3 +281,23 @@ Italic 활성 상태 표시, 키보드만 사용한 버튼 실행과 Bold·Itali
 ### 이번 검증에서 제외한 항목
 
 Strikethrough 활성 상태 표시, 키보드만 사용한 버튼 실행과 다른 mark와의 중첩 선택은 확인하지 않았다.
+
+## Floating Toolbar Inline Code Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] 한글 텍스트 선택에서 Inline Code 버튼으로 서식을 적용·해제할 수 있다.
+- [x] Inline Code 버튼을 눌러도 선택 영역이 유지된다.
+- [x] 서로 다른 두 문단을 가로지른 선택에서는 Inline Code가 적용되지 않는다.
+- [x] 단일 문단에 다시 적용한 최종 상태가 `` `…` `` Markdown으로 저장된다.
+- [x] 적용·해제 및 저장 과정에서 오류 알림이 나타나지 않는다.
+
+### 이번 검증에서 제외한 항목
+
+Inline Code 활성 상태 표시, 키보드만 사용한 버튼 실행과 백틱이 포함된 선택은 확인하지 않았다.
