@@ -301,3 +301,27 @@ Strikethrough 활성 상태 표시, 키보드만 사용한 버튼 실행과 다�
 ### 이번 검증에서 제외한 항목
 
 Inline Code 활성 상태 표시, 키보드만 사용한 버튼 실행과 백틱이 포함된 선택은 확인하지 않았다.
+
+## Floating Toolbar 활성 상태 Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 수정 후 통과
+
+### 확인 항목
+
+- [x] Bold, Italic, Strikethrough 및 Inline Code 선택에서 해당 버튼이 활성 상태로 표시된다.
+- [x] Bold와 Italic이 중첩된 선택에서 두 버튼이 동시에 활성 상태로 표시된다.
+- [x] 일반 텍스트 선택에서는 모든 서식 버튼이 비활성 상태로 표시된다.
+- [x] 버튼으로 서식을 해제하면 활성 상태 표시도 즉시 해제된다.
+- [x] 수정 후 Editor 초기화와 상태 변경 과정에서 오류 알림이 나타나지 않는다.
+
+### 재검증 메모
+
+최초 테스트에서는 Editor 생성이 완료되기 전에 활성 상태 명령이 실행돼 `Cannot destructure property 'doc' ...` 오류가 발생했다. Crepe 공식 Toolbar와 동일하게 `EditorStatus.Created` 이후에만 명령을 호출하도록 수정한 뒤 새 Extension Development Host에서 재검증해 통과했다.
+
+### 이번 검증에서 제외한 항목
+
+부분적으로만 mark가 적용된 선택 영역의 활성 상태와 스크린 리더의 `aria-pressed` 안내는 확인하지 않았다.
