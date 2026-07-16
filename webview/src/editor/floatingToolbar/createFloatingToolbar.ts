@@ -208,7 +208,7 @@ class FloatingToolbarView implements PluginView {
     });
 
     view.dom.addEventListener('blur', this.#handleEditorBlur, true);
-    view.dom.addEventListener(
+    view.dom.ownerDocument.addEventListener(
       'keydown',
       this.#handleEditorKeydown,
       true,
@@ -233,12 +233,17 @@ class FloatingToolbarView implements PluginView {
   };
 
   readonly #handleEditorKeydown = (event: KeyboardEvent): void => {
+    const { doc, selection } = this.#view.state;
+
     if (
       event.key !== 'Tab' ||
       event.altKey ||
       event.ctrlKey ||
       event.metaKey ||
-      this.#content.dataset.show !== 'true'
+      !this.#view.hasFocus() ||
+      !(selection instanceof TextSelection) ||
+      selection.empty ||
+      doc.textBetween(selection.from, selection.to).length === 0
     ) {
       return;
     }
@@ -289,7 +294,7 @@ class FloatingToolbarView implements PluginView {
 
   destroy(): void {
     this.#view.dom.removeEventListener('blur', this.#handleEditorBlur, true);
-    this.#view.dom.removeEventListener(
+    this.#view.dom.ownerDocument.removeEventListener(
       'keydown',
       this.#handleEditorKeydown,
       true,
