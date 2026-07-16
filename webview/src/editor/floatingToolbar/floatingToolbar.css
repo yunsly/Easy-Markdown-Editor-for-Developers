@@ -50,7 +50,7 @@
   background: var(--vscode-toolbar-activeBackground);
 }
 
-.floating-toolbar__button:focus {
+.milkdown .floating-toolbar__button:focus {
   outline: 2px solid var(--vscode-focusBorder);
   outline-offset: -2px;
 }
