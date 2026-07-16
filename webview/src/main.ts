@@ -51,6 +51,7 @@ let latestMarkdown: string | undefined;
 let pendingMarkdownUpdate: string | undefined;
 let markdownUpdateTimer: number | undefined;
 let isCreatingEditor = false;
+let isComposing = false;
 let isDisposed = false;
 
 const reportEditorError = (error: unknown, fallback: string): void => {
@@ -68,13 +69,47 @@ const destroyEditor = async (editor: Crepe): Promise<void> => {
   }
 };
 
-const clearPendingMarkdownUpdate = (): void => {
+const clearMarkdownUpdateTimer = (): void => {
   if (markdownUpdateTimer !== undefined) {
     window.clearTimeout(markdownUpdateTimer);
     markdownUpdateTimer = undefined;
   }
+};
+
+const clearPendingMarkdownUpdate = (): void => {
+  clearMarkdownUpdateTimer();
 
   pendingMarkdownUpdate = undefined;
+};
+
+const schedulePendingMarkdownUpdate = (editor: Crepe): void => {
+  clearMarkdownUpdateTimer();
+
+  if (
+    isDisposed ||
+    isComposing ||
+    crepe !== editor ||
+    pendingMarkdownUpdate === undefined
+  ) {
+    return;
+  }
+
+  markdownUpdateTimer = window.setTimeout(() => {
+    markdownUpdateTimer = undefined;
+    const markdownToRecord = pendingMarkdownUpdate;
+    pendingMarkdownUpdate = undefined;
+
+    if (
+      isDisposed ||
+      isComposing ||
+      crepe !== editor ||
+      markdownToRecord === undefined
+    ) {
+      return;
+    }
+
+    latestMarkdown = markdownToRecord;
+  }, MARKDOWN_UPDATE_DEBOUNCE_MS);
 };
 
 const queueMarkdownUpdate = (
@@ -101,26 +136,29 @@ const queueMarkdownUpdate = (
 
   pendingMarkdownUpdate = markdown;
 
-  if (markdownUpdateTimer !== undefined) {
-    window.clearTimeout(markdownUpdateTimer);
+  if (isComposing) {
+    clearMarkdownUpdateTimer();
+    return;
   }
 
-  markdownUpdateTimer = window.setTimeout(() => {
-    markdownUpdateTimer = undefined;
-    const markdownToRecord = pendingMarkdownUpdate;
-    pendingMarkdownUpdate = undefined;
-
-    if (
-      isDisposed ||
-      crepe !== editor ||
-      markdownToRecord === undefined
-    ) {
-      return;
-    }
-
-    latestMarkdown = markdownToRecord;
-  }, MARKDOWN_UPDATE_DEBOUNCE_MS);
+  schedulePendingMarkdownUpdate(editor);
 };
+
+const handleCompositionStart = (): void => {
+  isComposing = true;
+  clearMarkdownUpdateTimer();
+};
+
+const handleCompositionEnd = (): void => {
+  isComposing = false;
+
+  if (crepe !== undefined) {
+    schedulePendingMarkdownUpdate(crepe);
+  }
+};
+
+editorRoot.addEventListener('compositionstart', handleCompositionStart);
+editorRoot.addEventListener('compositionend', handleCompositionEnd);
 
 const initializeEditor = async (markdown: string): Promise<void> => {
   if (isDisposed || isCreatingEditor || crepe !== undefined) {
@@ -150,6 +188,7 @@ const initializeEditor = async (markdown: string): Promise<void> => {
     if (crepe === editor) {
       crepe = undefined;
       latestMarkdown = undefined;
+      isComposing = false;
       clearPendingMarkdownUpdate();
     }
 
@@ -161,6 +200,7 @@ const initializeEditor = async (markdown: string): Promise<void> => {
     if (isDisposed && crepe === editor) {
       crepe = undefined;
       latestMarkdown = undefined;
+      isComposing = false;
       clearPendingMarkdownUpdate();
       await destroyEditor(editor);
     }
@@ -180,6 +220,15 @@ window.addEventListener(
   () => {
     isDisposed = true;
     disposeMessageListener();
+    editorRoot.removeEventListener(
+      'compositionstart',
+      handleCompositionStart,
+    );
+    editorRoot.removeEventListener(
+      'compositionend',
+      handleCompositionEnd,
+    );
+    isComposing = false;
     clearPendingMarkdownUpdate();
 
     if (!isCreatingEditor && crepe !== undefined) {
