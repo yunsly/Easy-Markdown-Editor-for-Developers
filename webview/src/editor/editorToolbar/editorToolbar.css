@@ -36,3 +36,56 @@
 .editor-toolbar__button.is-active {
   background: var(--vscode-toolbar-activeBackground);
 }
+
+.editor-table-size-picker {
+  position: fixed;
+  z-index: 100;
+  box-sizing: border-box;
+  padding: 8px;
+  color: var(--vscode-editorWidget-foreground);
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+}
+
+.editor-table-size-picker[hidden] {
+  display: none;
+}
+
+.editor-table-size-picker__status {
+  margin-bottom: 6px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.editor-table-size-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(6, 24px);
+  gap: 3px;
+}
+
+.editor-table-size-picker__cell {
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 2px;
+}
+
+.editor-table-size-picker__cell.is-selected {
+  background: var(--vscode-editor-selectionBackground);
+  border-color: var(--vscode-focusBorder);
+}
+
+.editor-table-size-picker__cell:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.editor-table-size-picker__cell:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}

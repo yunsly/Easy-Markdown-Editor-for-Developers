@@ -1,5 +1,10 @@
 import './editorToolbar.css';
 
+import {
+  createTableSizePicker,
+  type TableSizePicker,
+} from './createTableSizePicker';
+
 export type EditorToolbarAction =
   | 'blockquote'
   | 'bullet-list'
@@ -48,10 +53,7 @@ const toolbarButtons: readonly ToolbarButtonDefinition[] = [
 
 const createToolbarButton = (
   definition: ToolbarButtonDefinition,
-  runAction: (
-    action: EditorToolbarAction,
-    options?: EditorToolbarActionOptions,
-  ) => void,
+  runAction: (action: EditorToolbarAction, focusPopup: boolean) => void,
 ): HTMLButtonElement => {
   const button = document.createElement('button');
   button.className = 'editor-toolbar__button';
@@ -63,7 +65,7 @@ const createToolbarButton = (
   button.textContent = definition.text;
   button.addEventListener('mousedown', (event) => {
     event.preventDefault();
-    runAction(definition.action);
+    runAction(definition.action, false);
   });
   button.addEventListener('click', (event) => {
     if (event.detail !== 0) {
@@ -71,7 +73,7 @@ const createToolbarButton = (
     }
 
     event.preventDefault();
-    runAction(definition.action);
+    runAction(definition.action, true);
   });
 
   return button;
@@ -85,20 +87,43 @@ export const createEditorToolbar = (
 ): EditorToolbar => {
   const toolbar = document.createElement('div');
   const buttons = new Map<EditorToolbarAction, HTMLButtonElement>();
+  let tableSizePicker: TableSizePicker | undefined;
   toolbar.className = 'editor-toolbar';
   toolbar.setAttribute('role', 'toolbar');
   toolbar.setAttribute('aria-label', '문서 편집');
   toolbar.setAttribute('aria-orientation', 'horizontal');
 
   for (const definition of toolbarButtons) {
-    const button = createToolbarButton(definition, runAction);
+    const button = createToolbarButton(
+      definition,
+      (action, focusPopup) => {
+        if (action === 'table') {
+          tableSizePicker?.toggle(focusPopup);
+          return;
+        }
+
+        tableSizePicker?.close();
+        runAction(action);
+      },
+    );
     buttons.set(definition.action, button);
     toolbar.append(button);
   }
 
+  const tableButton = buttons.get('table');
+
+  if (tableButton !== undefined) {
+    tableSizePicker = createTableSizePicker(tableButton, (tableSize) => {
+      runAction('table', { tableSize });
+    });
+  }
+
   return {
     buttons,
-    destroy: () => toolbar.replaceChildren(),
+    destroy: () => {
+      tableSizePicker?.destroy();
+      toolbar.replaceChildren();
+    },
     element: toolbar,
   };
 };
