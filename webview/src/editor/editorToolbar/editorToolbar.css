@@ -33,6 +33,23 @@
   color: var(--vscode-disabledForeground);
 }
 
+.editor-toolbar__button:not(:disabled) {
+  cursor: pointer;
+}
+
+.editor-toolbar__button:not(:disabled):hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.editor-toolbar__button:not(:disabled):active {
+  background: var(--vscode-toolbar-activeBackground);
+}
+
+.editor-toolbar__button:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: -2px;
+}
+
 .editor-toolbar__button.is-active {
   background: var(--vscode-toolbar-activeBackground);
 }
