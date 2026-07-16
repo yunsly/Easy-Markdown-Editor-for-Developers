@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
-import { Uri, window } from 'vscode';
+import { Uri, window, workspace } from 'vscode';
 import type {
   CancellationToken,
   CustomTextEditorProvider,
@@ -19,6 +19,11 @@ type DocumentChangedMessage = Extract<
   WebviewToExtensionMessage,
   { type: 'documentChanged' }
 >;
+
+interface PendingDocumentApply {
+  changeId: number;
+  expectedMarkdown: string;
+}
 
 export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
   public static readonly viewType = 'visualMarkdown.editor';
@@ -46,6 +51,7 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
     let didSendInitialDocument = false;
     let isApplyingDocumentChange = false;
     let isDisposed = false;
+    let pendingDocumentApply: PendingDocumentApply | undefined;
 
     const reportError = (errorMessage: string): void => {
       const showErrorMessage: ExtensionToWebviewMessage = {
@@ -72,6 +78,10 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
       }
 
       isApplyingDocumentChange = true;
+      pendingDocumentApply = {
+        changeId: message.changeId,
+        expectedMarkdown: message.text,
+      };
 
       try {
         const result = await applyDocumentChange(
@@ -128,9 +138,59 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
           `Visual Markdown Editor failed to update the document.${detail}`,
         );
       } finally {
+        pendingDocumentApply = undefined;
         isApplyingDocumentChange = false;
       }
     };
+
+    const documentChangeSubscription = workspace.onDidChangeTextDocument(
+      (event) => {
+        if (
+          isDisposed ||
+          event.document !== document ||
+          event.contentChanges.length === 0
+        ) {
+          return;
+        }
+
+        const currentMarkdown = event.document.getText();
+        const expectedChange = pendingDocumentApply;
+
+        if (
+          expectedChange !== undefined &&
+          expectedChange.expectedMarkdown === currentMarkdown
+        ) {
+          return;
+        }
+
+        if (!didSendInitialDocument) {
+          return;
+        }
+
+        const replaceMessage: ExtensionToWebviewMessage = {
+          type: 'replaceDocument',
+          text: currentMarkdown,
+          version: event.document.version,
+        };
+
+        void webview.postMessage(replaceMessage).then(
+          (didPost) => {
+            if (!didPost && !isDisposed) {
+              void window.showErrorMessage(
+                'Visual Markdown Editor could not send an external document change.',
+              );
+            }
+          },
+          () => {
+            if (!isDisposed) {
+              void window.showErrorMessage(
+                'Visual Markdown Editor could not send an external document change.',
+              );
+            }
+          },
+        );
+      },
+    );
 
     const messageSubscription = webview.onDidReceiveMessage(
       (message: unknown) => {
@@ -184,7 +244,9 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
 
     webviewPanel.onDidDispose(() => {
       isDisposed = true;
+      pendingDocumentApply = undefined;
       messageSubscription.dispose();
+      documentChangeSubscription.dispose();
     });
 
     webview.html = `<!DOCTYPE html>
