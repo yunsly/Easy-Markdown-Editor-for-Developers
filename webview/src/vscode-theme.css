@@ -54,3 +54,10 @@
 ):focus-visible {
   opacity: 1;
 }
+
+.editor-root .milkdown .cm-editor:not(.cm-focused) :is(
+  .cm-activeLine,
+  .cm-activeLineGutter
+) {
+  background-color: transparent;
+}
