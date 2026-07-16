@@ -3,6 +3,7 @@ import {
   CrepeFeature,
   type CrepeConfig,
 } from '@milkdown/crepe';
+import { replaceAll } from '@milkdown/kit/utils';
 
 import './styles.css';
 
@@ -61,6 +62,7 @@ let nextChangeId = 1;
 let isCreatingEditor = false;
 let isComposing = false;
 let isDisposed = false;
+let isReplacingDocument = false;
 
 const reportEditorError = (error: unknown, fallback: string): void => {
   const message = error instanceof Error ? error.message : fallback;
@@ -137,6 +139,56 @@ const handleDocumentApplied = (
   }
 };
 
+const handleReplaceDocument = (
+  markdown: string,
+  version: number,
+): void => {
+  if (isDisposed) {
+    return;
+  }
+
+  if (crepe === undefined) {
+    reportEditorError(
+      new Error('Cannot replace a document before Crepe is initialized.'),
+      'Failed to replace the Visual Markdown Editor document.',
+    );
+    return;
+  }
+
+  if (
+    isComposing ||
+    pendingMarkdownUpdate !== undefined ||
+    markdownUpdateTimer !== undefined ||
+    pendingDocumentChange !== undefined
+  ) {
+    reportEditorError(
+      new Error('External document change conflicts with local edits.'),
+      'Failed to replace the Visual Markdown Editor document.',
+    );
+    return;
+  }
+
+  if (markdown === latestMarkdown) {
+    documentVersion = version;
+    return;
+  }
+
+  isReplacingDocument = true;
+
+  try {
+    crepe.editor.action(replaceAll(markdown));
+    latestMarkdown = markdown;
+    documentVersion = version;
+  } catch (error: unknown) {
+    reportEditorError(
+      error,
+      'Failed to replace the Visual Markdown Editor document.',
+    );
+  } finally {
+    isReplacingDocument = false;
+  }
+};
+
 const schedulePendingMarkdownUpdate = (editor: Crepe): void => {
   clearMarkdownUpdateTimer();
 
@@ -175,6 +227,7 @@ const queueMarkdownUpdate = (
 ): void => {
   if (
     isDisposed ||
+    isReplacingDocument ||
     crepe !== editor ||
     markdown === previousMarkdown
   ) {
@@ -253,6 +306,7 @@ const initializeEditor = async (
       documentVersion = undefined;
       pendingDocumentChange = undefined;
       isComposing = false;
+      isReplacingDocument = false;
       clearPendingMarkdownUpdate();
     }
 
@@ -267,6 +321,7 @@ const initializeEditor = async (
       documentVersion = undefined;
       pendingDocumentChange = undefined;
       isComposing = false;
+      isReplacingDocument = false;
       clearPendingMarkdownUpdate();
       await destroyEditor(editor);
     }
@@ -278,6 +333,8 @@ const disposeMessageListener = onMessageFromExtension((message) => {
     void initializeEditor(message.text, message.version);
   } else if (message.type === 'documentApplied') {
     handleDocumentApplied(message.changeId, message.version);
+  } else if (message.type === 'replaceDocument') {
+    handleReplaceDocument(message.text, message.version);
   } else if (message.type === 'showError') {
     showError(message.message);
   }
@@ -297,6 +354,7 @@ window.addEventListener(
       handleCompositionEnd,
     );
     isComposing = false;
+    isReplacingDocument = false;
     clearPendingMarkdownUpdate();
 
     if (!isCreatingEditor && crepe !== undefined) {
