@@ -4,6 +4,9 @@
   display: flex;
   gap: 2px;
   box-sizing: border-box;
+  max-width: calc(100vw - 16px);
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
   padding: 4px;
   color: var(--vscode-editorWidget-foreground);
   background: var(--vscode-editorWidget-background);

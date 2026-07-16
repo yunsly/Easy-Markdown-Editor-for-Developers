@@ -1,7 +1,22 @@
+.editor-root,
+.editor-root .milkdown {
+  min-width: 0;
+}
+
 .editor-root .milkdown .ProseMirror {
   width: 100%;
   max-width: 960px;
   min-height: 100vh;
   margin: 0 auto;
-  padding: clamp(32px, 6vw, 60px) clamp(20px, 8vw, 80px) 96px;
+  padding: clamp(32px, 6vw, 60px) clamp(20px, 8vw, 80px)
+    max(96px, 20vh);
+}
+
+.editor-root .milkdown :is(.milkdown-code-block, .cm-editor) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.editor-root .milkdown .cm-scroller {
+  overscroll-behavior-inline: contain;
 }
