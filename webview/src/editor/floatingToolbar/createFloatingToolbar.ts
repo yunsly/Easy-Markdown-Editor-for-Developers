@@ -13,6 +13,7 @@ import {
 } from '@milkdown/kit/plugin/tooltip';
 import {
   toggleEmphasisCommand,
+  toggleInlineCodeCommand,
   toggleStrongCommand,
 } from '@milkdown/kit/preset/commonmark';
 import { toggleStrikethroughCommand } from '@milkdown/kit/preset/gfm';
@@ -25,13 +26,17 @@ interface ToolbarButtonDefinition {
   text: string;
 }
 
-type ToolbarAction = 'bold' | 'italic' | 'strikethrough';
+type ToolbarAction =
+  | 'bold'
+  | 'inlineCode'
+  | 'italic'
+  | 'strikethrough';
 
 const toolbarButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'bold', label: '굵게', text: 'B' },
   { action: 'italic', label: '기울임', text: 'I' },
   { action: 'strikethrough', label: '취소선', text: 'S' },
-  { label: '인라인 코드', text: '</>' },
+  { action: 'inlineCode', label: '인라인 코드', text: '</>' },
   { label: '링크', text: 'Link' },
 ];
 
@@ -93,6 +98,13 @@ class FloatingToolbarView implements PluginView {
         context.get(commandsCtx).call(toggleEmphasisCommand.key);
       } else if (action === 'strikethrough') {
         context.get(commandsCtx).call(toggleStrikethroughCommand.key);
+      } else if (
+        action === 'inlineCode' &&
+        view.state.selection.$from.sameParent(
+          view.state.selection.$to,
+        )
+      ) {
+        context.get(commandsCtx).call(toggleInlineCodeCommand.key);
       }
 
       view.focus();
