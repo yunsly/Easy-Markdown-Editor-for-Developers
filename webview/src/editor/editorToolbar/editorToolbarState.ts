@@ -3,6 +3,7 @@ import { editorViewCtx } from '@milkdown/kit/core';
 import {
   bulletListSchema,
   headingSchema,
+  orderedListSchema,
   paragraphSchema,
 } from '@milkdown/kit/preset/commonmark';
 
@@ -47,12 +48,17 @@ const getActiveTextBlockAction = (
   return undefined;
 };
 
-const isSelectionInBulletList = (context: Ctx): boolean => {
+const isSelectionInList = (
+  context: Ctx,
+  action: 'bullet-list' | 'ordered-list',
+): boolean => {
   const { $from } = context.get(editorViewCtx).state.selection;
-  const bulletListType = bulletListSchema.type(context);
+  const listType = action === 'bullet-list'
+    ? bulletListSchema.type(context)
+    : orderedListSchema.type(context);
 
   for (let depth = $from.depth; depth > 0; depth -= 1) {
-    if ($from.node(depth).type === bulletListType) {
+    if ($from.node(depth).type === listType) {
       return true;
     }
   }
@@ -83,6 +89,11 @@ export const updateEditorToolbarState = (
   updateButtonState(
     toolbar,
     'bullet-list',
-    isSelectionInBulletList(context),
+    isSelectionInList(context, 'bullet-list'),
+  );
+  updateButtonState(
+    toolbar,
+    'ordered-list',
+    isSelectionInList(context, 'ordered-list'),
   );
 };
