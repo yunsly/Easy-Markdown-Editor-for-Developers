@@ -57,7 +57,7 @@ errorBanner.hidden = true;
 const editorRoot = document.createElement('div');
 editorRoot.className = 'editor-root';
 const editorToolbar = createEditorToolbar();
-container.replaceChildren(errorBanner, editorToolbar, editorRoot);
+container.replaceChildren(errorBanner, editorToolbar.element, editorRoot);
 
 const showError = (message: string): void => {
   errorBanner.textContent = message;
