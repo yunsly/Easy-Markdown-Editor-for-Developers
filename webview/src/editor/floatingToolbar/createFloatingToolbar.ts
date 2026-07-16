@@ -11,7 +11,10 @@ import {
   TooltipProvider,
   tooltipFactory,
 } from '@milkdown/kit/plugin/tooltip';
-import { toggleStrongCommand } from '@milkdown/kit/preset/commonmark';
+import {
+  toggleEmphasisCommand,
+  toggleStrongCommand,
+} from '@milkdown/kit/preset/commonmark';
 
 import './floatingToolbar.css';
 
@@ -21,11 +24,11 @@ interface ToolbarButtonDefinition {
   text: string;
 }
 
-type ToolbarAction = 'bold';
+type ToolbarAction = 'bold' | 'italic';
 
 const toolbarButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'bold', label: '굵게', text: 'B' },
-  { label: '기울임', text: 'I' },
+  { action: 'italic', label: '기울임', text: 'I' },
   { label: '취소선', text: 'S' },
   { label: '인라인 코드', text: '</>' },
   { label: '링크', text: 'Link' },
@@ -85,8 +88,11 @@ class FloatingToolbarView implements PluginView {
     this.#content = createToolbarContent((action) => {
       if (action === 'bold') {
         context.get(commandsCtx).call(toggleStrongCommand.key);
-        view.focus();
+      } else if (action === 'italic') {
+        context.get(commandsCtx).call(toggleEmphasisCommand.key);
       }
+
+      view.focus();
     });
     this.#provider = new TooltipProvider({
       content: this.#content,
