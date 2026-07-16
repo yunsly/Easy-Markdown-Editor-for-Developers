@@ -23,6 +23,7 @@ import {
   type EditorToolbarAction,
 } from './editor/editorToolbar/createEditorToolbar';
 import { runEditorToolbarAction } from './editor/editorToolbar/editorToolbarActions';
+import { updateHeadingToolbarState } from './editor/editorToolbar/editorToolbarState';
 import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
@@ -405,6 +406,15 @@ const initializeEditor = async (
   registerFloatingToolbar(editor.editor);
 
   editor.on((listener) => {
+    listener.mounted((context) => {
+      updateHeadingToolbarState(context, editorToolbar);
+    });
+    listener.updated((context) => {
+      updateHeadingToolbarState(context, editorToolbar);
+    });
+    listener.selectionUpdated((context) => {
+      updateHeadingToolbarState(context, editorToolbar);
+    });
     listener.markdownUpdated((_context, updatedMarkdown, previousMarkdown) => {
       queueMarkdownUpdate(editor, updatedMarkdown, previousMarkdown);
     });
