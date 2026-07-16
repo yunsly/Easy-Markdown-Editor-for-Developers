@@ -42,3 +42,7 @@
 .floating-toolbar__button:not(:disabled):active {
   background: var(--vscode-toolbar-activeBackground);
 }
+
+.floating-toolbar__button.is-active {
+  background: var(--vscode-toolbar-activeBackground);
+}

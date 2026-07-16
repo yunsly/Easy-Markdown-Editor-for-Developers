@@ -12,11 +12,18 @@ import {
   tooltipFactory,
 } from '@milkdown/kit/plugin/tooltip';
 import {
+  emphasisSchema,
+  inlineCodeSchema,
+  isMarkSelectedCommand,
+  strongSchema,
   toggleEmphasisCommand,
   toggleInlineCodeCommand,
   toggleStrongCommand,
 } from '@milkdown/kit/preset/commonmark';
-import { toggleStrikethroughCommand } from '@milkdown/kit/preset/gfm';
+import {
+  strikethroughSchema,
+  toggleStrikethroughCommand,
+} from '@milkdown/kit/preset/gfm';
 
 import './floatingToolbar.css';
 
@@ -24,6 +31,11 @@ interface ToolbarButtonDefinition {
   action?: ToolbarAction;
   label: string;
   text: string;
+}
+
+interface ToolbarContent {
+  buttons: ReadonlyMap<ToolbarAction, HTMLButtonElement>;
+  element: HTMLElement;
 }
 
 type ToolbarAction =
@@ -46,8 +58,9 @@ const floatingToolbarTooltip = tooltipFactory(
 
 const createToolbarContent = (
   runAction: (action: ToolbarAction) => void,
-): HTMLElement => {
+): ToolbarContent => {
   const toolbar = document.createElement('div');
+  const buttons = new Map<ToolbarAction, HTMLButtonElement>();
   toolbar.className = 'floating-toolbar';
   toolbar.setAttribute('role', 'toolbar');
   toolbar.setAttribute('aria-label', '텍스트 서식');
@@ -63,6 +76,8 @@ const createToolbarContent = (
 
     if (definition.action !== undefined) {
       const action = definition.action;
+      button.setAttribute('aria-pressed', 'false');
+      buttons.set(action, button);
 
       button.addEventListener('mousedown', (event) => {
         event.preventDefault();
@@ -81,17 +96,53 @@ const createToolbarContent = (
     toolbar.append(button);
   }
 
-  return toolbar;
+  return { buttons, element: toolbar };
+};
+
+const isActionActive = (
+  context: Ctx,
+  action: ToolbarAction,
+): boolean => {
+  const commands = context.get(commandsCtx);
+
+  if (action === 'bold') {
+    return commands.call(
+      isMarkSelectedCommand.key,
+      strongSchema.type(context),
+    );
+  }
+
+  if (action === 'italic') {
+    return commands.call(
+      isMarkSelectedCommand.key,
+      emphasisSchema.type(context),
+    );
+  }
+
+  if (action === 'strikethrough') {
+    return commands.call(
+      isMarkSelectedCommand.key,
+      strikethroughSchema.type(context),
+    );
+  }
+
+  return commands.call(
+    isMarkSelectedCommand.key,
+    inlineCodeSchema.type(context),
+  );
 };
 
 class FloatingToolbarView implements PluginView {
+  readonly #buttons: ToolbarContent['buttons'];
   readonly #content: HTMLElement;
+  readonly #context: Ctx;
   readonly #provider: TooltipProvider;
   readonly #view: EditorView;
 
   constructor(context: Ctx, view: EditorView) {
+    this.#context = context;
     this.#view = view;
-    this.#content = createToolbarContent((action) => {
+    const toolbarContent = createToolbarContent((action) => {
       if (action === 'bold') {
         context.get(commandsCtx).call(toggleStrongCommand.key);
       } else if (action === 'italic') {
@@ -109,6 +160,8 @@ class FloatingToolbarView implements PluginView {
 
       view.focus();
     });
+    this.#buttons = toolbarContent.buttons;
+    this.#content = toolbarContent.element;
     this.#provider = new TooltipProvider({
       content: this.#content,
       debounce: 20,
@@ -149,6 +202,18 @@ class FloatingToolbarView implements PluginView {
 
   update(view: EditorView, previousState?: EditorState): void {
     this.#provider.update(view, previousState);
+
+    for (const [action, button] of this.#buttons) {
+      const isActive = isActionActive(this.#context, action);
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', String(isActive));
+
+      if (action === 'inlineCode') {
+        button.disabled = !view.state.selection.$from.sameParent(
+          view.state.selection.$to,
+        );
+      }
+    }
   }
 
   destroy(): void {
