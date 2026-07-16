@@ -15,6 +15,7 @@ import {
   toggleEmphasisCommand,
   toggleStrongCommand,
 } from '@milkdown/kit/preset/commonmark';
+import { toggleStrikethroughCommand } from '@milkdown/kit/preset/gfm';
 
 import './floatingToolbar.css';
 
@@ -24,12 +25,12 @@ interface ToolbarButtonDefinition {
   text: string;
 }
 
-type ToolbarAction = 'bold' | 'italic';
+type ToolbarAction = 'bold' | 'italic' | 'strikethrough';
 
 const toolbarButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'bold', label: '굵게', text: 'B' },
   { action: 'italic', label: '기울임', text: 'I' },
-  { label: '취소선', text: 'S' },
+  { action: 'strikethrough', label: '취소선', text: 'S' },
   { label: '인라인 코드', text: '</>' },
   { label: '링크', text: 'Link' },
 ];
@@ -90,6 +91,8 @@ class FloatingToolbarView implements PluginView {
         context.get(commandsCtx).call(toggleStrongCommand.key);
       } else if (action === 'italic') {
         context.get(commandsCtx).call(toggleEmphasisCommand.key);
+      } else if (action === 'strikethrough') {
+        context.get(commandsCtx).call(toggleStrikethroughCommand.key);
       }
 
       view.focus();
