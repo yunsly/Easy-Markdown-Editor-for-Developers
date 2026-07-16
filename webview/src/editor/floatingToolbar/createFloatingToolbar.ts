@@ -269,7 +269,6 @@ class FloatingToolbarView implements PluginView {
     }
 
     event.preventDefault();
-    event.stopPropagation();
     event.stopImmediatePropagation();
     target.focus({ preventScroll: true });
     return true;
@@ -302,7 +301,6 @@ class FloatingToolbarView implements PluginView {
 
         if (target !== undefined) {
           event.preventDefault();
-          event.stopPropagation();
           event.stopImmediatePropagation();
           target.focus({ preventScroll: true });
           return;
