@@ -158,3 +158,27 @@ Bullet list와 task list는 `-` 대신 `*` marker로 직렬화됐다. 목록 의
 ### 이번 검증에서 제외한 항목
 
 언어 식별자가 있는 Code block, 여러 줄 코드의 들여쓰기, Blockquote 안의 여러 문단 및 중첩 Blockquote는 확인하지 않았다.
+
+## Undo/Redo Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] 시간 간격을 두고 입력한 두 변경 중 마지막 변경만 `Cmd+Z`로 되돌릴 수 있다.
+- [x] `Cmd+Shift+Z`로 되돌린 마지막 변경을 다시 적용할 수 있다.
+- [x] Undo/Redo 중 커서가 예상하지 않은 위치로 이동하거나 Editor가 반복 갱신되지 않는다.
+- [x] Undo/Redo 이후 동기화 충돌 알림이 나타나지 않는다.
+- [x] Redo 이후 최종 한글 문자열이 `Cmd+S` 저장 결과에 반영된다.
+
+### 재검증 메모
+
+최초 테스트에서는 한 번의 단축키가 Milkdown history와 VS Code 문서 undo 양쪽에서 처리되어 외부 변경 충돌이 발생했다. Webview capture 단계에서 Undo/Redo 키를 소비하고 Crepe history command를 한 번만 실행하도록 수정한 뒤 새 Extension Development Host에서 재검증해 통과했다.
+
+### 이번 검증에서 제외한 항목
+
+여러 단계 연속 Undo/Redo, 서식 및 블록 구조 변경의 Undo/Redo, Windows/Linux의 `Ctrl+Y` 조합은 확인하지 않았다.
