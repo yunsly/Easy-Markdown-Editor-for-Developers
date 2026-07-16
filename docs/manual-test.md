@@ -325,3 +325,30 @@ Inline Code 활성 상태 표시, 키보드만 사용한 버튼 실행과 백틱
 ### 이번 검증에서 제외한 항목
 
 부분적으로만 mark가 적용된 선택 영역의 활성 상태와 스크린 리더의 `aria-pressed` 안내는 확인하지 않았다.
+
+## Floating Toolbar Link Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 임시 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] 선택한 한글 텍스트에 Link 버튼으로 새 URL을 입력할 수 있다.
+- [x] 기존 링크의 Preview Tooltip에서 URL을 수정할 수 있다.
+- [x] 기존 링크의 Preview Tooltip에서 link mark를 제거할 수 있다.
+- [x] 생성·수정·제거 결과가 각각 기대한 Markdown으로 저장된다.
+- [x] Link Tooltip이 열리면 Floating Toolbar가 겹치지 않게 숨겨진다.
+- [x] 생성·수정·제거 및 저장 과정에서 오류 알림이 나타나지 않는다.
+
+### 저장 결과
+
+- 새 링크: `[새 링크로 바꿀 텍스트입니다.](https://example.com/new)`
+- 수정된 링크: `[기존 링크 수정 대상](https://example.org/updated)`
+- 제거된 링크: `링크 제거 대상`
+
+### 이번 검증에서 제외한 항목
+
+상대 경로와 anchor URL, 잘못된 URL scheme, 빈 선택에서 URL 자체를 링크 텍스트로 삽입하는 흐름은 확인하지 않았다.
