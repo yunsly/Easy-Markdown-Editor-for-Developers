@@ -15,6 +15,7 @@ import {
   onMessageFromExtension,
   postMessageToExtension,
 } from './vscodeApi';
+import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
 
@@ -332,6 +333,7 @@ const initializeEditor = async (
     defaultValue: markdown,
     features,
   });
+  registerFloatingToolbar(editor.editor);
 
   editor.on((listener) => {
     listener.markdownUpdated((_context, updatedMarkdown, previousMarkdown) => {
