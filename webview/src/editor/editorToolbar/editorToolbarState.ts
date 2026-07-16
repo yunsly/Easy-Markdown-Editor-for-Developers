@@ -1,6 +1,10 @@
 import type { Ctx } from '@milkdown/kit/ctx';
 import { editorViewCtx } from '@milkdown/kit/core';
-import type { EditorState } from '@milkdown/kit/prose/state';
+import {
+  NodeSelection,
+  type EditorState,
+} from '@milkdown/kit/prose/state';
+import { isInTable } from '@milkdown/kit/prose/tables';
 import {
   blockquoteSchema,
   bulletListSchema,
@@ -10,6 +14,7 @@ import {
   orderedListSchema,
   paragraphSchema,
 } from '@milkdown/kit/preset/commonmark';
+import { tableSchema } from '@milkdown/kit/preset/gfm';
 
 import type {
   EditorToolbar,
@@ -115,7 +120,7 @@ const isSelectionInBlockquote = (
 export const updateEditorToolbarState = (
   context: Ctx,
   toolbar: EditorToolbar,
-): void => {
+): boolean | undefined => {
   const editorView = context.get(editorViewCtx);
 
   if (!('state' in editorView)) {
@@ -125,6 +130,9 @@ export const updateEditorToolbarState = (
   const { state } = editorView;
   const activeAction = getActiveTextBlockAction(context, state);
   const listState = getSelectionListState(context, state);
+  const isTableActive = isInTable(state) ||
+    (state.selection instanceof NodeSelection &&
+      state.selection.node.type === tableSchema.type(context));
 
   for (const action of textBlockActions) {
     updateButtonState(toolbar, action, action === activeAction);
@@ -152,4 +160,7 @@ export const updateEditorToolbarState = (
     state.selection.$from.parent.type ===
       codeBlockSchema.type(context),
   );
+  updateButtonState(toolbar, 'table', isTableActive);
+
+  return isTableActive;
 };

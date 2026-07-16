@@ -4,6 +4,8 @@ import {
   type CrepeConfig,
 } from '@milkdown/crepe';
 import { EditorView as CodeMirrorView } from '@codemirror/view';
+import type { Ctx } from '@milkdown/kit/ctx';
+import { EditorStatus } from '@milkdown/kit/core';
 import {
   redoCommand,
   undoCommand,
@@ -128,6 +130,23 @@ function handleEditorToolbarAction(action: EditorToolbarAction): void {
     reportEditorError(error, 'Failed to run editor toolbar action.');
   }
 }
+
+const syncEditorToolbarState = (context: Ctx): void => {
+  const isTableActive = updateEditorToolbarState(context, editorToolbar);
+
+  if (
+    isTableActive === undefined ||
+    crepe?.editor.status !== EditorStatus.Created
+  ) {
+    return;
+  }
+
+  const tableButton = editorToolbar.buttons.get('table');
+
+  if (tableButton !== undefined) {
+    tableButton.disabled = isTableActive;
+  }
+};
 
 const destroyEditor = async (editor: Crepe): Promise<void> => {
   try {
@@ -407,13 +426,13 @@ const initializeEditor = async (
 
   editor.on((listener) => {
     listener.mounted((context) => {
-      updateEditorToolbarState(context, editorToolbar);
+      syncEditorToolbarState(context);
     });
     listener.updated((context) => {
-      updateEditorToolbarState(context, editorToolbar);
+      syncEditorToolbarState(context);
     });
     listener.selectionUpdated((context) => {
-      updateEditorToolbarState(context, editorToolbar);
+      syncEditorToolbarState(context);
     });
     listener.markdownUpdated((_context, updatedMarkdown, previousMarkdown) => {
       queueMarkdownUpdate(editor, updatedMarkdown, previousMarkdown);
@@ -438,6 +457,7 @@ const initializeEditor = async (
     editorToolbar.buttons.get('blockquote')?.removeAttribute('disabled');
     editorToolbar.buttons.get('code-block')?.removeAttribute('disabled');
     editorToolbar.buttons.get('table')?.removeAttribute('disabled');
+    editor.editor.action(syncEditorToolbarState);
   } catch (error: unknown) {
     if (crepe === editor) {
       crepe = undefined;
