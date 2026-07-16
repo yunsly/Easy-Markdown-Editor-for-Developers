@@ -453,3 +453,20 @@ VoiceOver 등 실제 스크린 리더를 사용한 `aria-label` 및 `aria-presse
 ### 재검증 메모
 
 CodeMirror가 런타임에 생성한 기본 레이아웃 CSS가 Webview CSP에 의해 차단되어 줄 번호와 코드 열 배치가 깨졌다. Webview의 nonce를 CodeMirror `EditorView.cspNonce` 설정에 전달한 뒤 재검증해 통과했다.
+
+## 편집기 보조 UI 포커스 Smoke Test
+
+- 실행일: 2026-07-16
+- 환경: macOS 26.5.1 (arm64), VS Code 1.127.0
+- 대상: Extension Development Host의 Markdown 파일
+- 편집기: Visual Markdown Editor
+- 결과: 통과
+
+### 확인 항목
+
+- [x] Floating Toolbar 버튼에 키보드 포커스 테두리가 표시된다.
+- [x] Link 입력과 미리보기 링크에 키보드 포커스 테두리가 표시된다.
+- [x] 코드 블록의 언어 및 복사 버튼이 키보드 포커스를 받으면 표시된다.
+- [x] 코드 블록 언어 목록 항목에 키보드 포커스 테두리가 표시된다.
+- [x] 라이트·다크 테마에서 포커스 테두리를 구분할 수 있다.
+- [x] 마우스 클릭에는 불필요한 포커스 테두리가 남지 않는다.
