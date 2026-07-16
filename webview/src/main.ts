@@ -19,6 +19,11 @@ interface PendingDocumentChange {
   markdown: string;
 }
 
+interface PendingExternalDocument {
+  markdown: string;
+  version: number;
+}
+
 const container = document.querySelector<HTMLElement>('#app');
 
 if (container === null) {
@@ -58,6 +63,7 @@ let pendingMarkdownUpdate: string | undefined;
 let markdownUpdateTimer: number | undefined;
 let documentVersion: number | undefined;
 let pendingDocumentChange: PendingDocumentChange | undefined;
+let pendingExternalDocument: PendingExternalDocument | undefined;
 let nextChangeId = 1;
 let isCreatingEditor = false;
 let isComposing = false;
@@ -144,6 +150,11 @@ const handleReplaceDocument = (
   version: number,
 ): void => {
   if (isDisposed) {
+    return;
+  }
+
+  if (isCreatingEditor) {
+    pendingExternalDocument = { markdown, version };
     return;
   }
 
@@ -305,6 +316,7 @@ const initializeEditor = async (
       latestMarkdown = undefined;
       documentVersion = undefined;
       pendingDocumentChange = undefined;
+      pendingExternalDocument = undefined;
       isComposing = false;
       isReplacingDocument = false;
       clearPendingMarkdownUpdate();
@@ -320,10 +332,23 @@ const initializeEditor = async (
       latestMarkdown = undefined;
       documentVersion = undefined;
       pendingDocumentChange = undefined;
+      pendingExternalDocument = undefined;
       isComposing = false;
       isReplacingDocument = false;
       clearPendingMarkdownUpdate();
       await destroyEditor(editor);
+    }
+  }
+
+  if (!isDisposed && crepe === editor) {
+    const externalDocument = pendingExternalDocument;
+    pendingExternalDocument = undefined;
+
+    if (externalDocument !== undefined) {
+      handleReplaceDocument(
+        externalDocument.markdown,
+        externalDocument.version,
+      );
     }
   }
 };
@@ -363,6 +388,7 @@ window.addEventListener(
       latestMarkdown = undefined;
       documentVersion = undefined;
       pendingDocumentChange = undefined;
+      pendingExternalDocument = undefined;
       void destroyEditor(editor);
     }
   },
