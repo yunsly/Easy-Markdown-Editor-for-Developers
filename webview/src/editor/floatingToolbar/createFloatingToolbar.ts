@@ -33,8 +33,6 @@ import {
 
 import './floatingToolbar.css';
 
-const isMacOS = navigator.userAgent.includes('Macintosh');
-
 interface ToolbarButtonDefinition {
   action?: ToolbarAction;
   label: string;
@@ -74,6 +72,7 @@ const createToolbarContent = (
   toolbar.setAttribute('role', 'toolbar');
   toolbar.setAttribute('aria-label', '텍스트 서식');
   toolbar.setAttribute('aria-orientation', 'horizontal');
+  toolbar.setAttribute('aria-keyshortcuts', 'Alt+F10');
 
   for (const definition of toolbarButtons) {
     const button = document.createElement('button');
@@ -240,12 +239,20 @@ class FloatingToolbarView implements PluginView {
     const isEditorTarget =
       eventTarget instanceof Node &&
       this.#view.dom.contains(eventTarget);
+    const isTabEntry =
+      event.key === 'Tab' &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey;
+    const isToolbarShortcut =
+      event.key === 'F10' &&
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey;
 
     if (
-      event.key !== 'Tab' ||
-      event.altKey ||
-      (event.ctrlKey && !isMacOS) ||
-      event.metaKey ||
+      (!isTabEntry && !isToolbarShortcut) ||
       !isEditorTarget ||
       !(selection instanceof TextSelection) ||
       selection.empty ||
@@ -257,7 +264,7 @@ class FloatingToolbarView implements PluginView {
     const enabledButtons = [...this.#buttons.values()].filter(
       (button) => !button.disabled,
     );
-    const target = event.shiftKey
+    const target = isTabEntry && event.shiftKey
       ? enabledButtons.at(-1)
       : enabledButtons.at(0);
 
