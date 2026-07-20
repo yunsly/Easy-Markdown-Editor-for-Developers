@@ -1,6 +1,6 @@
-# Visual Markdown Editor
+# Easy Markdown Editor for Developers
 
-Visual Markdown Editor is a VS Code custom editor for editing Markdown as a rendered document. Changes are written back to the original `.md` file through VS Code's document model, so saving, dirty-state tracking, undo, redo, and external file updates stay in the normal editor workflow.
+Easy Markdown Editor for Developers is a VS Code custom editor for editing Markdown as a rendered document. Changes are written back to the original `.md` file through VS Code's document model, so saving, dirty-state tracking, undo, redo, and external file updates stay in the normal editor workflow.
 
 ## Features
 
@@ -16,7 +16,7 @@ Visual Markdown Editor is a VS Code custom editor for editing Markdown as a rend
 
 1. Open a `.md` file in VS Code.
 2. Open the editor picker from the tab or Explorer context menu.
-3. Select **Visual Markdown Editor**.
+3. Select **Easy Markdown Editor for Developers**.
 4. Edit the rendered document and save with the standard VS Code save command.
 
 The built-in Markdown text editor remains available from **Reopen Editor With...** whenever source-level editing is preferable.
@@ -51,7 +51,7 @@ Create an installable VSIX:
 npm run package:vsix
 ```
 
-The package command runs a production build first and writes `visual-markdown-editor-<version>.vsix` to the repository root.
+The package command runs a production build first and writes `easy-markdown-editor-for-developers-<version>.vsix` to the repository root.
 
 ## Current Scope
 

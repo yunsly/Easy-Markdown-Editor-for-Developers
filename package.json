@@ -1,6 +1,6 @@
 {
-  "name": "visual-markdown-editor",
-  "displayName": "Visual Markdown Editor",
+  "name": "easy-markdown-editor-for-developers",
+  "displayName": "Easy Markdown Editor for Developers",
   "description": "Edit Markdown visually inside VS Code.",
   "version": "0.0.1",
   "publisher": "yunsly",
@@ -20,7 +20,7 @@
     "customEditors": [
       {
         "viewType": "visualMarkdown.editor",
-        "displayName": "Visual Markdown Editor",
+        "displayName": "Easy Markdown Editor for Developers",
         "selector": [
           {
             "filenamePattern": "*.md"
