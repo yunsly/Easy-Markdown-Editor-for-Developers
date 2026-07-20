@@ -75,7 +75,8 @@ export const createBadgeBuilder = (
   title.className = 'badge-builder__title';
   title.textContent = 'Insert Badge';
   description.className = 'badge-builder__description';
-  description.textContent = 'Badge 옵션을 선택해 Markdown에 삽입합니다.';
+  description.textContent =
+    'Choose badge options and insert the result into Markdown.';
   controls.className = 'badge-builder__controls';
   technologyField.className = 'badge-builder__field';
   technologyLabel.className = 'badge-builder__label';
@@ -270,7 +271,7 @@ export const createBadgeBuilder = (
 
       if (protocol !== 'http:' && protocol !== 'https:') {
         clickUrlInput.setCustomValidity(
-          'Click URL은 http:// 또는 https://로 시작해야 합니다.',
+          'Click URL must start with http:// or https://.',
         );
         clickUrlInput.reportValidity();
         clickUrlInput.focus({ preventScroll: true });
@@ -342,7 +343,7 @@ export const createBadgeBuilder = (
     previewImage.hidden = true;
     previewStatus.hidden = false;
     previewStatus.textContent =
-      '미리보기를 불러올 수 없습니다. Badge URL은 계속 생성할 수 있습니다.';
+      'Unable to load the preview. You can still create the badge URL.';
   };
 
   cancelButton.addEventListener('click', handleCancelClick);

@@ -313,7 +313,7 @@ export const badgePalettes = [
   {
     id: 'brand',
     name: 'Brand',
-    description: '회색 라벨과 기술 브랜드 색상을 사용합니다.',
+    description: "Uses a gray label and the technology's brand color.",
     showLabel: true,
     labelColor: '555555',
     messageColor: { source: 'brand' },
@@ -322,7 +322,7 @@ export const badgePalettes = [
   {
     id: 'brand-solid',
     name: 'Brand Solid',
-    description: '라벨 없이 기술 브랜드 색상을 사용합니다.',
+    description: "Uses the technology's brand color without a label.",
     showLabel: false,
     messageColor: { source: 'brand' },
     logoColor: 'white',
@@ -330,7 +330,7 @@ export const badgePalettes = [
   {
     id: 'dark',
     name: 'Dark',
-    description: '라벨 없이 통일된 어두운 배경을 사용합니다.',
+    description: 'Uses a consistent dark background without a label.',
     showLabel: false,
     messageColor: { source: 'fixed', value: '24292F' },
     logoColor: 'white',
