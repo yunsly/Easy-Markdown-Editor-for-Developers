@@ -6,6 +6,7 @@ import {
   technologyBadgePresets,
 } from './badgePresets';
 import type { BadgeDefinition, BadgeStyle } from './badgeTypes';
+import { createShieldsBadgeUrl } from './createShieldsBadgeUrl';
 
 const badgeStyles = [
   'flat',
@@ -44,6 +45,11 @@ export const createBadgeBuilder = (
   const styleField = document.createElement('label');
   const styleLabel = document.createElement('span');
   const styleSelect = document.createElement('select');
+  const previewField = document.createElement('div');
+  const previewLabel = document.createElement('span');
+  const previewContainer = document.createElement('div');
+  const previewImage = document.createElement('img');
+  const previewStatus = document.createElement('span');
   const actions = document.createElement('div');
   const cancelButton = document.createElement('button');
   const insertButton = document.createElement('button');
@@ -125,11 +131,24 @@ export const createBadgeBuilder = (
   }
 
   styleField.append(styleLabel, styleSelect);
+  previewField.className = 'badge-builder__field';
+  previewLabel.className = 'badge-builder__label';
+  previewLabel.textContent = 'Preview';
+  previewContainer.className = 'badge-builder__preview';
+  previewImage.className = 'badge-builder__preview-image';
+  previewImage.alt = 'Badge preview';
+  previewImage.hidden = true;
+  previewStatus.className = 'badge-builder__preview-status';
+  previewStatus.setAttribute('role', 'status');
+  previewStatus.setAttribute('aria-live', 'polite');
+  previewContainer.append(previewImage, previewStatus);
+  previewField.append(previewLabel, previewContainer);
   controls.append(
     technologyField,
     paletteField,
     labelOptions,
     styleField,
+    previewField,
   );
   actions.className = 'badge-builder__actions';
   cancelButton.className = 'badge-builder__button';
@@ -181,6 +200,17 @@ export const createBadgeBuilder = (
     return definition;
   };
 
+  const updatePreview = (): void => {
+    const definition = getDefinition();
+    previewImage.hidden = true;
+    previewImage.alt = definition.label === undefined
+      ? `${definition.message} Badge preview`
+      : `${definition.label}: ${definition.message} Badge preview`;
+    previewStatus.hidden = false;
+    previewStatus.textContent = 'Loading preview…';
+    previewImage.src = createShieldsBadgeUrl(definition);
+  };
+
   const close = (): void => {
     if (dialog.open) {
       dialog.close();
@@ -208,6 +238,8 @@ export const createBadgeBuilder = (
     if (!isLabelDirty) {
       labelInput.value = getSelectedTechnology().defaultLabel ?? '';
     }
+
+    updatePreview();
   };
 
   const handlePaletteChange = (): void => {
@@ -215,15 +247,35 @@ export const createBadgeBuilder = (
       showLabelInput.checked = getSelectedPalette().showLabel;
       updateLabelAvailability();
     }
+
+    updatePreview();
   };
 
   const handleShowLabelChange = (): void => {
     isShowLabelDirty = true;
     updateLabelAvailability();
+    updatePreview();
   };
 
   const handleLabelInput = (): void => {
     isLabelDirty = true;
+    updatePreview();
+  };
+
+  const handleStyleChange = (): void => {
+    updatePreview();
+  };
+
+  const handlePreviewLoad = (): void => {
+    previewImage.hidden = false;
+    previewStatus.hidden = true;
+  };
+
+  const handlePreviewError = (): void => {
+    previewImage.hidden = true;
+    previewStatus.hidden = false;
+    previewStatus.textContent =
+      '미리보기를 불러올 수 없습니다. Badge URL은 계속 생성할 수 있습니다.';
   };
 
   cancelButton.addEventListener('click', handleCancelClick);
@@ -232,6 +284,9 @@ export const createBadgeBuilder = (
   technologySelect.addEventListener('change', handleTechnologyChange);
   showLabelInput.addEventListener('change', handleShowLabelChange);
   labelInput.addEventListener('input', handleLabelInput);
+  styleSelect.addEventListener('change', handleStyleChange);
+  previewImage.addEventListener('load', handlePreviewLoad);
+  previewImage.addEventListener('error', handlePreviewError);
 
   for (const input of paletteInputs) {
     input.addEventListener('change', handlePaletteChange);
@@ -248,6 +303,9 @@ export const createBadgeBuilder = (
       technologySelect.removeEventListener('change', handleTechnologyChange);
       showLabelInput.removeEventListener('change', handleShowLabelChange);
       labelInput.removeEventListener('input', handleLabelInput);
+      styleSelect.removeEventListener('change', handleStyleChange);
+      previewImage.removeEventListener('load', handlePreviewLoad);
+      previewImage.removeEventListener('error', handlePreviewError);
 
       for (const input of paletteInputs) {
         input.removeEventListener('change', handlePaletteChange);
@@ -273,6 +331,7 @@ export const createBadgeBuilder = (
       showLabelInput.checked = badgePalettes[0].showLabel;
       styleSelect.value = 'flat';
       updateLabelAvailability();
+      updatePreview();
       anchor.setAttribute('aria-expanded', 'true');
       dialog.showModal();
       technologySelect.focus({ preventScroll: true });

@@ -255,7 +255,7 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
   <meta charset="UTF-8">
   <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'none'; font-src ${webview.cspSource}; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src ${webview.cspSource} 'nonce-${nonce}';"
+    content="default-src 'none'; font-src ${webview.cspSource}; img-src ${webview.cspSource} https://img.shields.io; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src ${webview.cspSource} 'nonce-${nonce}';"
   >
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Visual Markdown Editor</title>

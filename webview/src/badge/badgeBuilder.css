@@ -149,6 +149,35 @@
   margin: 0;
 }
 
+.badge-builder__preview {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px;
+  overflow: hidden;
+  background: var(--vscode-input-background);
+  border: 1px solid var(
+    --vscode-editorWidget-border,
+    var(--vscode-contrastBorder, transparent)
+  );
+  border-radius: 4px;
+}
+
+.badge-builder__preview-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.badge-builder__preview-image[hidden] {
+  display: none;
+}
+
+.badge-builder__preview-status {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
 .badge-builder__actions {
   display: flex;
   justify-content: flex-end;
