@@ -4,6 +4,10 @@
   "description": "Edit Markdown visually inside VS Code.",
   "version": "0.0.1",
   "publisher": "yunsly",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yunsly/VSCode-MDeditor-extension.git"
+  },
   "private": true,
   "engines": {
     "vscode": "^1.125.0"
