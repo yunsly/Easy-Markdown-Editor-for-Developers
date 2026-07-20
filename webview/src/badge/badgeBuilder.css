@@ -55,7 +55,8 @@
   font-weight: 600;
 }
 
-.badge-builder__select {
+.badge-builder__select,
+.badge-builder__input {
   box-sizing: border-box;
   width: 100%;
   min-height: 30px;
@@ -70,9 +71,19 @@
   font: inherit;
 }
 
-.badge-builder__select:focus-visible {
+.badge-builder__select:focus-visible,
+.badge-builder__input:focus-visible {
   outline: 2px solid var(--vscode-focusBorder);
   outline-offset: 1px;
+}
+
+.badge-builder__input:disabled {
+  color: var(--vscode-disabledForeground);
+  opacity: 1;
+}
+
+.badge-builder__input {
+  background: var(--vscode-input-background);
 }
 
 .badge-builder__palette-options {
@@ -119,6 +130,23 @@
 .badge-builder__palette-option:has(input:checked)
   .badge-builder__palette-description {
   color: inherit;
+}
+
+.badge-builder__label-options {
+  display: grid;
+  gap: 8px;
+}
+
+.badge-builder__checkbox {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.badge-builder__checkbox input {
+  margin: 0;
 }
 
 .badge-builder__actions {

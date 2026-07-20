@@ -5,7 +5,13 @@ import {
   badgePalettes,
   technologyBadgePresets,
 } from './badgePresets';
-import type { BadgeDefinition } from './badgeTypes';
+import type { BadgeDefinition, BadgeStyle } from './badgeTypes';
+
+const badgeStyles = [
+  'flat',
+  'flat-square',
+  'for-the-badge',
+] as const satisfies readonly BadgeStyle[];
 
 export interface BadgeBuilder {
   close: () => void;
@@ -28,11 +34,23 @@ export const createBadgeBuilder = (
   const paletteLegend = document.createElement('legend');
   const paletteOptions = document.createElement('div');
   const paletteInputs: HTMLInputElement[] = [];
+  const labelOptions = document.createElement('div');
+  const showLabelControl = document.createElement('label');
+  const showLabelInput = document.createElement('input');
+  const showLabelText = document.createElement('span');
+  const labelField = document.createElement('label');
+  const labelText = document.createElement('span');
+  const labelInput = document.createElement('input');
+  const styleField = document.createElement('label');
+  const styleLabel = document.createElement('span');
+  const styleSelect = document.createElement('select');
   const actions = document.createElement('div');
   const cancelButton = document.createElement('button');
   const insertButton = document.createElement('button');
   const titleId = 'badge-builder-title';
   let isDestroyed = false;
+  let isLabelDirty = false;
+  let isShowLabelDirty = false;
 
   dialog.className = 'badge-builder';
   dialog.setAttribute('aria-labelledby', titleId);
@@ -82,7 +100,37 @@ export const createBadgeBuilder = (
   }
 
   paletteField.append(paletteLegend, paletteOptions);
-  controls.append(technologyField, paletteField);
+  labelOptions.className = 'badge-builder__label-options';
+  showLabelControl.className = 'badge-builder__checkbox';
+  showLabelInput.type = 'checkbox';
+  showLabelText.textContent = 'Show label';
+  showLabelControl.append(showLabelInput, showLabelText);
+  labelField.className = 'badge-builder__field';
+  labelText.className = 'badge-builder__label';
+  labelText.textContent = 'Label';
+  labelInput.className = 'badge-builder__input';
+  labelInput.type = 'text';
+  labelField.append(labelText, labelInput);
+  labelOptions.append(showLabelControl, labelField);
+  styleField.className = 'badge-builder__field';
+  styleLabel.className = 'badge-builder__label';
+  styleLabel.textContent = 'Style';
+  styleSelect.className = 'badge-builder__select';
+
+  for (const style of badgeStyles) {
+    const option = document.createElement('option');
+    option.value = style;
+    option.textContent = style;
+    styleSelect.append(option);
+  }
+
+  styleField.append(styleLabel, styleSelect);
+  controls.append(
+    technologyField,
+    paletteField,
+    labelOptions,
+    styleField,
+  );
   actions.className = 'badge-builder__actions';
   cancelButton.className = 'badge-builder__button';
   cancelButton.type = 'button';
@@ -98,17 +146,39 @@ export const createBadgeBuilder = (
   dialog.append(title, description, controls, actions);
   document.body.append(dialog);
 
-  const getDefinition = (): BadgeDefinition => {
-    const technology = technologyBadgePresets.find(
-      (preset) => preset.id === technologySelect.value,
-    ) ?? technologyBadgePresets[0];
-    const palette = badgePalettes.find(
-      (candidate) => paletteInputs.some(
-        (input) => input.checked && input.value === candidate.id,
-      ),
-    ) ?? badgePalettes[0];
+  const getSelectedTechnology = () => technologyBadgePresets.find(
+    (preset) => preset.id === technologySelect.value,
+  ) ?? technologyBadgePresets[0];
 
-    return applyBadgePalette(technology, palette);
+  const getSelectedPalette = () => badgePalettes.find(
+    (candidate) => paletteInputs.some(
+      (input) => input.checked && input.value === candidate.id,
+    ),
+  ) ?? badgePalettes[0];
+
+  const updateLabelAvailability = (): void => {
+    labelInput.disabled = !showLabelInput.checked;
+  };
+
+  const getDefinition = (): BadgeDefinition => {
+    const definition = applyBadgePalette(
+      getSelectedTechnology(),
+      getSelectedPalette(),
+    );
+    definition.style = badgeStyles.find(
+      (style) => style === styleSelect.value,
+    ) ?? 'flat';
+
+    const label = labelInput.value.trim();
+
+    if (showLabelInput.checked && label.length > 0) {
+      definition.label = label;
+    } else {
+      delete definition.label;
+      delete definition.labelColor;
+    }
+
+    return definition;
   };
 
   const close = (): void => {
@@ -134,9 +204,38 @@ export const createBadgeBuilder = (
     }
   };
 
+  const handleTechnologyChange = (): void => {
+    if (!isLabelDirty) {
+      labelInput.value = getSelectedTechnology().defaultLabel ?? '';
+    }
+  };
+
+  const handlePaletteChange = (): void => {
+    if (!isShowLabelDirty) {
+      showLabelInput.checked = getSelectedPalette().showLabel;
+      updateLabelAvailability();
+    }
+  };
+
+  const handleShowLabelChange = (): void => {
+    isShowLabelDirty = true;
+    updateLabelAvailability();
+  };
+
+  const handleLabelInput = (): void => {
+    isLabelDirty = true;
+  };
+
   cancelButton.addEventListener('click', handleCancelClick);
   dialog.addEventListener('cancel', handleDialogCancel);
   dialog.addEventListener('close', handleDialogClose);
+  technologySelect.addEventListener('change', handleTechnologyChange);
+  showLabelInput.addEventListener('change', handleShowLabelChange);
+  labelInput.addEventListener('input', handleLabelInput);
+
+  for (const input of paletteInputs) {
+    input.addEventListener('change', handlePaletteChange);
+  }
 
   return {
     close,
@@ -146,6 +245,14 @@ export const createBadgeBuilder = (
       cancelButton.removeEventListener('click', handleCancelClick);
       dialog.removeEventListener('cancel', handleDialogCancel);
       dialog.removeEventListener('close', handleDialogClose);
+      technologySelect.removeEventListener('change', handleTechnologyChange);
+      showLabelInput.removeEventListener('change', handleShowLabelChange);
+      labelInput.removeEventListener('input', handleLabelInput);
+
+      for (const input of paletteInputs) {
+        input.removeEventListener('change', handlePaletteChange);
+      }
+
       dialog.remove();
       anchor.removeAttribute('aria-haspopup');
       anchor.removeAttribute('aria-expanded');
@@ -160,6 +267,12 @@ export const createBadgeBuilder = (
       for (const [index, input] of paletteInputs.entries()) {
         input.checked = index === 0;
       }
+      isLabelDirty = false;
+      isShowLabelDirty = false;
+      labelInput.value = technologyBadgePresets[0].defaultLabel;
+      showLabelInput.checked = badgePalettes[0].showLabel;
+      styleSelect.value = 'flat';
+      updateLabelAvailability();
       anchor.setAttribute('aria-expanded', 'true');
       dialog.showModal();
       technologySelect.focus({ preventScroll: true });
