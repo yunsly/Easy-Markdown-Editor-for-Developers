@@ -195,7 +195,7 @@ export const runEditorToolbarAction = (
           [linkMark],
         );
         view.dispatch(
-          view.state.tr.replaceSelectionWith(imageNode).scrollIntoView(),
+          view.state.tr.replaceSelectionWith(imageNode, false).scrollIntoView(),
         );
       }
     } else if (action === 'table') {
