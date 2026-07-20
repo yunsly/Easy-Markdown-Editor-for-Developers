@@ -276,7 +276,7 @@ const handleReplaceDocument = (
   if (crepe === undefined) {
     reportEditorError(
       new Error('Cannot replace a document before Crepe is initialized.'),
-      'Failed to replace the Visual Markdown Editor document.',
+      'Failed to replace the Easy Markdown Editor for Developers document.',
     );
     return;
   }
@@ -289,7 +289,7 @@ const handleReplaceDocument = (
   ) {
     reportEditorError(
       new Error('External document change conflicts with local edits.'),
-      'Failed to replace the Visual Markdown Editor document.',
+      'Failed to replace the Easy Markdown Editor for Developers document.',
     );
     return;
   }
@@ -308,7 +308,7 @@ const handleReplaceDocument = (
   } catch (error: unknown) {
     reportEditorError(
       error,
-      'Failed to replace the Visual Markdown Editor document.',
+      'Failed to replace the Easy Markdown Editor for Developers document.',
     );
   } finally {
     isReplacingDocument = false;

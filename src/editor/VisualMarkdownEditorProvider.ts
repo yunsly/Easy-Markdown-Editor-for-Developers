@@ -72,7 +72,7 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
 
       if (isApplyingDocumentChange) {
         reportError(
-          'Visual Markdown Editor received overlapping document changes.',
+          'Easy Markdown Editor for Developers received overlapping document changes.',
         );
         return;
       }
@@ -95,27 +95,29 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
         }
 
         if (result.status === 'documentClosed') {
-          reportError('Visual Markdown Editor document is already closed.');
+          reportError(
+            'Easy Markdown Editor for Developers document is already closed.',
+          );
           return;
         }
 
         if (result.status === 'versionMismatch') {
           reportError(
-            `Visual Markdown Editor rejected an outdated change. Expected document version ${message.baseVersion}, but found ${result.actualVersion}.`,
+            `Easy Markdown Editor for Developers rejected an outdated change. Expected document version ${message.baseVersion}, but found ${result.actualVersion}.`,
           );
           return;
         }
 
         if (result.status === 'applyFailed') {
           reportError(
-            'Visual Markdown Editor could not apply the document change.',
+            'Easy Markdown Editor for Developers could not apply the document change.',
           );
           return;
         }
 
         if (result.status === 'contentMismatch') {
           reportError(
-            `Visual Markdown Editor detected a document conflict at version ${result.actualVersion}.`,
+            `Easy Markdown Editor for Developers detected a document conflict at version ${result.actualVersion}.`,
           );
           return;
         }
@@ -129,13 +131,13 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
 
         if (!didPost && !isDisposed) {
           void window.showErrorMessage(
-            'Visual Markdown Editor could not confirm the document change.',
+            'Easy Markdown Editor for Developers could not confirm the document change.',
           );
         }
       } catch (error: unknown) {
         const detail = error instanceof Error ? ` ${error.message}` : '';
         reportError(
-          `Visual Markdown Editor failed to update the document.${detail}`,
+          `Easy Markdown Editor for Developers failed to update the document.${detail}`,
         );
       } finally {
         pendingDocumentApply = undefined;
@@ -177,14 +179,14 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
           (didPost) => {
             if (!didPost && !isDisposed) {
               void window.showErrorMessage(
-                'Visual Markdown Editor could not send an external document change.',
+                'Easy Markdown Editor for Developers could not send an external document change.',
               );
             }
           },
           () => {
             if (!isDisposed) {
               void window.showErrorMessage(
-                'Visual Markdown Editor could not send an external document change.',
+                'Easy Markdown Editor for Developers could not send an external document change.',
               );
             }
           },
@@ -196,14 +198,14 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
       (message: unknown) => {
         if (!isWebviewToExtensionMessage(message)) {
           const errorMessage =
-            'Visual Markdown Editor received an invalid Webview message.';
+            'Easy Markdown Editor for Developers received an invalid Webview message.';
           reportError(errorMessage);
           return;
         }
 
         if (message.type === 'reportError') {
           void window.showErrorMessage(
-            `Visual Markdown Editor Webview: ${message.message}`,
+            `Easy Markdown Editor for Developers Webview: ${message.message}`,
           );
           return;
         }
@@ -231,13 +233,13 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
           (didPost) => {
             if (!didPost) {
               void window.showErrorMessage(
-                'Visual Markdown Editor could not send the initial document.',
+                'Easy Markdown Editor for Developers could not send the initial document.',
               );
             }
           },
           () => {
             void window.showErrorMessage(
-              'Visual Markdown Editor could not send the initial document.',
+              'Easy Markdown Editor for Developers could not send the initial document.',
             );
           },
         );
@@ -260,7 +262,7 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
     content="default-src 'none'; font-src ${webview.cspSource}; img-src ${webview.cspSource} https://img.shields.io; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src ${webview.cspSource} 'nonce-${nonce}';"
   >
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visual Markdown Editor</title>
+  <title>Easy Markdown Editor for Developers</title>
   <link rel="stylesheet" href="${styleUri.toString()}">
 </head>
 <body>
