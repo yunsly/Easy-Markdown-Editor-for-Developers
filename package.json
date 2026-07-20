@@ -36,6 +36,8 @@
     "build:extension": "node esbuild.mjs",
     "build:webview": "vite build --config webview/vite.config.ts",
     "build": "npm run typecheck && npm run build:extension && npm run build:webview",
+    "vscode:prepublish": "npm run build",
+    "package:vsix": "vsce package",
     "watch:extension": "node esbuild.mjs --watch",
     "watch:webview": "node webview/watch.mjs"
   },
@@ -43,6 +45,7 @@
     "@eslint/js": "10.0.1",
     "@types/node": "24.13.3",
     "@types/vscode": "1.125.0",
+    "@vscode/vsce": "3.9.2",
     "esbuild": "0.28.1",
     "eslint": "10.7.0",
     "typescript": "6.0.3",
