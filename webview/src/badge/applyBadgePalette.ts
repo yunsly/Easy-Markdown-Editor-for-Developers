@@ -7,16 +7,17 @@ import type {
 export const applyBadgePalette = (
   technology: TechnologyBadgePreset,
   palette: BadgePalette,
+  showLabel: boolean,
 ): BadgeDefinition => ({
   message: technology.name,
   messageColor: palette.messageColor.source === 'brand'
     ? technology.brandColor
     : palette.messageColor.value,
   style: 'flat',
-  ...(palette.showLabel && technology.defaultLabel !== undefined
+  ...(showLabel && technology.defaultLabel !== undefined
     ? { label: technology.defaultLabel }
     : {}),
-  ...(palette.showLabel && palette.labelColor !== undefined
+  ...(showLabel && palette.labelColor !== undefined
     ? { labelColor: palette.labelColor }
     : {}),
   ...(technology.logoSlug === undefined

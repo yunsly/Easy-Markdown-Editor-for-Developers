@@ -66,7 +66,6 @@ export const createBadgeBuilder = (
   const titleId = 'badge-builder-title';
   let isDestroyed = false;
   let isLabelDirty = false;
-  let isShowLabelDirty = false;
   let shouldRestoreAnchorFocus = true;
 
   dialog.className = 'badge-builder';
@@ -204,6 +203,7 @@ export const createBadgeBuilder = (
     const definition = applyBadgePalette(
       getSelectedTechnology(),
       getSelectedPalette(),
+      showLabelInput.checked,
     );
     definition.style = badgeStyles.find(
       (style) => style === styleSelect.value,
@@ -307,16 +307,10 @@ export const createBadgeBuilder = (
   };
 
   const handlePaletteChange = (): void => {
-    if (!isShowLabelDirty) {
-      showLabelInput.checked = getSelectedPalette().showLabel;
-      updateLabelAvailability();
-    }
-
     updatePreview();
   };
 
   const handleShowLabelChange = (): void => {
-    isShowLabelDirty = true;
     updateLabelAvailability();
     updatePreview();
   };
@@ -398,10 +392,9 @@ export const createBadgeBuilder = (
         input.checked = index === 0;
       }
       isLabelDirty = false;
-      isShowLabelDirty = false;
       shouldRestoreAnchorFocus = true;
       labelInput.value = technologyBadgePresets[0].defaultLabel;
-      showLabelInput.checked = badgePalettes[0].showLabel;
+      showLabelInput.checked = true;
       styleSelect.value = 'flat';
       clickUrlInput.value = '';
       clickUrlInput.setCustomValidity('');

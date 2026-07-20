@@ -30,13 +30,12 @@ export interface TechnologyBadgePreset {
   defaultLabel?: string;
 }
 
-export type BadgePaletteId = 'brand' | 'brand-solid' | 'dark';
+export type BadgePaletteId = 'brand' | 'dark';
 
 export interface BadgePalette {
   id: BadgePaletteId;
   name: string;
   description: string;
-  showLabel: boolean;
   labelColor?: string;
   messageColor:
     | { source: 'brand' }

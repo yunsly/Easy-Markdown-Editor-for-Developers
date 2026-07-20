@@ -9,8 +9,8 @@ import {
 describe('applyBadgePalette', () => {
   const swift = technologyBadgePresets[0];
 
-  it('applies the labeled Brand palette', () => {
-    expect(applyBadgePalette(swift, badgePalettes[0])).toEqual({
+  it('applies the Brand palette with a label', () => {
+    expect(applyBadgePalette(swift, badgePalettes[0], true)).toEqual({
       label: 'language',
       message: 'Swift',
       labelColor: '555555',
@@ -21,8 +21,8 @@ describe('applyBadgePalette', () => {
     });
   });
 
-  it('applies the label-free Brand Solid palette', () => {
-    expect(applyBadgePalette(swift, badgePalettes[1])).toEqual({
+  it('applies the Brand palette without a label', () => {
+    expect(applyBadgePalette(swift, badgePalettes[0], false)).toEqual({
       message: 'Swift',
       messageColor: 'F05138',
       logo: 'swift',
@@ -31,18 +31,20 @@ describe('applyBadgePalette', () => {
     });
   });
 
-  it('applies the fixed Dark palette without mutating its inputs', () => {
+  it('applies the labeled Dark palette without mutating its inputs', () => {
     const technologyBefore = structuredClone(swift);
-    const paletteBefore = structuredClone(badgePalettes[2]);
+    const paletteBefore = structuredClone(badgePalettes[1]);
 
-    expect(applyBadgePalette(swift, badgePalettes[2])).toEqual({
+    expect(applyBadgePalette(swift, badgePalettes[1], true)).toEqual({
+      label: 'language',
       message: 'Swift',
+      labelColor: '555555',
       messageColor: '24292F',
       logo: 'swift',
       logoColor: 'white',
       style: 'flat',
     });
     expect(swift).toEqual(technologyBefore);
-    expect(badgePalettes[2]).toEqual(paletteBefore);
+    expect(badgePalettes[1]).toEqual(paletteBefore);
   });
 });
