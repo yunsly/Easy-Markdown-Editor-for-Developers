@@ -493,19 +493,20 @@ CodeMirror가 런타임에 생성한 기본 레이아웃 CSS가 Webview CSP에 �
 
 ## Badge Preset Builder Smoke Test
 
-- 실행일: 미실행
+- 실행일: 2026-07-20 (부분 실행)
 - 환경: Extension Development Host
 - 대상: `fixtures/badges.md` 및 임시 Markdown 파일
 - 편집기: Visual Markdown Editor
-- 결과: 대기
+- 결과: Palette 및 Show label 동작 통과, 나머지 항목 대기
 
 ### 확인 항목
 
 - [ ] `Badge` 버튼이 Builder dialog를 열고 모든 Badge UI 문구가 영어로 표시된다.
 - [ ] Technology 목록에서 각 카테고리의 프리셋을 선택할 수 있다.
-- [ ] Brand preset이 기술 brand color를 적용한다.
-- [ ] Dark preset이 동일한 dark background를 적용한다.
-- [ ] Brand와 Dark에서 `Show label`을 켜거나 끄면 palette를 바꾸지 않고 label만 추가되거나 제거된다.
+- [x] Color preset에는 Brand와 Dark만 표시된다.
+- [x] Brand preset이 기술 brand color를 적용한다.
+- [x] Dark preset이 동일한 dark background를 적용한다.
+- [x] Brand와 Dark에서 `Show label`을 켜거나 끄면 palette를 바꾸지 않고 label만 추가되거나 제거되며 preview와 삽입 결과에 반영된다.
 - [ ] Technology, Color preset, Label 및 Style 변경이 preview에 즉시 반영된다.
 - [ ] Preview loading 및 failure 상태가 dialog 안에서 명확하게 표시된다.
 - [ ] 빈 Click URL은 일반 image Markdown을 생성한다.
