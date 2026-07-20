@@ -23,6 +23,7 @@ export interface BadgeBuilder {
 
 interface BadgeImage {
   alt: string;
+  linkUrl?: string;
   src: string;
 }
 
@@ -51,6 +52,9 @@ export const createBadgeBuilder = (
   const styleField = document.createElement('label');
   const styleLabel = document.createElement('span');
   const styleSelect = document.createElement('select');
+  const clickUrlField = document.createElement('label');
+  const clickUrlLabel = document.createElement('span');
+  const clickUrlInput = document.createElement('input');
   const previewField = document.createElement('div');
   const previewLabel = document.createElement('span');
   const previewContainer = document.createElement('div');
@@ -138,6 +142,15 @@ export const createBadgeBuilder = (
   }
 
   styleField.append(styleLabel, styleSelect);
+  clickUrlField.className = 'badge-builder__field';
+  clickUrlLabel.className = 'badge-builder__label';
+  clickUrlLabel.textContent = 'Click URL (optional)';
+  clickUrlInput.className = 'badge-builder__input';
+  clickUrlInput.type = 'url';
+  clickUrlInput.inputMode = 'url';
+  clickUrlInput.setAttribute('autocomplete', 'url');
+  clickUrlInput.placeholder = 'https://example.com';
+  clickUrlField.append(clickUrlLabel, clickUrlInput);
   previewField.className = 'badge-builder__field';
   previewLabel.className = 'badge-builder__label';
   previewLabel.textContent = 'Preview';
@@ -155,6 +168,7 @@ export const createBadgeBuilder = (
     paletteField,
     labelOptions,
     styleField,
+    clickUrlField,
     previewField,
   );
   actions.className = 'badge-builder__actions';
@@ -243,11 +257,34 @@ export const createBadgeBuilder = (
   };
 
   const handleInsertClick = (): void => {
+    const linkUrl = clickUrlInput.value.trim();
+
+    if (linkUrl.length > 0) {
+      let protocol: string | undefined;
+
+      try {
+        protocol = new URL(linkUrl).protocol;
+      } catch {
+        protocol = undefined;
+      }
+
+      if (protocol !== 'http:' && protocol !== 'https:') {
+        clickUrlInput.setCustomValidity(
+          'Click URL은 http:// 또는 https://로 시작해야 합니다.',
+        );
+        clickUrlInput.reportValidity();
+        clickUrlInput.focus({ preventScroll: true });
+        return;
+      }
+    }
+
+    clickUrlInput.setCustomValidity('');
     const definition = getDefinition();
     const image = {
       alt: definition.label === undefined
         ? definition.message
         : `${definition.label}: ${definition.message}`,
+      ...(linkUrl.length > 0 ? { linkUrl } : {}),
       src: createShieldsBadgeUrl(definition),
     };
     shouldRestoreAnchorFocus = false;
@@ -292,6 +329,10 @@ export const createBadgeBuilder = (
     updatePreview();
   };
 
+  const handleClickUrlInput = (): void => {
+    clickUrlInput.setCustomValidity('');
+  };
+
   const handlePreviewLoad = (): void => {
     previewImage.hidden = false;
     previewStatus.hidden = true;
@@ -312,6 +353,7 @@ export const createBadgeBuilder = (
   showLabelInput.addEventListener('change', handleShowLabelChange);
   labelInput.addEventListener('input', handleLabelInput);
   styleSelect.addEventListener('change', handleStyleChange);
+  clickUrlInput.addEventListener('input', handleClickUrlInput);
   previewImage.addEventListener('load', handlePreviewLoad);
   previewImage.addEventListener('error', handlePreviewError);
 
@@ -332,6 +374,7 @@ export const createBadgeBuilder = (
       showLabelInput.removeEventListener('change', handleShowLabelChange);
       labelInput.removeEventListener('input', handleLabelInput);
       styleSelect.removeEventListener('change', handleStyleChange);
+      clickUrlInput.removeEventListener('input', handleClickUrlInput);
       previewImage.removeEventListener('load', handlePreviewLoad);
       previewImage.removeEventListener('error', handlePreviewError);
 
@@ -359,6 +402,8 @@ export const createBadgeBuilder = (
       labelInput.value = technologyBadgePresets[0].defaultLabel;
       showLabelInput.checked = badgePalettes[0].showLabel;
       styleSelect.value = 'flat';
+      clickUrlInput.value = '';
+      clickUrlInput.setCustomValidity('');
       updateLabelAvailability();
       updatePreview();
       anchor.setAttribute('aria-expanded', 'true');

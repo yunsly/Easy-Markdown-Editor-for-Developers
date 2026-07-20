@@ -15,8 +15,10 @@ import {
   bulletListSchema,
   codeBlockSchema,
   createCodeBlockCommand,
+  imageSchema,
   insertImageCommand,
   liftListItemCommand,
+  linkSchema,
   listItemSchema,
   orderedListSchema,
   turnIntoTextCommand,
@@ -178,7 +180,24 @@ export const runEditorToolbarAction = (
           : createCodeBlockCommand.key,
       );
     } else if (action === 'badge' && options.image !== undefined) {
-      commands.call(insertImageCommand.key, options.image);
+      const { alt, linkUrl, src } = options.image;
+
+      if (linkUrl === undefined) {
+        commands.call(insertImageCommand.key, { alt, src });
+      } else {
+        const linkMark = linkSchema.type(context).create({
+          href: linkUrl,
+          title: null,
+        });
+        const imageNode = imageSchema.type(context).create(
+          { alt, src, title: '' },
+          undefined,
+          [linkMark],
+        );
+        view.dispatch(
+          view.state.tr.replaceSelectionWith(imageNode).scrollIntoView(),
+        );
+      }
     } else if (action === 'table') {
       const { selection } = view.state;
       const isTableSelected = selection instanceof NodeSelection &&

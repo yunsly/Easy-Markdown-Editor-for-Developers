@@ -22,6 +22,7 @@ export type EditorToolbarAction =
 export interface EditorToolbarActionOptions {
   image?: {
     alt: string;
+    linkUrl?: string;
     src: string;
   };
   tableSize?: {
