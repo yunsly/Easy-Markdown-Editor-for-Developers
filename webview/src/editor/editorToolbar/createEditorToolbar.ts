@@ -6,6 +6,7 @@ import {
 } from './createTableSizePicker';
 
 export type EditorToolbarAction =
+  | 'badge'
   | 'blockquote'
   | 'bullet-list'
   | 'code-block'
@@ -49,6 +50,7 @@ const toolbarButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'code-block', label: '코드 블록', text: '</>' },
   { action: 'table', label: '표 삽입', text: 'Table' },
   { action: 'delete-table', label: '표 삭제', text: 'Delete Table' },
+  { action: 'badge', label: 'Badge 삽입', text: 'Badge' },
 ];
 
 const createToolbarButton = (

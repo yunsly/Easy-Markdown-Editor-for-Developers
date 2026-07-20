@@ -472,6 +472,7 @@ const initializeEditor = async (
     editorToolbar.buttons.get('blockquote')?.removeAttribute('disabled');
     editorToolbar.buttons.get('code-block')?.removeAttribute('disabled');
     editorToolbar.buttons.get('table')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('badge')?.removeAttribute('disabled');
     editor.editor.action(syncEditorToolbarState);
   } catch (error: unknown) {
     if (crepe === editor) {
