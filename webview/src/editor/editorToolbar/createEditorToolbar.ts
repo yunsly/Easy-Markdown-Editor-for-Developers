@@ -44,17 +44,17 @@ export interface EditorToolbar {
 }
 
 const toolbarButtons: readonly ToolbarButtonDefinition[] = [
-  { action: 'paragraph', label: '문단', text: '¶' },
-  { action: 'heading-1', label: '제목 1', text: 'H1' },
-  { action: 'heading-2', label: '제목 2', text: 'H2' },
-  { action: 'heading-3', label: '제목 3', text: 'H3' },
-  { action: 'bullet-list', label: '글머리 기호 목록', text: '• List' },
-  { action: 'ordered-list', label: '번호 매기기 목록', text: '1. List' },
-  { action: 'task-list', label: '체크리스트', text: 'Task' },
-  { action: 'blockquote', label: '인용문', text: 'Quote' },
-  { action: 'code-block', label: '코드 블록', text: '</>' },
-  { action: 'table', label: '표 삽입', text: 'Table' },
-  { action: 'delete-table', label: '표 삭제', text: 'Delete Table' },
+  { action: 'paragraph', label: 'Paragraph', text: '¶' },
+  { action: 'heading-1', label: 'Heading 1', text: 'H1' },
+  { action: 'heading-2', label: 'Heading 2', text: 'H2' },
+  { action: 'heading-3', label: 'Heading 3', text: 'H3' },
+  { action: 'bullet-list', label: 'Bulleted List', text: '• List' },
+  { action: 'ordered-list', label: 'Numbered List', text: '1. List' },
+  { action: 'task-list', label: 'Task List', text: 'Task' },
+  { action: 'blockquote', label: 'Blockquote', text: 'Quote' },
+  { action: 'code-block', label: 'Code Block', text: '</>' },
+  { action: 'table', label: 'Insert Table', text: 'Table' },
+  { action: 'delete-table', label: 'Delete Table', text: 'Delete Table' },
   { action: 'badge', label: 'Insert Badge', text: 'Badge' },
 ];
 
@@ -97,7 +97,7 @@ export const createEditorToolbar = (
   let tableSizePicker: TableSizePicker | undefined;
   toolbar.className = 'editor-toolbar';
   toolbar.setAttribute('role', 'toolbar');
-  toolbar.setAttribute('aria-label', '문서 편집');
+  toolbar.setAttribute('aria-label', 'Markdown Editor Toolbar');
   toolbar.setAttribute('aria-orientation', 'horizontal');
 
   for (const definition of toolbarButtons) {

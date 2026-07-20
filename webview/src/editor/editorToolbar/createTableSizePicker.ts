@@ -24,18 +24,18 @@ export const createTableSizePicker = (
   picker.className = 'editor-table-size-picker';
   picker.hidden = true;
   picker.setAttribute('role', 'dialog');
-  picker.setAttribute('aria-label', '표 크기 선택');
+  picker.setAttribute('aria-label', 'Select Table Size');
   status.className = 'editor-table-size-picker__status';
   status.setAttribute('aria-live', 'polite');
   grid.className = 'editor-table-size-picker__grid';
   grid.setAttribute('role', 'grid');
-  grid.setAttribute('aria-label', '표의 행과 열 선택');
+  grid.setAttribute('aria-label', 'Select Table Rows and Columns');
   anchor.setAttribute('aria-haspopup', 'dialog');
   anchor.setAttribute('aria-controls', picker.id);
   anchor.setAttribute('aria-expanded', 'false');
 
   const updateSelection = ({ row, col }: TableSize): void => {
-    status.textContent = `${row} × ${col} 표 (행 수는 헤더 포함)`;
+    status.textContent = `${row} × ${col} table (including header row)`;
 
     for (const cell of cells) {
       const cellRow = Number(cell.dataset.row);
@@ -102,7 +102,7 @@ export const createTableSizePicker = (
       cell.dataset.col = String(col);
       cell.setAttribute(
         'aria-label',
-        `${row}행 ${col}열 표 삽입 (행 수는 헤더 포함)`,
+        `Insert ${row} × ${col} table (including header row)`,
       );
       cell.addEventListener('mouseenter', () => {
         updateSelection({ row, col });
