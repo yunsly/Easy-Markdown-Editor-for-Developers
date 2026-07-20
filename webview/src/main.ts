@@ -20,6 +20,7 @@ import {
   onMessageFromExtension,
   postMessageToExtension,
 } from './vscodeApi';
+import { createBadgeBuilder } from './badge/createBadgeBuilder';
 import {
   createEditorToolbar,
   type EditorToolbarAction,
@@ -65,6 +66,13 @@ errorBanner.hidden = true;
 const editorRoot = document.createElement('div');
 editorRoot.className = 'editor-root';
 const editorToolbar = createEditorToolbar(handleEditorToolbarAction);
+const badgeButton = editorToolbar.buttons.get('badge');
+
+if (badgeButton === undefined) {
+  throw new Error('Missing Badge Toolbar button.');
+}
+
+const badgeBuilder = createBadgeBuilder(badgeButton);
 container.replaceChildren(errorBanner, editorToolbar.element, editorRoot);
 
 const showError = (message: string): void => {
@@ -129,6 +137,11 @@ function handleEditorToolbarAction(
   }
 
   try {
+    if (action === 'badge') {
+      badgeBuilder.open();
+      return;
+    }
+
     runEditorToolbarAction(crepe.editor, action, options);
   } catch (error: unknown) {
     reportEditorError(error, 'Failed to run editor toolbar action.');
@@ -534,6 +547,7 @@ window.addEventListener(
   () => {
     isDisposed = true;
     disposeMessageListener();
+    badgeBuilder.destroy();
     editorToolbar.destroy();
     editorRoot.removeEventListener(
       'compositionstart',

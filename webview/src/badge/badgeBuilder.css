@@ -1,0 +1,74 @@
+.badge-builder {
+  box-sizing: border-box;
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  padding: 20px;
+  overflow: auto;
+  color: var(--vscode-editorWidget-foreground);
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(
+    --vscode-editorWidget-border,
+    var(--vscode-contrastBorder, transparent)
+  );
+  border-radius: 6px;
+  box-shadow: 0 4px 16px var(--vscode-widget-shadow);
+}
+
+.badge-builder::backdrop {
+  background: color-mix(
+    in srgb,
+    var(--vscode-editor-background) 55%,
+    transparent
+  );
+}
+
+.badge-builder__title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.badge-builder__description {
+  margin: 12px 0 20px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.badge-builder__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.badge-builder__button {
+  min-width: 72px;
+  padding: 6px 12px;
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+  border: 1px solid transparent;
+  border-radius: 2px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.badge-builder__button:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.badge-builder__button:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
+
+.badge-builder__button--primary {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+}
+
+.badge-builder__button--primary:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.badge-builder__button:disabled {
+  color: var(--vscode-disabledForeground);
+  background: var(--vscode-button-secondaryBackground);
+  cursor: default;
+}
