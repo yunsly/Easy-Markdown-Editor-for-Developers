@@ -98,7 +98,7 @@ const featureConfigs = {
   },
   [CrepeFeature.Placeholder]: {
     mode: 'doc',
-    text: '내용을 입력하세요…',
+    text: 'Start writing…',
   },
 } satisfies NonNullable<CrepeConfig['featureConfigs']>;
 

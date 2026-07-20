@@ -252,7 +252,7 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
     });
 
     webview.html = `<!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta

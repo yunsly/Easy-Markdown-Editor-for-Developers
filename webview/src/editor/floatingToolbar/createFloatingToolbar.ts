@@ -51,11 +51,11 @@ type ToolbarAction =
 type ToolbarActionState = 'active' | 'inactive' | 'mixed';
 
 const toolbarButtons: readonly ToolbarButtonDefinition[] = [
-  { action: 'bold', label: '굵게', text: 'B' },
-  { action: 'italic', label: '기울임', text: 'I' },
-  { action: 'strikethrough', label: '취소선', text: 'S' },
-  { action: 'inlineCode', label: '인라인 코드', text: '</>' },
-  { action: 'link', label: '링크', text: 'Link' },
+  { action: 'bold', label: 'Bold', text: 'B' },
+  { action: 'italic', label: 'Italic', text: 'I' },
+  { action: 'strikethrough', label: 'Strikethrough', text: 'S' },
+  { action: 'inlineCode', label: 'Inline Code', text: '</>' },
+  { action: 'link', label: 'Link', text: 'Link' },
 ];
 
 const floatingToolbarTooltip = tooltipFactory(
@@ -69,7 +69,7 @@ const createToolbarContent = (
   const buttons = new Map<ToolbarAction, HTMLButtonElement>();
   toolbar.className = 'floating-toolbar';
   toolbar.setAttribute('role', 'toolbar');
-  toolbar.setAttribute('aria-label', '텍스트 서식');
+  toolbar.setAttribute('aria-label', 'Text Formatting');
   toolbar.setAttribute('aria-orientation', 'horizontal');
   toolbar.setAttribute('aria-keyshortcuts', 'Alt+F10');
 
