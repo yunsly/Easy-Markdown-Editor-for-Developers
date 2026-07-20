@@ -503,10 +503,10 @@ CodeMirror가 런타임에 생성한 기본 레이아웃 CSS가 Webview CSP에 �
 
 - [ ] `Badge` 버튼이 Builder dialog를 열고 모든 Badge UI 문구가 영어로 표시된다.
 - [ ] Technology 목록에서 각 카테고리의 프리셋을 선택할 수 있다.
-- [ ] Brand preset이 회색 label과 기술 brand color를 적용한다.
-- [ ] Brand Solid preset이 label 없이 기술 brand color를 적용한다.
-- [ ] Dark preset이 label 없이 동일한 dark background를 적용한다.
-- [ ] Technology, Color preset, Show label, Label 및 Style 변경이 preview에 즉시 반영된다.
+- [ ] Brand preset이 기술 brand color를 적용한다.
+- [ ] Dark preset이 동일한 dark background를 적용한다.
+- [ ] Brand와 Dark에서 `Show label`을 켜거나 끄면 palette를 바꾸지 않고 label만 추가되거나 제거된다.
+- [ ] Technology, Color preset, Label 및 Style 변경이 preview에 즉시 반영된다.
 - [ ] Preview loading 및 failure 상태가 dialog 안에서 명확하게 표시된다.
 - [ ] 빈 Click URL은 일반 image Markdown을 생성한다.
 - [ ] 유효한 HTTP(S) Click URL은 linked image Markdown을 생성한다.
@@ -514,7 +514,7 @@ CodeMirror가 런타임에 생성한 기본 레이아웃 CSS가 Webview CSP에 �
 - [ ] 현재 cursor 위치에 Badge를 삽입하고 dialog가 닫힌 뒤 Editor focus가 복귀한다.
 - [ ] Badge 삽입을 Undo 한 번과 Redo 한 번으로 되돌리고 다시 적용할 수 있다.
 - [ ] Badge 삽입 후 dirty state가 표시되고 저장 및 다시 열기가 성공한다.
-- [ ] `fixtures/badges.md`의 Brand, Brand Solid, Dark, 한글 label, 공백 및 특수문자가 보존된다.
+- [ ] `fixtures/badges.md`의 Brand/Dark label on·off, 한글 label, 공백 및 특수문자가 보존된다.
 - [ ] linked Badge가 GitHub Markdown의 `[![alt](image)](target)` 형식으로 저장된다.
 - [ ] 기존 Editor Toolbar, Table 편집 및 Floating Toolbar가 이전과 동일하게 동작한다.
 - [ ] Badge 사용 후 한글 IME, 외부 변경 동기화 및 여러 Markdown 탭 전환이 정상 동작한다.
