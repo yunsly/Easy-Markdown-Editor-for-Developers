@@ -520,3 +520,19 @@ CodeMirror가 런타임에 생성한 기본 레이아웃 CSS가 Webview CSP에 �
 - [x] 기존 Editor Toolbar, Table 편집 및 Floating Toolbar가 이전과 동일하게 동작한다.
 - [x] Badge 사용 후 한글 IME, 외부 변경 동기화 및 여러 Markdown 탭 전환이 정상 동작한다.
 - [x] Builder와 preview가 VS Code light 및 dark theme에서 읽기 쉽게 표시된다.
+
+## VSIX Installation Smoke Test
+
+- 실행일: 2026-07-20
+- 환경: 사용자 로컬 VS Code
+- 대상: `easy-markdown-editor-for-developers-0.0.1.vsix`
+- 확장 ID: `yunsly.easy-markdown-editor-for-developers`
+- SHA-256: `d627d2bb2501a86f01aadda3cbe87d19b0b6ea626f7d8ed8697acee333f519a0`
+- 결과: 통과
+
+### 확인 항목
+
+- [x] **Extensions: Install from VSIX...**에서 패키지가 오류 없이 설치된다.
+- [x] 설치된 확장이 **Easy Markdown Editor for Developers**라는 이름으로 표시된다.
+- [x] 설치 후 Markdown 파일을 확장 편집기로 열 수 있다.
+- [x] 설치된 패키지에서 편집기를 사용하는 동안 별도 문제가 발생하지 않는다.
