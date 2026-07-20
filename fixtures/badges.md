@@ -2,15 +2,19 @@
 
 This document verifies badge parsing, rendering, and Markdown round trips.
 
-## Brand
+## Brand with Label
 
 ![language: Swift](https://img.shields.io/badge/language-Swift-F05138?logo=swift&logoColor=white&labelColor=555555)
 
-## Brand Solid
+## Brand without Label
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 
-## Dark
+## Dark with Label
+
+![frontend: React](https://img.shields.io/badge/frontend-React-24292F?logo=react&logoColor=white&labelColor=555555)
+
+## Dark without Label
 
 ![React](https://img.shields.io/badge/React-24292F?logo=react&logoColor=white)
 
