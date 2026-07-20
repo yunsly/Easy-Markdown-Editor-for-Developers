@@ -21,8 +21,14 @@ export interface BadgeBuilder {
   open: () => void;
 }
 
+interface BadgeImage {
+  alt: string;
+  src: string;
+}
+
 export const createBadgeBuilder = (
   anchor: HTMLButtonElement,
+  insertBadge: (image: BadgeImage) => boolean,
 ): BadgeBuilder => {
   const dialog = document.createElement('dialog');
   const title = document.createElement('h2');
@@ -57,6 +63,7 @@ export const createBadgeBuilder = (
   let isDestroyed = false;
   let isLabelDirty = false;
   let isShowLabelDirty = false;
+  let shouldRestoreAnchorFocus = true;
 
   dialog.className = 'badge-builder';
   dialog.setAttribute('aria-labelledby', titleId);
@@ -158,7 +165,6 @@ export const createBadgeBuilder = (
     'badge-builder__button badge-builder__button--primary';
   insertButton.type = 'button';
   insertButton.textContent = 'Insert';
-  insertButton.disabled = true;
   anchor.setAttribute('aria-haspopup', 'dialog');
   anchor.setAttribute('aria-expanded', 'false');
   actions.append(cancelButton, insertButton);
@@ -229,7 +235,27 @@ export const createBadgeBuilder = (
   const handleDialogClose = (): void => {
     anchor.setAttribute('aria-expanded', 'false');
 
-    if (!isDestroyed) {
+    if (!isDestroyed && shouldRestoreAnchorFocus) {
+      anchor.focus({ preventScroll: true });
+    }
+
+    shouldRestoreAnchorFocus = true;
+  };
+
+  const handleInsertClick = (): void => {
+    const definition = getDefinition();
+    const image = {
+      alt: definition.label === undefined
+        ? definition.message
+        : `${definition.label}: ${definition.message}`,
+      src: createShieldsBadgeUrl(definition),
+    };
+    shouldRestoreAnchorFocus = false;
+    close();
+
+    const didInsert = insertBadge(image);
+
+    if (!didInsert && !isDestroyed) {
       anchor.focus({ preventScroll: true });
     }
   };
@@ -279,6 +305,7 @@ export const createBadgeBuilder = (
   };
 
   cancelButton.addEventListener('click', handleCancelClick);
+  insertButton.addEventListener('click', handleInsertClick);
   dialog.addEventListener('cancel', handleDialogCancel);
   dialog.addEventListener('close', handleDialogClose);
   technologySelect.addEventListener('change', handleTechnologyChange);
@@ -298,6 +325,7 @@ export const createBadgeBuilder = (
       isDestroyed = true;
       close();
       cancelButton.removeEventListener('click', handleCancelClick);
+      insertButton.removeEventListener('click', handleInsertClick);
       dialog.removeEventListener('cancel', handleDialogCancel);
       dialog.removeEventListener('close', handleDialogClose);
       technologySelect.removeEventListener('change', handleTechnologyChange);
@@ -327,6 +355,7 @@ export const createBadgeBuilder = (
       }
       isLabelDirty = false;
       isShowLabelDirty = false;
+      shouldRestoreAnchorFocus = true;
       labelInput.value = technologyBadgePresets[0].defaultLabel;
       showLabelInput.checked = badgePalettes[0].showLabel;
       styleSelect.value = 'flat';

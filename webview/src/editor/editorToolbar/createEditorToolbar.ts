@@ -20,6 +20,10 @@ export type EditorToolbarAction =
   | 'task-list';
 
 export interface EditorToolbarActionOptions {
+  image?: {
+    alt: string;
+    src: string;
+  };
   tableSize?: {
     col: number;
     row: number;

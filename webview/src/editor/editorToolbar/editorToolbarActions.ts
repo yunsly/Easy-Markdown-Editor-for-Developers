@@ -15,6 +15,7 @@ import {
   bulletListSchema,
   codeBlockSchema,
   createCodeBlockCommand,
+  insertImageCommand,
   liftListItemCommand,
   listItemSchema,
   orderedListSchema,
@@ -176,6 +177,8 @@ export const runEditorToolbarAction = (
           ? turnIntoTextCommand.key
           : createCodeBlockCommand.key,
       );
+    } else if (action === 'badge' && options.image !== undefined) {
+      commands.call(insertImageCommand.key, options.image);
     } else if (action === 'table') {
       const { selection } = view.state;
       const isTableSelected = selection instanceof NodeSelection &&

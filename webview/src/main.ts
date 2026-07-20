@@ -72,7 +72,7 @@ if (badgeButton === undefined) {
   throw new Error('Missing Badge Toolbar button.');
 }
 
-const badgeBuilder = createBadgeBuilder(badgeButton);
+const badgeBuilder = createBadgeBuilder(badgeButton, insertBadgeImage);
 container.replaceChildren(errorBanner, editorToolbar.element, editorRoot);
 
 const showError = (message: string): void => {
@@ -121,6 +121,28 @@ const reportEditorError = (error: unknown, fallback: string): void => {
   showError(message);
   postMessageToExtension({ type: 'reportError', message });
 };
+
+function insertBadgeImage(
+  image: NonNullable<EditorToolbarActionOptions['image']>,
+): boolean {
+  if (
+    isDisposed ||
+    isCreatingEditor ||
+    isComposing ||
+    isReplacingDocument ||
+    crepe === undefined
+  ) {
+    return false;
+  }
+
+  try {
+    runEditorToolbarAction(crepe.editor, 'badge', { image });
+    return true;
+  } catch (error: unknown) {
+    reportEditorError(error, 'Failed to insert Badge image.');
+    return false;
+  }
+}
 
 function handleEditorToolbarAction(
   action: EditorToolbarAction,
