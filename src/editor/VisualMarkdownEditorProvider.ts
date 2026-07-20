@@ -213,10 +213,12 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
           return;
         }
 
-        if (message.type !== 'ready' || didSendInitialDocument) {
+        if (message.type !== 'ready') {
           return;
         }
 
+        // VS Code can recreate a hidden Webview context when its tab is shown.
+        // Each new context needs the authoritative TextDocument snapshot.
         didSendInitialDocument = true;
 
         const initialDocument: ExtensionToWebviewMessage = {
