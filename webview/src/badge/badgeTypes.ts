@@ -10,6 +10,16 @@ export type BadgeCategory =
 
 export type BadgeStyle = 'flat' | 'flat-square' | 'for-the-badge';
 
+export interface BadgeDefinition {
+  label?: string;
+  message: string;
+  labelColor?: string;
+  messageColor: string;
+  logo?: string;
+  logoColor?: string;
+  style: BadgeStyle;
+}
+
 export interface TechnologyBadgePreset {
   id: string;
   name: string;
