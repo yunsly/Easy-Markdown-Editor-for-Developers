@@ -1,5 +1,7 @@
 import './badgeBuilder.css';
 
+import { technologyBadgePresets } from './badgePresets';
+
 export interface BadgeBuilder {
   close: () => void;
   destroy: () => void;
@@ -12,6 +14,10 @@ export const createBadgeBuilder = (
   const dialog = document.createElement('dialog');
   const title = document.createElement('h2');
   const description = document.createElement('p');
+  const controls = document.createElement('div');
+  const technologyField = document.createElement('label');
+  const technologyLabel = document.createElement('span');
+  const technologySelect = document.createElement('select');
   const actions = document.createElement('div');
   const cancelButton = document.createElement('button');
   const insertButton = document.createElement('button');
@@ -25,6 +31,21 @@ export const createBadgeBuilder = (
   title.textContent = 'Insert Badge';
   description.className = 'badge-builder__description';
   description.textContent = 'Badge 옵션을 선택해 Markdown에 삽입합니다.';
+  controls.className = 'badge-builder__controls';
+  technologyField.className = 'badge-builder__field';
+  technologyLabel.className = 'badge-builder__label';
+  technologyLabel.textContent = 'Technology';
+  technologySelect.className = 'badge-builder__select';
+
+  for (const preset of technologyBadgePresets) {
+    const option = document.createElement('option');
+    option.value = preset.id;
+    option.textContent = preset.name;
+    technologySelect.append(option);
+  }
+
+  technologyField.append(technologyLabel, technologySelect);
+  controls.append(technologyField);
   actions.className = 'badge-builder__actions';
   cancelButton.className = 'badge-builder__button';
   cancelButton.type = 'button';
@@ -37,7 +58,7 @@ export const createBadgeBuilder = (
   anchor.setAttribute('aria-haspopup', 'dialog');
   anchor.setAttribute('aria-expanded', 'false');
   actions.append(cancelButton, insertButton);
-  dialog.append(title, description, actions);
+  dialog.append(title, description, controls, actions);
   document.body.append(dialog);
 
   const close = (): void => {
@@ -84,9 +105,10 @@ export const createBadgeBuilder = (
         return;
       }
 
+      technologySelect.value = technologyBadgePresets[0].id;
       anchor.setAttribute('aria-expanded', 'true');
       dialog.showModal();
-      cancelButton.focus({ preventScroll: true });
+      technologySelect.focus({ preventScroll: true });
     },
   };
 };

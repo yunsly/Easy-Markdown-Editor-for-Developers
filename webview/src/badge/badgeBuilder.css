@@ -28,8 +28,44 @@
 }
 
 .badge-builder__description {
-  margin: 12px 0 20px;
+  margin: 12px 0 16px;
   color: var(--vscode-descriptionForeground);
+}
+
+.badge-builder__controls {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.badge-builder__field {
+  display: grid;
+  gap: 6px;
+}
+
+.badge-builder__label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-builder__select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 8px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(
+    --vscode-dropdown-border,
+    var(--vscode-contrastBorder, transparent)
+  );
+  border-radius: 2px;
+  font: inherit;
+}
+
+.badge-builder__select:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
 }
 
 .badge-builder__actions {
