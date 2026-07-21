@@ -14,7 +14,14 @@ import {
   type ExtensionToWebviewMessage,
   type WebviewToExtensionMessage,
 } from '../shared/messages';
-import { classifyAttachment } from './attachment/attachmentPaths';
+import {
+  classifyAttachment,
+  createMarkdownRelativePath,
+  isPathInsideRoot,
+  resolveAttachmentFileName,
+  validateAttachmentDestinationFolder,
+  validateAttachmentFileName,
+} from './attachment/attachmentPaths';
 import { applyDocumentChange } from './documentSync';
 
 type DocumentChangedMessage = Extract<
@@ -25,6 +32,11 @@ type DocumentChangedMessage = Extract<
 type RequestAttachmentSourceMessage = Extract<
   WebviewToExtensionMessage,
   { type: 'requestAttachmentSource' }
+>;
+
+type CopyAttachmentMessage = Extract<
+  WebviewToExtensionMessage,
+  { type: 'copyAttachment' }
 >;
 
 interface PendingDocumentApply {
@@ -243,6 +255,105 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
       }
     };
 
+    const handleCopyAttachment = async (
+      message: CopyAttachmentMessage,
+    ): Promise<void> => {
+      if (isDisposed) {
+        return;
+      }
+
+      const sendFailure = (errorMessage: string): void => {
+        const failedMessage: ExtensionToWebviewMessage = {
+          type: 'attachmentFailed',
+          requestId: message.requestId,
+          message: errorMessage,
+        };
+        void webview.postMessage(failedMessage);
+      };
+      const sourceUri = pendingAttachmentSources.get(message.requestId);
+      const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
+      const destinationFolder = message.destinationFolder.trim();
+      const requestedFileName = message.fileName.trim();
+
+      if (sourceUri === undefined) {
+        sendFailure('This attachment request is no longer available. Select the file again.');
+        return;
+      }
+
+      if (
+        document.isClosed ||
+        document.isUntitled ||
+        document.uri.scheme !== 'file' ||
+        workspaceFolder?.uri.scheme !== 'file'
+      ) {
+        sendFailure('Attachments require an open Markdown file in a local workspace.');
+        return;
+      }
+
+      if (workspace.fs.isWritableFileSystem(workspaceFolder.uri.scheme) === false) {
+        sendFailure('The current workspace is read-only.');
+        return;
+      }
+
+      const destinationError = validateAttachmentDestinationFolder(
+        destinationFolder,
+      );
+      const fileNameError = validateAttachmentFileName(requestedFileName);
+
+      if (destinationError !== undefined || fileNameError !== undefined) {
+        sendFailure(destinationError ?? fileNameError ?? 'Invalid attachment destination.');
+        return;
+      }
+
+      const destinationFolderUri = Uri.joinPath(
+        workspaceFolder.uri,
+        ...destinationFolder.split('/'),
+      );
+
+      if (!isPathInsideRoot(workspaceFolder.uri.path, destinationFolderUri.path)) {
+        sendFailure('Attachment destination must remain inside the current workspace.');
+        return;
+      }
+
+      try {
+        await workspace.fs.createDirectory(destinationFolderUri);
+        const finalFileName = await resolveAttachmentFileName(
+          requestedFileName,
+          async (candidate) => {
+            try {
+              await workspace.fs.stat(Uri.joinPath(destinationFolderUri, candidate));
+              return true;
+            } catch {
+              return false;
+            }
+          },
+        );
+        const attachmentUri = Uri.joinPath(destinationFolderUri, finalFileName);
+        await workspace.fs.copy(sourceUri, attachmentUri, { overwrite: false });
+
+        if (isDisposed) {
+          return;
+        }
+
+        pendingAttachmentSources.delete(message.requestId);
+        const readyMessage: ExtensionToWebviewMessage = {
+          type: 'attachmentReady',
+          requestId: message.requestId,
+          markdownPath: createMarkdownRelativePath(
+            document.uri.path,
+            attachmentUri.path,
+          ),
+          finalFileName,
+          detectedKind: classifyAttachment(finalFileName),
+        };
+        void webview.postMessage(readyMessage);
+      } catch {
+        if (!isDisposed) {
+          sendFailure('The attachment could not be copied into the workspace.');
+        }
+      }
+    };
+
     const documentChangeSubscription = workspace.onDidChangeTextDocument(
       (event) => {
         if (
@@ -315,6 +426,11 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
 
         if (message.type === 'requestAttachmentSource') {
           void handleRequestAttachmentSource(message);
+          return;
+        }
+
+        if (message.type === 'copyAttachment') {
+          void handleCopyAttachment(message);
           return;
         }
 
