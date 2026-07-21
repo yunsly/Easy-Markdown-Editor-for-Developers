@@ -65,3 +65,80 @@ export function encodeMarkdownPathForUrl(markdownPath: string): string {
     encodeURIComponent(segment).replaceAll('(', '%28').replaceAll(')', '%29')
   ).join('/');
 }
+
+const WINDOWS_RESERVED_NAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
+const INVALID_FILE_NAME_CHARACTERS = /[<>:"/\\|?*]/;
+
+const validatePathSegment = (segment: string): string | undefined => {
+  if (segment.length === 0) {
+    return 'Path segments must not be empty.';
+  }
+
+  if (segment === '.' || segment === '..') {
+    return 'Relative path traversal is not allowed.';
+  }
+
+  if (
+    INVALID_FILE_NAME_CHARACTERS.test(segment) ||
+    Array.from(segment).some((character) => character.charCodeAt(0) < 32) ||
+    segment.endsWith(' ') ||
+    segment.endsWith('.') ||
+    WINDOWS_RESERVED_NAME.test(segment)
+  ) {
+    return 'The path contains a name that is not portable across supported platforms.';
+  }
+
+  return undefined;
+};
+
+export function validateAttachmentDestinationFolder(
+  destinationFolder: string,
+): string | undefined {
+  if (destinationFolder.length === 0) {
+    return 'Destination folder must not be empty.';
+  }
+
+  if (
+    destinationFolder.startsWith('/') ||
+    destinationFolder.includes('\\') ||
+    path.posix.isAbsolute(destinationFolder)
+  ) {
+    return 'Destination folder must be a workspace-relative path using forward slashes.';
+  }
+
+  for (const segment of destinationFolder.split('/')) {
+    const error = validatePathSegment(segment);
+
+    if (error !== undefined) {
+      return error;
+    }
+  }
+
+  return undefined;
+}
+
+export function validateAttachmentFileName(
+  fileName: string,
+): string | undefined {
+  if (fileName.length === 0) {
+    return 'File name must not be empty.';
+  }
+
+  return validatePathSegment(fileName);
+}
+
+export function isPathInsideRoot(
+  rootPath: string,
+  candidatePath: string,
+): boolean {
+  const relativePath = path.posix.relative(
+    normalizePathSeparators(rootPath),
+    normalizePathSeparators(candidatePath),
+  );
+
+  return relativePath === '' || (
+    relativePath !== '..' &&
+    !relativePath.startsWith('../') &&
+    !path.posix.isAbsolute(relativePath)
+  );
+}

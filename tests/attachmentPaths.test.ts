@@ -5,7 +5,10 @@ import {
   createMarkdownRelativePath,
   encodeMarkdownPathForUrl,
   escapeMarkdownDestination,
+  isPathInsideRoot,
   resolveAttachmentFileName,
+  validateAttachmentDestinationFolder,
+  validateAttachmentFileName,
 } from '../src/editor/attachment/attachmentPaths';
 
 describe('classifyAttachment', () => {
@@ -111,5 +114,66 @@ describe('Markdown attachment path encoding', () => {
     )).toBe(
       '../assets/%ED%8E%B8%EC%A7%91%20%ED%99%94%EB%A9%B4%20%28%EC%B5%9C%EC%A2%85%29%20%23100%25.png',
     );
+  });
+});
+
+describe('attachment destination validation', () => {
+  it.each([
+    'assets',
+    'docs/assets',
+    '문서 자료/이미지 파일',
+    'release-2026.07/files',
+  ])('accepts the safe destination folder %s', (destinationFolder) => {
+    expect(
+      validateAttachmentDestinationFolder(destinationFolder),
+    ).toBeUndefined();
+  });
+
+  it.each([
+    '',
+    '/absolute/assets',
+    String.raw`C:\absolute\assets`,
+    'docs/../assets',
+    'docs//assets',
+    'docs/./assets',
+    'docs/assets.',
+    'docs/NUL',
+    'docs/a\0b',
+  ])('rejects the unsafe destination folder %s', (destinationFolder) => {
+    expect(
+      validateAttachmentDestinationFolder(destinationFolder),
+    ).toBeTypeOf('string');
+  });
+
+  it.each([
+    'preview.png',
+    '편집 화면 (최종) #100%.png',
+    'archive.tar.gz',
+  ])('accepts the safe file name %s', (fileName) => {
+    expect(validateAttachmentFileName(fileName)).toBeUndefined();
+  });
+
+  it.each([
+    '',
+    '../preview.png',
+    'nested/preview.png',
+    String.raw`nested\preview.png`,
+    'preview?.png',
+    'preview.png.',
+    'COM1.txt',
+    'a\0b.png',
+  ])('rejects the unsafe file name %s', (fileName) => {
+    expect(validateAttachmentFileName(fileName)).toBeTypeOf('string');
+  });
+
+  it('recognizes candidates inside the selected workspace root', () => {
+    expect(
+      isPathInsideRoot('/workspace', '/workspace/docs/assets'),
+    ).toBe(true);
+    expect(isPathInsideRoot('/workspace', '/workspace')).toBe(true);
+    expect(
+      isPathInsideRoot('/workspace', '/workspace-other/assets'),
+    ).toBe(false);
+    expect(isPathInsideRoot('/workspace', '/outside/assets')).toBe(false);
   });
 });
