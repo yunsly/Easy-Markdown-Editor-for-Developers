@@ -4,15 +4,23 @@ Easy Markdown Editor for Developers is a VS Code custom editor for editing Markd
 
 ## Features
 
-- Edit headings, paragraphs, blockquotes, code blocks, bulleted lists, numbered lists, and task lists visually.
-- Format selected text with bold, italic, strikethrough, inline code, and links.
-- Insert tables with a keyboard-accessible size picker and delete the active table from its contextual tooltip.
-- Build Shields.io technology badges from presets, with optional labels and click-through links.
-- Attach one local file at the cursor as a relative Markdown image or link.
-- Switch between rendered Visual editing and syntax-highlighted Markdown Source editing in the same tab.
-- Keep multiple Markdown tabs synchronized with their own VS Code documents.
-- Follow VS Code light and dark themes.
-- Support Korean IME and mixed-language editing without replacing the editor during normal typing.
+* Edit headings, paragraphs, blockquotes, code blocks, bulleted lists, numbered lists, and task lists visually.
+
+* Format selected text with bold, italic, strikethrough, inline code, and links.
+
+* Insert tables with a keyboard-accessible size picker and delete the active table from its contextual tooltip.
+
+* Build Shields.io technology badges from presets, with optional labels and click-through links.
+
+* Attach one local file at the cursor as a relative Markdown image or link.
+
+* Switch between rendered Visual editing and syntax-highlighted Markdown Source editing in the same tab.
+
+* Keep multiple Markdown tabs synchronized with their own VS Code documents.
+
+* Follow VS Code light and dark themes.
+
+* Support Korean IME and mixed-language editing without replacing the editor during normal typing.
 
 ## Usage
 
