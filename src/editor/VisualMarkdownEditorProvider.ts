@@ -56,12 +56,21 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
   ): void {
     const { webview } = webviewPanel;
     const webviewRoot = Uri.joinPath(this.extensionUri, 'dist', 'webview');
+    const documentWorkspaceFolder = workspace.getWorkspaceFolder(document.uri);
+    const canLoadWorkspaceResources =
+      document.uri.scheme === 'file' &&
+      documentWorkspaceFolder?.uri.scheme === 'file';
 
     webview.options = {
       enableScripts: true,
       enableForms: false,
       enableCommandUris: false,
-      localResourceRoots: [webviewRoot],
+      localResourceRoots: [
+        webviewRoot,
+        ...(canLoadWorkspaceResources && documentWorkspaceFolder !== undefined
+          ? [documentWorkspaceFolder.uri]
+          : []),
+      ],
     };
 
     const scriptUri = webview.asWebviewUri(Uri.joinPath(webviewRoot, 'main.js'));
@@ -446,6 +455,13 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
           type: 'initDocument',
           text: document.getText(),
           version: document.version,
+          ...(canLoadWorkspaceResources
+            ? {
+                resourceBaseUri: webview.asWebviewUri(
+                  Uri.joinPath(document.uri, '..'),
+                ).toString(),
+              }
+            : {}),
         };
 
         void webview.postMessage(initialDocument).then(

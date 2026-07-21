@@ -77,3 +77,23 @@ describe('attachment message validation', () => {
     expect(isExtensionToWebviewMessage(message)).toBe(false);
   });
 });
+
+describe('document resource base message validation', () => {
+  it('accepts an optional Webview resource base URI', () => {
+    expect(isExtensionToWebviewMessage({
+      type: 'initDocument',
+      text: '# Document',
+      version: 1,
+      resourceBaseUri: 'https://file+.vscode-resource.vscode-cdn.net/project',
+    })).toBe(true);
+  });
+
+  it('rejects a non-string Webview resource base URI', () => {
+    expect(isExtensionToWebviewMessage({
+      type: 'initDocument',
+      text: '# Document',
+      version: 1,
+      resourceBaseUri: 42,
+    })).toBe(false);
+  });
+});

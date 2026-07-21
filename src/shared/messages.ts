@@ -3,6 +3,7 @@ export type ExtensionToWebviewMessage =
       type: 'initDocument';
       text: string;
       version: number;
+      resourceBaseUri?: string;
     }
   | {
       type: 'replaceDocument';
@@ -94,6 +95,14 @@ export function isExtensionToWebviewMessage(
 
   switch (value.type) {
     case 'initDocument':
+      return (
+        typeof value.text === 'string' &&
+        isNonNegativeSafeInteger(value.version) &&
+        (
+          value.resourceBaseUri === undefined ||
+          typeof value.resourceBaseUri === 'string'
+        )
+      );
     case 'replaceDocument':
       return (
         typeof value.text === 'string' &&
