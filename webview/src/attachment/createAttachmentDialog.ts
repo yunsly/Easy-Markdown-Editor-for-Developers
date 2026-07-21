@@ -1,5 +1,7 @@
 import './attachmentDialog.css';
 
+import { validateAttachmentForm } from './validateAttachmentForm';
+
 export type AttachmentInsertKind = 'image' | 'link';
 
 export interface AttachmentSource {
@@ -194,9 +196,22 @@ export const createAttachmentDialog = (
 
     const destinationFolder = destinationInput.value.trim();
     const fileName = fileNameInput.value.trim();
+    const text = textInput.value.trim();
+    const error = validateAttachmentForm({
+      destinationFolder,
+      fileName,
+      originalFileName: activeSource.originalFileName,
+      text,
+    });
 
-    if (destinationFolder.length === 0 || fileName.length === 0) {
-      status.textContent = 'Destination folder and file name are required.';
+    if (error !== undefined) {
+      status.textContent = error.message;
+      const input = error.field === 'destinationFolder'
+        ? destinationInput
+        : error.field === 'fileName'
+          ? fileNameInput
+          : textInput;
+      input.focus({ preventScroll: true });
       return;
     }
 
