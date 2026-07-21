@@ -35,6 +35,10 @@ import {
 import { updateEditorToolbarState } from './editor/editorToolbar/editorToolbarState';
 import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
 import { registerWorkspaceImageView } from './editor/registerWorkspaceImageView';
+import {
+  createMarkdownSourceEditor,
+  type MarkdownSourceEditor,
+} from './editor/source/createMarkdownSourceEditor';
 import { registerTableDeleteTooltip } from './editor/table/createTableDeleteTooltip';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
@@ -72,6 +76,9 @@ errorBanner.hidden = true;
 
 const editorRoot = document.createElement('div');
 editorRoot.className = 'editor-root';
+const sourceEditorRoot = document.createElement('div');
+sourceEditorRoot.className = 'source-editor-root';
+sourceEditorRoot.hidden = true;
 const editorModeState = createEditorModeState();
 const editorToolbar = createEditorToolbar(
   handleEditorToolbarAction,
@@ -112,7 +119,12 @@ const attachmentDialog = createAttachmentDialog(
     }
   },
 );
-container.replaceChildren(errorBanner, editorToolbar.element, editorRoot);
+container.replaceChildren(
+  errorBanner,
+  editorToolbar.element,
+  editorRoot,
+  sourceEditorRoot,
+);
 
 const showError = (message: string): void => {
   errorBanner.textContent = message;
@@ -142,6 +154,7 @@ const featureConfigs = {
 } satisfies NonNullable<CrepeConfig['featureConfigs']>;
 
 let crepe: Crepe | undefined;
+let sourceEditor: MarkdownSourceEditor | undefined;
 let latestMarkdown: string | undefined;
 let pendingMarkdownUpdate: string | undefined;
 let markdownUpdateTimer: number | undefined;
@@ -342,6 +355,7 @@ const handleReplaceDocument = (
   }
 
   if (markdown === latestMarkdown) {
+    sourceEditor?.replaceMarkdown(markdown);
     documentVersion = version;
     return;
   }
@@ -350,6 +364,7 @@ const handleReplaceDocument = (
 
   try {
     crepe.editor.action(replaceAll(markdown));
+    sourceEditor?.replaceMarkdown(markdown);
     latestMarkdown = markdown;
     documentVersion = version;
   } catch (error: unknown) {
@@ -556,6 +571,12 @@ const initializeEditor = async (
 
   try {
     await editor.create();
+    sourceEditor = createMarkdownSourceEditor({
+      markdown,
+      onChange: () => {},
+      parent: sourceEditorRoot,
+      styleNonce,
+    });
     editorToolbar.buttons.get('paragraph')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-1')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-2')?.removeAttribute('disabled');
@@ -571,6 +592,8 @@ const initializeEditor = async (
     editor.editor.action(syncEditorToolbarState);
   } catch (error: unknown) {
     if (crepe === editor) {
+      sourceEditor?.destroy();
+      sourceEditor = undefined;
       crepe = undefined;
       latestMarkdown = undefined;
       documentVersion = undefined;
@@ -587,6 +610,8 @@ const initializeEditor = async (
     isCreatingEditor = false;
 
     if (isDisposed && crepe === editor) {
+      sourceEditor?.destroy();
+      sourceEditor = undefined;
       crepe = undefined;
       latestMarkdown = undefined;
       documentVersion = undefined;
@@ -711,6 +736,8 @@ window.addEventListener(
       documentVersion = undefined;
       pendingDocumentChange = undefined;
       pendingExternalDocument = undefined;
+      sourceEditor?.destroy();
+      sourceEditor = undefined;
       void destroyEditor(editor);
     }
   },
