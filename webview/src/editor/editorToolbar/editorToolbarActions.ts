@@ -37,6 +37,12 @@ import type {
   EditorToolbarActionOptions,
 } from './createEditorToolbar';
 
+export interface CopiedAttachment {
+  kind: 'image' | 'link';
+  src: string;
+  text: string;
+}
+
 const findAncestorDepth = (
   position: ResolvedPos,
   nodeTypes: readonly NodeType[],
@@ -220,6 +226,34 @@ export const runEditorToolbarAction = (
       ) {
         view.dispatch(view.state.tr.deleteSelection());
       }
+    }
+
+    view.focus();
+  });
+};
+
+export const insertCopiedAttachment = (
+  editor: Editor,
+  attachment: CopiedAttachment,
+): void => {
+  editor.action((context) => {
+    const view = context.get(editorViewCtx);
+
+    if (attachment.kind === 'image') {
+      const commands = context.get(commandsCtx);
+      commands.call(insertImageCommand.key, {
+        alt: attachment.text,
+        src: attachment.src,
+      });
+    } else {
+      const linkMark = linkSchema.type(context).create({
+        href: attachment.src,
+        title: null,
+      });
+      const linkText = view.state.schema.text(attachment.text, [linkMark]);
+      view.dispatch(
+        view.state.tr.replaceSelectionWith(linkText, false).scrollIntoView(),
+      );
     }
 
     view.focus();

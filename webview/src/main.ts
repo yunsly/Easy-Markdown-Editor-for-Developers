@@ -27,7 +27,10 @@ import {
   type EditorToolbarAction,
   type EditorToolbarActionOptions,
 } from './editor/editorToolbar/createEditorToolbar';
-import { runEditorToolbarAction } from './editor/editorToolbar/editorToolbarActions';
+import {
+  insertCopiedAttachment,
+  runEditorToolbarAction,
+} from './editor/editorToolbar/editorToolbarActions';
 import { updateEditorToolbarState } from './editor/editorToolbar/editorToolbarState';
 import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
 
@@ -612,6 +615,41 @@ const disposeMessageListener = onMessageFromExtension((message) => {
       showError(message.message);
       pendingAttachmentRequestId = undefined;
       attachButton.disabled = false;
+    }
+  } else if (message.type === 'attachmentReady') {
+    if (message.requestId !== pendingAttachmentRequestId) {
+      return;
+    }
+
+    const insertion = attachmentDialog.complete(message.requestId);
+    pendingAttachmentRequestId = undefined;
+    attachButton.disabled = false;
+
+    if (
+      insertion === undefined ||
+      isDisposed ||
+      isCreatingEditor ||
+      isComposing ||
+      isReplacingDocument ||
+      crepe === undefined
+    ) {
+      showError(
+        `The file was copied to ${message.markdownPath}, but it could not be inserted.`,
+      );
+      return;
+    }
+
+    try {
+      insertCopiedAttachment(crepe.editor, {
+        kind: insertion.kind,
+        src: message.markdownPath,
+        text: insertion.text,
+      });
+    } catch (error: unknown) {
+      reportEditorError(
+        error,
+        `The file was copied to ${message.markdownPath}, but it could not be inserted.`,
+      );
     }
   }
 });
