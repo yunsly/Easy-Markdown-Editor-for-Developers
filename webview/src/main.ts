@@ -5,7 +5,7 @@ import {
 } from '@milkdown/crepe';
 import { EditorView as CodeMirrorView } from '@codemirror/view';
 import type { Ctx } from '@milkdown/kit/ctx';
-import { EditorStatus } from '@milkdown/kit/core';
+import { editorViewCtx, EditorStatus } from '@milkdown/kit/core';
 import {
   redoCommand,
   undoCommand,
@@ -22,7 +22,10 @@ import {
 } from './vscodeApi';
 import { createBadgeBuilder } from './badge/createBadgeBuilder';
 import { createAttachmentDialog } from './attachment/createAttachmentDialog';
-import { createEditorModeState } from './editor/editorMode';
+import {
+  createEditorModeState,
+  type EditorMode,
+} from './editor/editorMode';
 import {
   createEditorToolbar,
   type EditorToolbarAction,
@@ -82,9 +85,7 @@ sourceEditorRoot.hidden = true;
 const editorModeState = createEditorModeState();
 const editorToolbar = createEditorToolbar(
   handleEditorToolbarAction,
-  (mode) => {
-    editorModeState.setMode(mode);
-  },
+  handleEditorModeRequest,
 );
 editorToolbar.modeControl.setEnabled('source', false);
 const unsubscribeEditorMode = editorModeState.subscribe((mode) => {
@@ -156,6 +157,7 @@ const featureConfigs = {
 let crepe: Crepe | undefined;
 let sourceEditor: MarkdownSourceEditor | undefined;
 let latestMarkdown: string | undefined;
+let visualMarkdownSnapshot: string | undefined;
 let pendingMarkdownUpdate: string | undefined;
 let markdownUpdateTimer: number | undefined;
 let documentVersion: number | undefined;
@@ -166,6 +168,7 @@ let isCreatingEditor = false;
 let isComposing = false;
 let isDisposed = false;
 let isReplacingDocument = false;
+let isSwitchingMode = false;
 let pendingAttachmentRequestId: string | undefined;
 
 const reportEditorError = (error: unknown, fallback: string): void => {
@@ -183,6 +186,7 @@ function insertBadgeImage(
     isCreatingEditor ||
     isComposing ||
     isReplacingDocument ||
+    editorModeState.getMode() !== 'visual' ||
     crepe === undefined
   ) {
     return false;
@@ -206,6 +210,7 @@ function handleEditorToolbarAction(
     isCreatingEditor ||
     isComposing ||
     isReplacingDocument ||
+    editorModeState.getMode() !== 'visual' ||
     crepe === undefined
   ) {
     return;
@@ -236,6 +241,14 @@ function handleEditorToolbarAction(
 }
 
 const syncEditorToolbarState = (context: Ctx): void => {
+  if (editorModeState.getMode() !== 'visual') {
+    for (const button of editorToolbar.buttons.values()) {
+      button.disabled = true;
+    }
+
+    return;
+  }
+
   const isTableActive = updateEditorToolbarState(context, editorToolbar);
 
   if (
@@ -271,6 +284,19 @@ const clearPendingMarkdownUpdate = (): void => {
   clearMarkdownUpdateTimer();
 
   pendingMarkdownUpdate = undefined;
+};
+
+const flushPendingMarkdownUpdate = (): void => {
+  clearMarkdownUpdateTimer();
+  const markdownToRecord = pendingMarkdownUpdate;
+  pendingMarkdownUpdate = undefined;
+
+  if (markdownToRecord === undefined) {
+    return;
+  }
+
+  latestMarkdown = markdownToRecord;
+  sendLatestMarkdownUpdate();
 };
 
 const sendLatestMarkdownUpdate = (): void => {
@@ -366,6 +392,7 @@ const handleReplaceDocument = (
     crepe.editor.action(replaceAll(markdown));
     sourceEditor?.replaceMarkdown(markdown);
     latestMarkdown = markdown;
+    visualMarkdownSnapshot = markdown;
     documentVersion = version;
   } catch (error: unknown) {
     reportEditorError(
@@ -377,13 +404,12 @@ const handleReplaceDocument = (
   }
 };
 
-const schedulePendingMarkdownUpdate = (editor: Crepe): void => {
+const schedulePendingMarkdownUpdate = (): void => {
   clearMarkdownUpdateTimer();
 
   if (
     isDisposed ||
     isComposing ||
-    crepe !== editor ||
     pendingMarkdownUpdate === undefined
   ) {
     return;
@@ -397,7 +423,6 @@ const schedulePendingMarkdownUpdate = (editor: Crepe): void => {
     if (
       isDisposed ||
       isComposing ||
-      crepe !== editor ||
       markdownToRecord === undefined
     ) {
       return;
@@ -409,14 +434,12 @@ const schedulePendingMarkdownUpdate = (editor: Crepe): void => {
 };
 
 const queueMarkdownUpdate = (
-  editor: Crepe,
   markdown: string,
   previousMarkdown: string,
 ): void => {
   if (
     isDisposed ||
     isReplacingDocument ||
-    crepe !== editor ||
     markdown === previousMarkdown
   ) {
     return;
@@ -438,7 +461,7 @@ const queueMarkdownUpdate = (
     return;
   }
 
-  schedulePendingMarkdownUpdate(editor);
+  schedulePendingMarkdownUpdate();
 };
 
 const handleCompositionStart = (): void => {
@@ -449,10 +472,95 @@ const handleCompositionStart = (): void => {
 const handleCompositionEnd = (): void => {
   isComposing = false;
 
-  if (crepe !== undefined) {
-    schedulePendingMarkdownUpdate(crepe);
+  schedulePendingMarkdownUpdate();
+};
+
+const handleSourceSaveKeydown = (event: KeyboardEvent): void => {
+  const isSave =
+    (event.metaKey || event.ctrlKey) &&
+    !event.altKey &&
+    !event.shiftKey &&
+    event.key.toLowerCase() === 's';
+
+  if (isSave && !isComposing) {
+    flushPendingMarkdownUpdate();
   }
 };
+
+const setVisualToolbarEnabled = (enabled: boolean): void => {
+  for (const button of editorToolbar.buttons.values()) {
+    button.disabled = !enabled;
+  }
+
+  if (enabled && crepe?.editor.status === EditorStatus.Created) {
+    crepe.editor.action(syncEditorToolbarState);
+  }
+};
+
+function handleEditorModeRequest(mode: EditorMode): void {
+  if (
+    isDisposed ||
+    isCreatingEditor ||
+    isReplacingDocument ||
+    isSwitchingMode ||
+    isComposing ||
+    mode === editorModeState.getMode() ||
+    crepe === undefined ||
+    sourceEditor === undefined ||
+    document.querySelector(
+      'dialog[open], .editor-table-size-picker:not([hidden])',
+    ) !== null ||
+    pendingAttachmentRequestId !== undefined
+  ) {
+    return;
+  }
+
+  isSwitchingMode = true;
+
+  try {
+    flushPendingMarkdownUpdate();
+
+    if (mode === 'source') {
+      if (latestMarkdown === undefined) {
+        return;
+      }
+
+      badgeBuilder.close();
+      sourceEditor.replaceMarkdown(latestMarkdown);
+      editorRoot.hidden = true;
+      sourceEditorRoot.hidden = false;
+      editorModeState.setMode('source');
+      setVisualToolbarEnabled(false);
+      sourceEditor.focus();
+      return;
+    }
+
+    const markdown = sourceEditor.getMarkdown();
+
+    if (markdown !== visualMarkdownSnapshot) {
+      isReplacingDocument = true;
+
+      try {
+        crepe.editor.action(replaceAll(markdown));
+        visualMarkdownSnapshot = markdown;
+      } finally {
+        isReplacingDocument = false;
+      }
+    }
+
+    sourceEditorRoot.hidden = true;
+    editorRoot.hidden = false;
+    editorModeState.setMode('visual');
+    setVisualToolbarEnabled(true);
+    crepe.editor.action((context) => {
+      context.get(editorViewCtx).focus();
+    });
+  } catch (error: unknown) {
+    reportEditorError(error, 'Failed to switch editor mode.');
+  } finally {
+    isSwitchingMode = false;
+  }
+}
 
 const handleHistoryKeydown = (event: KeyboardEvent): void => {
   const key = event.key.toLowerCase();
@@ -507,6 +615,11 @@ const handleWorkbenchShortcutKeydown = (event: KeyboardEvent): void => {
 
 editorRoot.addEventListener('compositionstart', handleCompositionStart);
 editorRoot.addEventListener('compositionend', handleCompositionEnd);
+sourceEditorRoot.addEventListener('compositionstart', handleCompositionStart);
+sourceEditorRoot.addEventListener('compositionend', handleCompositionEnd);
+sourceEditorRoot.addEventListener('keydown', handleSourceSaveKeydown, {
+  capture: true,
+});
 editorRoot.addEventListener('keydown', handleHistoryKeydown, {
   capture: true,
 });
@@ -559,12 +672,14 @@ const initializeEditor = async (
       });
     });
     listener.markdownUpdated((_context, updatedMarkdown, previousMarkdown) => {
-      queueMarkdownUpdate(editor, updatedMarkdown, previousMarkdown);
+      visualMarkdownSnapshot = updatedMarkdown;
+      queueMarkdownUpdate(updatedMarkdown, previousMarkdown);
     });
   });
 
   crepe = editor;
   latestMarkdown = markdown;
+  visualMarkdownSnapshot = markdown;
   documentVersion = version;
   pendingDocumentChange = undefined;
   nextChangeId = 1;
@@ -573,10 +688,13 @@ const initializeEditor = async (
     await editor.create();
     sourceEditor = createMarkdownSourceEditor({
       markdown,
-      onChange: () => {},
+      onChange: (updatedMarkdown, previousMarkdown) => {
+        queueMarkdownUpdate(updatedMarkdown, previousMarkdown);
+      },
       parent: sourceEditorRoot,
       styleNonce,
     });
+    editorToolbar.modeControl.setEnabled('source', true);
     editorToolbar.buttons.get('paragraph')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-1')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-2')?.removeAttribute('disabled');
@@ -596,6 +714,7 @@ const initializeEditor = async (
       sourceEditor = undefined;
       crepe = undefined;
       latestMarkdown = undefined;
+      visualMarkdownSnapshot = undefined;
       documentVersion = undefined;
       pendingDocumentChange = undefined;
       pendingExternalDocument = undefined;
@@ -614,6 +733,7 @@ const initializeEditor = async (
       sourceEditor = undefined;
       crepe = undefined;
       latestMarkdown = undefined;
+      visualMarkdownSnapshot = undefined;
       documentVersion = undefined;
       pendingDocumentChange = undefined;
       pendingExternalDocument = undefined;
@@ -721,18 +841,31 @@ window.addEventListener(
       'compositionend',
       handleCompositionEnd,
     );
+    sourceEditorRoot.removeEventListener(
+      'compositionstart',
+      handleCompositionStart,
+    );
+    sourceEditorRoot.removeEventListener(
+      'compositionend',
+      handleCompositionEnd,
+    );
+    sourceEditorRoot.removeEventListener('keydown', handleSourceSaveKeydown, {
+      capture: true,
+    });
     editorRoot.removeEventListener('keydown', handleHistoryKeydown, {
       capture: true,
     });
     editorRoot.removeEventListener('keydown', handleWorkbenchShortcutKeydown);
     isComposing = false;
     isReplacingDocument = false;
+    isSwitchingMode = false;
     clearPendingMarkdownUpdate();
 
     if (!isCreatingEditor && crepe !== undefined) {
       const editor = crepe;
       crepe = undefined;
       latestMarkdown = undefined;
+      visualMarkdownSnapshot = undefined;
       documentVersion = undefined;
       pendingDocumentChange = undefined;
       pendingExternalDocument = undefined;

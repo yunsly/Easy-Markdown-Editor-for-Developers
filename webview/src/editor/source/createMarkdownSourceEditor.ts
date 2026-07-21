@@ -23,7 +23,7 @@ import { tags } from '@lezer/highlight';
 
 interface MarkdownSourceEditorOptions {
   markdown: string;
-  onChange: (markdown: string) => void;
+  onChange: (markdown: string, previousMarkdown: string) => void;
   parent: HTMLElement;
   styleNonce: string;
 }
@@ -151,7 +151,10 @@ export const createMarkdownSourceEditor = (
           return;
         }
 
-        options.onChange(update.state.doc.toString());
+        options.onChange(
+          update.state.doc.toString(),
+          update.startState.doc.toString(),
+        );
       }),
     ],
   });
