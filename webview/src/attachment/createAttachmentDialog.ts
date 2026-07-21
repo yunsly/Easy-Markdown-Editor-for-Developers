@@ -173,6 +173,11 @@ export const createAttachmentDialog = (
 
   const handleDialogCancel = (event: Event): void => {
     event.preventDefault();
+
+    if (isCopying) {
+      return;
+    }
+
     cancelActiveRequest();
   };
 
@@ -181,6 +186,7 @@ export const createAttachmentDialog = (
     activeSource = undefined;
     isCopying = false;
     attachButton.disabled = false;
+    cancelButton.disabled = false;
 
     if (!isDestroyed && shouldRestoreAnchorFocus) {
       anchor.focus({ preventScroll: true });
@@ -217,6 +223,7 @@ export const createAttachmentDialog = (
 
     isCopying = true;
     attachButton.disabled = true;
+    cancelButton.disabled = true;
     status.textContent = 'Copying attachment…';
     requestCopy({
       requestId: activeSource.requestId,
@@ -267,6 +274,7 @@ export const createAttachmentDialog = (
 
       isCopying = false;
       attachButton.disabled = false;
+      cancelButton.disabled = false;
       status.textContent = message;
       return true;
     },

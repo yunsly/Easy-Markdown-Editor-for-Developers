@@ -94,6 +94,7 @@ const attachmentDialog = createAttachmentDialog(
   },
   (requestId) => {
     if (requestId === pendingAttachmentRequestId) {
+      postMessageToExtension({ type: 'cancelAttachment', requestId });
       pendingAttachmentRequestId = undefined;
       attachButton.disabled = false;
     }

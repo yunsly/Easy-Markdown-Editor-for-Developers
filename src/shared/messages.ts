@@ -66,6 +66,10 @@ export type WebviewToExtensionMessage =
       requestId: string;
       destinationFolder: string;
       fileName: string;
+    }
+  | {
+      type: 'cancelAttachment';
+      requestId: string;
     };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -164,6 +168,8 @@ export function isWebviewToExtensionMessage(
         typeof value.destinationFolder === 'string' &&
         typeof value.fileName === 'string'
       );
+    case 'cancelAttachment':
+      return hasRequestId(value);
     default:
       return false;
   }

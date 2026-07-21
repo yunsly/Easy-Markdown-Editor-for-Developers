@@ -17,6 +17,10 @@ describe('attachment message validation', () => {
       destinationFolder: 'docs/assets',
       fileName: '편집 화면.png',
     },
+    {
+      type: 'cancelAttachment',
+      requestId: 'request-1',
+    },
   ])('accepts a valid Webview message', (message) => {
     expect(isWebviewToExtensionMessage(message)).toBe(true);
   });

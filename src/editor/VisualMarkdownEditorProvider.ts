@@ -443,6 +443,11 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
           return;
         }
 
+        if (message.type === 'cancelAttachment') {
+          pendingAttachmentSources.delete(message.requestId);
+          return;
+        }
+
         if (message.type !== 'ready') {
           return;
         }
