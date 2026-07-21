@@ -6,6 +6,7 @@ import {
 } from './createTableSizePicker';
 
 export type EditorToolbarAction =
+  | 'attach'
   | 'badge'
   | 'blockquote'
   | 'bullet-list'
@@ -56,6 +57,7 @@ const toolbarButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'table', label: 'Insert Table', text: 'Table' },
   { action: 'delete-table', label: 'Delete Table', text: 'Delete Table' },
   { action: 'badge', label: 'Insert Badge', text: 'Badge' },
+  { action: 'attach', label: 'Attach file', text: 'Attach' },
 ];
 
 const createToolbarButton = (
