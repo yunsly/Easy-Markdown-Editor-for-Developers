@@ -62,8 +62,8 @@ export const createEditorModeControl = (
       }
 
       event.preventDefault();
-      selectEnabledMode(targetMode);
       buttons.get(targetMode)?.focus({ preventScroll: true });
+      selectEnabledMode(targetMode);
     });
     buttons.set(mode, button);
     control.append(button);

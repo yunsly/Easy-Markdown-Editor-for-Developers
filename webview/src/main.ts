@@ -170,6 +170,11 @@ let isDisposed = false;
 let isReplacingDocument = false;
 let isSwitchingMode = false;
 let pendingAttachmentRequestId: string | undefined;
+let restoreScrollFrame: number | undefined;
+const editorScrollPositions: Record<EditorMode, number> = {
+  source: 0,
+  visual: 0,
+};
 
 const reportEditorError = (error: unknown, fallback: string): void => {
   const message = error instanceof Error ? error.message : fallback;
@@ -497,6 +502,20 @@ const setVisualToolbarEnabled = (enabled: boolean): void => {
   }
 };
 
+const restoreModeScroll = (mode: EditorMode): void => {
+  if (restoreScrollFrame !== undefined) {
+    window.cancelAnimationFrame(restoreScrollFrame);
+  }
+
+  restoreScrollFrame = window.requestAnimationFrame(() => {
+    restoreScrollFrame = undefined;
+
+    if (!isDisposed && editorModeState.getMode() === mode) {
+      window.scrollTo(0, editorScrollPositions[mode]);
+    }
+  });
+};
+
 function handleEditorModeRequest(mode: EditorMode): void {
   if (
     isDisposed ||
@@ -518,6 +537,7 @@ function handleEditorModeRequest(mode: EditorMode): void {
   isSwitchingMode = true;
 
   try {
+    editorScrollPositions[editorModeState.getMode()] = window.scrollY;
     flushPendingMarkdownUpdate();
 
     if (mode === 'source') {
@@ -532,6 +552,7 @@ function handleEditorModeRequest(mode: EditorMode): void {
       editorModeState.setMode('source');
       setVisualToolbarEnabled(false);
       sourceEditor.focus();
+      restoreModeScroll('source');
       return;
     }
 
@@ -555,6 +576,7 @@ function handleEditorModeRequest(mode: EditorMode): void {
     crepe.editor.action((context) => {
       context.get(editorViewCtx).focus();
     });
+    restoreModeScroll('visual');
   } catch (error: unknown) {
     reportEditorError(error, 'Failed to switch editor mode.');
   } finally {
@@ -859,6 +881,10 @@ window.addEventListener(
     isComposing = false;
     isReplacingDocument = false;
     isSwitchingMode = false;
+    if (restoreScrollFrame !== undefined) {
+      window.cancelAnimationFrame(restoreScrollFrame);
+      restoreScrollFrame = undefined;
+    }
     clearPendingMarkdownUpdate();
 
     if (!isCreatingEditor && crepe !== undefined) {
