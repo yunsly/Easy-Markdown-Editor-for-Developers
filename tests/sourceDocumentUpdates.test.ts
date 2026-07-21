@@ -8,6 +8,7 @@ import {
   createSourceDocumentReplacement,
   isUserSourceDocumentUpdate,
   programmaticSourceUpdate,
+  shouldReplaceVisualDocument,
 } from '../webview/src/editor/source/sourceDocumentUpdates';
 
 const fixtureDirectory = resolve(process.cwd(), 'fixtures');
@@ -74,5 +75,12 @@ describe('source document updates', () => {
     expect(
       isUserSourceDocumentUpdate(transaction.docChanged, [transaction]),
     ).toBe(false);
+    expect(shouldReplaceVisualDocument(markdown, markdown)).toBe(false);
+  });
+
+  it('replaces the Visual document only after a Source edit', () => {
+    expect(shouldReplaceVisualDocument('# Updated\n', '# Original\n')).toBe(
+      true,
+    );
   });
 });

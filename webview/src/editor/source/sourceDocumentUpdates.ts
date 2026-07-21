@@ -45,3 +45,8 @@ export const isUserSourceDocumentUpdate = (
     transaction.docChanged &&
     transaction.annotation(programmaticSourceUpdate) !== true,
 );
+
+export const shouldReplaceVisualDocument = (
+  sourceMarkdown: string,
+  visualMarkdownSnapshot: string | undefined,
+): boolean => sourceMarkdown !== visualMarkdownSnapshot;

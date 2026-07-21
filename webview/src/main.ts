@@ -42,6 +42,7 @@ import {
   createMarkdownSourceEditor,
   type MarkdownSourceEditor,
 } from './editor/source/createMarkdownSourceEditor';
+import { shouldReplaceVisualDocument } from './editor/source/sourceDocumentUpdates';
 import { registerTableDeleteTooltip } from './editor/table/createTableDeleteTooltip';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
@@ -558,7 +559,7 @@ function handleEditorModeRequest(mode: EditorMode): void {
 
     const markdown = sourceEditor.getMarkdown();
 
-    if (markdown !== visualMarkdownSnapshot) {
+    if (shouldReplaceVisualDocument(markdown, visualMarkdownSnapshot)) {
       isReplacingDocument = true;
 
       try {
