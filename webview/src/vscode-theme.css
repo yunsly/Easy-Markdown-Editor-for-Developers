@@ -30,6 +30,22 @@
   caret-color: var(--vscode-editorCursor-foreground);
 }
 
+.editor-root .milkdown .ProseMirror hr {
+  background-color: color-mix(
+    in srgb,
+    var(--vscode-editor-foreground),
+    transparent 55%
+  );
+}
+
+.editor-root .milkdown .ProseMirror hr.ProseMirror-selectednode {
+  background-color: color-mix(
+    in srgb,
+    var(--vscode-editor-foreground),
+    transparent 20%
+  );
+}
+
 .editor-root .milkdown .milkdown-list-item-block li .label-wrapper {
   color: var(--vscode-editor-foreground);
 }
