@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import path from 'node:path';
 
 import { Uri, window, workspace } from 'vscode';
 import type {
@@ -13,11 +14,17 @@ import {
   type ExtensionToWebviewMessage,
   type WebviewToExtensionMessage,
 } from '../shared/messages';
+import { classifyAttachment } from './attachment/attachmentPaths';
 import { applyDocumentChange } from './documentSync';
 
 type DocumentChangedMessage = Extract<
   WebviewToExtensionMessage,
   { type: 'documentChanged' }
+>;
+
+type RequestAttachmentSourceMessage = Extract<
+  WebviewToExtensionMessage,
+  { type: 'requestAttachmentSource' }
 >;
 
 interface PendingDocumentApply {
@@ -52,6 +59,8 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
     let isApplyingDocumentChange = false;
     let isDisposed = false;
     let pendingDocumentApply: PendingDocumentApply | undefined;
+    let isSelectingAttachment = false;
+    const pendingAttachmentSources = new Map<string, Uri>();
 
     const reportError = (errorMessage: string): void => {
       const showErrorMessage: ExtensionToWebviewMessage = {
@@ -145,6 +154,95 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
       }
     };
 
+    const handleRequestAttachmentSource = async (
+      message: RequestAttachmentSourceMessage,
+    ): Promise<void> => {
+      if (isDisposed || isSelectingAttachment) {
+        return;
+      }
+
+      const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
+
+      if (
+        document.isUntitled ||
+        document.uri.scheme !== 'file' ||
+        workspaceFolder?.uri.scheme !== 'file'
+      ) {
+        const failedMessage: ExtensionToWebviewMessage = {
+          type: 'attachmentFailed',
+          requestId: message.requestId,
+          message: 'Attachments require a saved Markdown file in a local workspace.',
+        };
+        void webview.postMessage(failedMessage);
+        return;
+      }
+
+      isSelectingAttachment = true;
+
+      try {
+        const selectedUris = await window.showOpenDialog({
+          canSelectFiles: true,
+          canSelectFolders: false,
+          canSelectMany: false,
+          title: 'Select a file to attach',
+        });
+
+        if (isDisposed) {
+          return;
+        }
+
+        const sourceUri = selectedUris?.[0];
+
+        if (sourceUri === undefined) {
+          const cancelledMessage: ExtensionToWebviewMessage = {
+            type: 'attachmentCancelled',
+            requestId: message.requestId,
+          };
+          void webview.postMessage(cancelledMessage);
+          return;
+        }
+
+        if (sourceUri.scheme !== 'file') {
+          const failedMessage: ExtensionToWebviewMessage = {
+            type: 'attachmentFailed',
+            requestId: message.requestId,
+            message: 'Only local files can be attached.',
+          };
+          void webview.postMessage(failedMessage);
+          return;
+        }
+
+        const originalFileName = path.posix.basename(sourceUri.path);
+        const documentFolder = path.posix.dirname(document.uri.path);
+        const defaultDestinationFolder = path.posix.relative(
+          workspaceFolder.uri.path,
+          path.posix.join(documentFolder, 'assets'),
+        );
+        pendingAttachmentSources.clear();
+        pendingAttachmentSources.set(message.requestId, sourceUri);
+
+        const selectedMessage: ExtensionToWebviewMessage = {
+          type: 'attachmentSourceSelected',
+          requestId: message.requestId,
+          originalFileName,
+          detectedKind: classifyAttachment(originalFileName),
+          defaultDestinationFolder,
+        };
+        void webview.postMessage(selectedMessage);
+      } catch {
+        if (!isDisposed) {
+          const failedMessage: ExtensionToWebviewMessage = {
+            type: 'attachmentFailed',
+            requestId: message.requestId,
+            message: 'The selected attachment file could not be opened.',
+          };
+          void webview.postMessage(failedMessage);
+        }
+      } finally {
+        isSelectingAttachment = false;
+      }
+    };
+
     const documentChangeSubscription = workspace.onDidChangeTextDocument(
       (event) => {
         if (
@@ -215,6 +313,11 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
           return;
         }
 
+        if (message.type === 'requestAttachmentSource') {
+          void handleRequestAttachmentSource(message);
+          return;
+        }
+
         if (message.type !== 'ready') {
           return;
         }
@@ -249,6 +352,7 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
     webviewPanel.onDidDispose(() => {
       isDisposed = true;
       pendingDocumentApply = undefined;
+      pendingAttachmentSources.clear();
       messageSubscription.dispose();
       documentChangeSubscription.dispose();
     });
