@@ -22,6 +22,7 @@ import {
 } from './vscodeApi';
 import { createBadgeBuilder } from './badge/createBadgeBuilder';
 import { createAttachmentDialog } from './attachment/createAttachmentDialog';
+import { createEditorModeState } from './editor/editorMode';
 import {
   createEditorToolbar,
   type EditorToolbarAction,
@@ -71,7 +72,17 @@ errorBanner.hidden = true;
 
 const editorRoot = document.createElement('div');
 editorRoot.className = 'editor-root';
-const editorToolbar = createEditorToolbar(handleEditorToolbarAction);
+const editorModeState = createEditorModeState();
+const editorToolbar = createEditorToolbar(
+  handleEditorToolbarAction,
+  (mode) => {
+    editorModeState.setMode(mode);
+  },
+);
+editorToolbar.modeControl.setEnabled('source', false);
+const unsubscribeEditorMode = editorModeState.subscribe((mode) => {
+  editorToolbar.modeControl.setMode(mode);
+});
 const getToolbarButton = (
   action: EditorToolbarAction,
 ): HTMLButtonElement => {
@@ -510,7 +521,10 @@ const initializeEditor = async (
 
   registerFloatingToolbar(editor.editor);
   registerTableDeleteTooltip(editor.editor, {
-    canShow: () => !isDisposed && !isReplacingDocument,
+    canShow: () =>
+      !isDisposed &&
+      !isReplacingDocument &&
+      editorModeState.getMode() === 'visual',
   });
 
   editor.on((listener) => {
@@ -672,6 +686,7 @@ window.addEventListener(
     disposeMessageListener();
     badgeBuilder.destroy();
     attachmentDialog.destroy();
+    unsubscribeEditorMode();
     editorToolbar.destroy();
     editorRoot.removeEventListener(
       'compositionstart',

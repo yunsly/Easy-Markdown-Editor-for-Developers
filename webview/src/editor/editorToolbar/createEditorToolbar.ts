@@ -1,5 +1,10 @@
 import './editorToolbar.css';
 
+import type { EditorMode } from '../editorMode';
+import {
+  createEditorModeControl,
+  type EditorModeControl,
+} from './createEditorModeControl';
 import {
   createTableSizePicker,
   type TableSizePicker,
@@ -41,6 +46,7 @@ export interface EditorToolbar {
   buttons: ReadonlyMap<EditorToolbarAction, HTMLButtonElement>;
   destroy: () => void;
   element: HTMLElement;
+  modeControl: EditorModeControl;
 }
 
 const toolbarButtons: readonly ToolbarButtonDefinition[] = [
@@ -91,9 +97,12 @@ export const createEditorToolbar = (
     action: EditorToolbarAction,
     options?: EditorToolbarActionOptions,
   ) => void,
+  selectMode: (mode: EditorMode) => void,
 ): EditorToolbar => {
   const toolbar = document.createElement('div');
+  const spacer = document.createElement('div');
   const buttons = new Map<EditorToolbarAction, HTMLButtonElement>();
+  const modeControl = createEditorModeControl({ selectMode });
   let tableSizePicker: TableSizePicker | undefined;
   toolbar.className = 'editor-toolbar';
   toolbar.setAttribute('role', 'toolbar');
@@ -117,6 +126,10 @@ export const createEditorToolbar = (
     toolbar.append(button);
   }
 
+  spacer.className = 'editor-toolbar__spacer';
+  spacer.setAttribute('aria-hidden', 'true');
+  toolbar.append(spacer, modeControl.element);
+
   const tableButton = buttons.get('table');
 
   if (tableButton !== undefined) {
@@ -129,8 +142,10 @@ export const createEditorToolbar = (
     buttons,
     destroy: () => {
       tableSizePicker?.destroy();
+      modeControl.destroy();
       toolbar.replaceChildren();
     },
     element: toolbar,
+    modeControl,
   };
 };
