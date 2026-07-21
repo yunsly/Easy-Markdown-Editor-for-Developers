@@ -17,6 +17,29 @@ export type ExtensionToWebviewMessage =
   | {
       type: 'showError';
       message: string;
+    }
+  | {
+      type: 'attachmentSourceSelected';
+      requestId: string;
+      originalFileName: string;
+      detectedKind: 'file' | 'image';
+      defaultDestinationFolder: string;
+    }
+  | {
+      type: 'attachmentReady';
+      requestId: string;
+      markdownPath: string;
+      finalFileName: string;
+      detectedKind: 'file' | 'image';
+    }
+  | {
+      type: 'attachmentCancelled';
+      requestId: string;
+    }
+  | {
+      type: 'attachmentFailed';
+      requestId: string;
+      message: string;
     };
 
 export type WebviewToExtensionMessage =
@@ -32,6 +55,16 @@ export type WebviewToExtensionMessage =
   | {
       type: 'reportError';
       message: string;
+    }
+  | {
+      type: 'requestAttachmentSource';
+      requestId: string;
+    }
+  | {
+      type: 'copyAttachment';
+      requestId: string;
+      destinationFolder: string;
+      fileName: string;
     };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -42,6 +75,14 @@ function isNonNegativeSafeInteger(value: unknown): value is number {
   return (
     typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
   );
+}
+
+function isAttachmentKind(value: unknown): value is 'file' | 'image' {
+  return value === 'file' || value === 'image';
+}
+
+function hasRequestId(value: Record<string, unknown>): boolean {
+  return typeof value.requestId === 'string' && value.requestId.length > 0;
 }
 
 export function isExtensionToWebviewMessage(
@@ -65,6 +106,24 @@ export function isExtensionToWebviewMessage(
       );
     case 'showError':
       return typeof value.message === 'string';
+    case 'attachmentSourceSelected':
+      return (
+        hasRequestId(value) &&
+        typeof value.originalFileName === 'string' &&
+        isAttachmentKind(value.detectedKind) &&
+        typeof value.defaultDestinationFolder === 'string'
+      );
+    case 'attachmentReady':
+      return (
+        hasRequestId(value) &&
+        typeof value.markdownPath === 'string' &&
+        typeof value.finalFileName === 'string' &&
+        isAttachmentKind(value.detectedKind)
+      );
+    case 'attachmentCancelled':
+      return hasRequestId(value);
+    case 'attachmentFailed':
+      return hasRequestId(value) && typeof value.message === 'string';
     default:
       return false;
   }
@@ -88,6 +147,14 @@ export function isWebviewToExtensionMessage(
       );
     case 'reportError':
       return typeof value.message === 'string';
+    case 'requestAttachmentSource':
+      return hasRequestId(value);
+    case 'copyAttachment':
+      return (
+        hasRequestId(value) &&
+        typeof value.destinationFolder === 'string' &&
+        typeof value.fileName === 'string'
+      );
     default:
       return false;
   }
