@@ -8,6 +8,7 @@ import {
   createSourceDocumentReplacement,
   isUserSourceDocumentUpdate,
   programmaticSourceUpdate,
+  shouldQueueMarkdownUpdate,
   shouldReplaceVisualDocument,
 } from '../webview/src/editor/source/sourceDocumentUpdates';
 
@@ -82,5 +83,68 @@ describe('source document updates', () => {
     expect(shouldReplaceVisualDocument('# Updated\n', '# Original\n')).toBe(
       true,
     );
+  });
+
+  it('ignores a deferred Visual normalization update on open', () => {
+    expect(shouldQueueMarkdownUpdate(
+      '# Normalized\n',
+      '# Parsed\n',
+      {
+        activeMode: 'visual',
+        isCreatingEditor: false,
+        isReplacingDocument: false,
+        isSwitchingMode: false,
+        origin: 'visual',
+        visualUserMutationObserved: false,
+      },
+    )).toBe(false);
+  });
+
+  it('queues Visual Markdown only after a user mutation', () => {
+    expect(shouldQueueMarkdownUpdate(
+      '# 직접 편집\n',
+      '# Before\n',
+      {
+        activeMode: 'visual',
+        isCreatingEditor: false,
+        isReplacingDocument: false,
+        isSwitchingMode: false,
+        origin: 'visual',
+        visualUserMutationObserved: true,
+      },
+    )).toBe(true);
+  });
+
+  it('queues user Source updates without Visual mutation state', () => {
+    expect(shouldQueueMarkdownUpdate(
+      '# Source edit\n',
+      '# Before\n',
+      {
+        activeMode: 'source',
+        isCreatingEditor: false,
+        isReplacingDocument: false,
+        isSwitchingMode: false,
+        origin: 'source',
+        visualUserMutationObserved: false,
+      },
+    )).toBe(true);
+  });
+
+  it('ignores updates from an inactive editor or document replacement', () => {
+    const policy = {
+      activeMode: 'source' as const,
+      isCreatingEditor: false,
+      isReplacingDocument: false,
+      isSwitchingMode: false,
+      origin: 'visual' as const,
+      visualUserMutationObserved: true,
+    };
+
+    expect(shouldQueueMarkdownUpdate('After', 'Before', policy)).toBe(false);
+    expect(shouldQueueMarkdownUpdate('After', 'Before', {
+      ...policy,
+      activeMode: 'visual',
+      isReplacingDocument: true,
+    })).toBe(false);
   });
 });

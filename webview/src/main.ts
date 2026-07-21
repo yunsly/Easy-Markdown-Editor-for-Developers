@@ -42,7 +42,10 @@ import {
   createMarkdownSourceEditor,
   type MarkdownSourceEditor,
 } from './editor/source/createMarkdownSourceEditor';
-import { shouldReplaceVisualDocument } from './editor/source/sourceDocumentUpdates';
+import {
+  shouldQueueMarkdownUpdate,
+  shouldReplaceVisualDocument,
+} from './editor/source/sourceDocumentUpdates';
 import { registerTableDeleteTooltip } from './editor/table/createTableDeleteTooltip';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
@@ -170,6 +173,7 @@ let isComposing = false;
 let isDisposed = false;
 let isReplacingDocument = false;
 let isSwitchingMode = false;
+let visualUserMutationObserved = false;
 let pendingAttachmentRequestId: string | undefined;
 let restoreScrollFrame: number | undefined;
 const editorScrollPositions: Record<EditorMode, number> = {
@@ -182,6 +186,18 @@ const reportEditorError = (error: unknown, fallback: string): void => {
 
   showError(message);
   postMessageToExtension({ type: 'reportError', message });
+};
+
+const markVisualUserMutation = (): void => {
+  if (
+    !isDisposed &&
+    !isCreatingEditor &&
+    !isReplacingDocument &&
+    !isSwitchingMode &&
+    editorModeState.getMode() === 'visual'
+  ) {
+    visualUserMutationObserved = true;
+  }
 };
 
 function insertBadgeImage(
@@ -199,6 +215,7 @@ function insertBadgeImage(
   }
 
   try {
+    markVisualUserMutation();
     runEditorToolbarAction(crepe.editor, 'badge', { image });
     return true;
   } catch (error: unknown) {
@@ -240,6 +257,7 @@ function handleEditorToolbarAction(
       return;
     }
 
+    markVisualUserMutation();
     runEditorToolbarAction(crepe.editor, action, options);
   } catch (error: unknown) {
     reportEditorError(error, 'Failed to run editor toolbar action.');
@@ -393,6 +411,7 @@ const handleReplaceDocument = (
   }
 
   isReplacingDocument = true;
+  visualUserMutationObserved = false;
 
   try {
     crepe.editor.action(replaceAll(markdown));
@@ -440,15 +459,26 @@ const schedulePendingMarkdownUpdate = (): void => {
 };
 
 const queueMarkdownUpdate = (
+  origin: EditorMode,
   markdown: string,
   previousMarkdown: string,
 ): void => {
   if (
     isDisposed ||
-    isReplacingDocument ||
-    markdown === previousMarkdown
+    !shouldQueueMarkdownUpdate(markdown, previousMarkdown, {
+      activeMode: editorModeState.getMode(),
+      isCreatingEditor,
+      isReplacingDocument,
+      isSwitchingMode,
+      origin,
+      visualUserMutationObserved,
+    })
   ) {
     return;
+  }
+
+  if (origin === 'visual') {
+    visualMarkdownSnapshot = markdown;
   }
 
   if (markdown === latestMarkdown) {
@@ -470,7 +500,11 @@ const queueMarkdownUpdate = (
   schedulePendingMarkdownUpdate();
 };
 
-const handleCompositionStart = (): void => {
+const handleCompositionStart = (event: CompositionEvent): void => {
+  if (event.currentTarget === editorRoot) {
+    markVisualUserMutation();
+  }
+
   isComposing = true;
   clearMarkdownUpdateTimer();
 };
@@ -535,11 +569,23 @@ function handleEditorModeRequest(mode: EditorMode): void {
     return;
   }
 
-  isSwitchingMode = true;
-
   try {
     editorScrollPositions[editorModeState.getMode()] = window.scrollY;
+
+    if (
+      editorModeState.getMode() === 'visual' &&
+      visualUserMutationObserved
+    ) {
+      const currentVisualMarkdown = crepe.getMarkdown();
+      queueMarkdownUpdate(
+        'visual',
+        currentVisualMarkdown,
+        visualMarkdownSnapshot ?? currentVisualMarkdown,
+      );
+    }
+
     flushPendingMarkdownUpdate();
+    isSwitchingMode = true;
 
     if (mode === 'source') {
       if (latestMarkdown === undefined) {
@@ -547,6 +593,7 @@ function handleEditorModeRequest(mode: EditorMode): void {
       }
 
       badgeBuilder.close();
+      visualUserMutationObserved = false;
       sourceEditor.replaceMarkdown(latestMarkdown);
       editorRoot.hidden = true;
       sourceEditorRoot.hidden = false;
@@ -561,6 +608,7 @@ function handleEditorModeRequest(mode: EditorMode): void {
 
     if (shouldReplaceVisualDocument(markdown, visualMarkdownSnapshot)) {
       isReplacingDocument = true;
+      visualUserMutationObserved = false;
 
       try {
         crepe.editor.action(replaceAll(markdown));
@@ -612,6 +660,7 @@ const handleHistoryKeydown = (event: KeyboardEvent): void => {
   }
 
   const command = isRedo ? redoCommand : undoCommand;
+  markVisualUserMutation();
   crepe.editor.action(callCommand(command.key));
 };
 
@@ -638,6 +687,7 @@ const handleWorkbenchShortcutKeydown = (event: KeyboardEvent): void => {
 
 editorRoot.addEventListener('compositionstart', handleCompositionStart);
 editorRoot.addEventListener('compositionend', handleCompositionEnd);
+editorRoot.addEventListener('beforeinput', markVisualUserMutation);
 sourceEditorRoot.addEventListener('compositionstart', handleCompositionStart);
 sourceEditorRoot.addEventListener('compositionend', handleCompositionEnd);
 sourceEditorRoot.addEventListener('keydown', handleSourceSaveKeydown, {
@@ -670,12 +720,13 @@ const initializeEditor = async (
     registerWorkspaceImageView(editor.editor, resourceBaseUri);
   }
 
-  registerFloatingToolbar(editor.editor);
+  registerFloatingToolbar(editor.editor, markVisualUserMutation);
   registerTableDeleteTooltip(editor.editor, {
     canShow: () =>
       !isDisposed &&
       !isReplacingDocument &&
       editorModeState.getMode() === 'visual',
+    onDocumentChange: markVisualUserMutation,
   });
 
   editor.on((listener) => {
@@ -695,8 +746,7 @@ const initializeEditor = async (
       });
     });
     listener.markdownUpdated((_context, updatedMarkdown, previousMarkdown) => {
-      visualMarkdownSnapshot = updatedMarkdown;
-      queueMarkdownUpdate(updatedMarkdown, previousMarkdown);
+      queueMarkdownUpdate('visual', updatedMarkdown, previousMarkdown);
     });
   });
 
@@ -712,7 +762,7 @@ const initializeEditor = async (
     sourceEditor = createMarkdownSourceEditor({
       markdown,
       onChange: (updatedMarkdown, previousMarkdown) => {
-        queueMarkdownUpdate(updatedMarkdown, previousMarkdown);
+        queueMarkdownUpdate('source', updatedMarkdown, previousMarkdown);
       },
       parent: sourceEditorRoot,
       styleNonce,
@@ -833,6 +883,7 @@ const disposeMessageListener = onMessageFromExtension((message) => {
     }
 
     try {
+      markVisualUserMutation();
       insertCopiedAttachment(crepe.editor, {
         kind: insertion.kind,
         src: message.markdownPath,
@@ -864,6 +915,7 @@ window.addEventListener(
       'compositionend',
       handleCompositionEnd,
     );
+    editorRoot.removeEventListener('beforeinput', markVisualUserMutation);
     sourceEditorRoot.removeEventListener(
       'compositionstart',
       handleCompositionStart,

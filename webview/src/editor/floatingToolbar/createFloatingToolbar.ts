@@ -214,10 +214,16 @@ class FloatingToolbarView implements PluginView {
   readonly #provider: TooltipProvider;
   readonly #view: EditorView;
 
-  constructor(context: Ctx, view: EditorView) {
+  constructor(
+    context: Ctx,
+    view: EditorView,
+    onDocumentChange: () => void,
+  ) {
     this.#context = context;
     this.#view = view;
     const toolbarContent = createToolbarContent((action) => {
+      onDocumentChange();
+
       if (action === 'bold') {
         toggleMarkForSelection(context, strongSchema.type(context));
       } else if (action === 'italic') {
@@ -406,7 +412,10 @@ class FloatingToolbarView implements PluginView {
   }
 }
 
-export const registerFloatingToolbar = (editor: Editor): void => {
+export const registerFloatingToolbar = (
+  editor: Editor,
+  onDocumentChange: () => void,
+): void => {
   editor
     .config((context) => {
       let toolbarView: FloatingToolbarView | undefined;
@@ -419,7 +428,11 @@ export const registerFloatingToolbar = (editor: Editor): void => {
           },
         },
         view: (view) => {
-          toolbarView = new FloatingToolbarView(context, view);
+          toolbarView = new FloatingToolbarView(
+            context,
+            view,
+            onDocumentChange,
+          );
           return toolbarView;
         },
       });

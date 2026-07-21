@@ -50,3 +50,32 @@ export const shouldReplaceVisualDocument = (
   sourceMarkdown: string,
   visualMarkdownSnapshot: string | undefined,
 ): boolean => sourceMarkdown !== visualMarkdownSnapshot;
+
+type EditorMode = 'source' | 'visual';
+
+interface MarkdownUpdatePolicy {
+  activeMode: EditorMode;
+  isCreatingEditor: boolean;
+  isReplacingDocument: boolean;
+  isSwitchingMode: boolean;
+  origin: EditorMode;
+  visualUserMutationObserved: boolean;
+}
+
+export const shouldQueueMarkdownUpdate = (
+  markdown: string,
+  previousMarkdown: string,
+  policy: MarkdownUpdatePolicy,
+): boolean => {
+  if (
+    markdown === previousMarkdown ||
+    policy.isCreatingEditor ||
+    policy.isReplacingDocument ||
+    policy.isSwitchingMode ||
+    policy.activeMode !== policy.origin
+  ) {
+    return false;
+  }
+
+  return policy.origin === 'source' || policy.visualUserMutationObserved;
+};

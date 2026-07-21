@@ -20,6 +20,7 @@ import './tableDeleteTooltip.css';
 
 interface TableDeleteTooltipOptions {
   canShow: () => boolean;
+  onDocumentChange: () => void;
 }
 
 const tableDeleteTooltip = tooltipFactory(
@@ -86,6 +87,7 @@ class TableDeleteTooltipView implements PluginView {
   readonly #dialogObserver: MutationObserver;
   readonly #provider: TooltipProvider;
   readonly #view: EditorView;
+  readonly #onDocumentChange: () => void;
 
   constructor(
     context: Ctx,
@@ -95,6 +97,7 @@ class TableDeleteTooltipView implements PluginView {
     this.#context = context;
     this.#view = view;
     this.#canShow = options.canShow;
+    this.#onDocumentChange = options.onDocumentChange;
     const content = createTooltipContent(this.#deleteActiveTable);
     this.#button = content.button;
     this.#content = content.element;
@@ -123,6 +126,7 @@ class TableDeleteTooltipView implements PluginView {
   readonly #deleteActiveTable = (): void => {
     const { state } = this.#view;
     const tableType = tableSchema.type(this.#context);
+    this.#onDocumentChange();
     deleteActiveTable(state, this.#view.dispatch, tableType);
 
     this.#provider.hide();
