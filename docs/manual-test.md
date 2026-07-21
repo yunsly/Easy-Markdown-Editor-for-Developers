@@ -571,3 +571,58 @@ CodeMirror가 런타임에 생성한 기본 레이아웃 CSS가 Webview CSP에 �
 - [x] 설치된 확장이 **Easy Markdown Editor for Developers**라는 이름으로 표시된다.
 - [x] 설치 후 Markdown 파일을 확장 편집기로 열 수 있다.
 - [x] 설치된 패키지에서 편집기를 사용하는 동안 별도 문제가 발생하지 않는다.
+
+## Table Delete Tooltip 및 Visual/Source Mode 회귀 테스트
+
+- 실행일: 미실행
+- 환경: Extension Development Host 및 새로 설치한 VSIX
+- 대상: `fixtures/table.md`, `fixtures/unsupported.md`, `fixtures/badges.md`, `fixtures/korean.md` 및 임시 Markdown 파일
+- 편집기: Easy Markdown Editor for Developers
+- 결과: 사용자 검증 필요
+
+### Table Delete Tooltip
+
+- [ ] 일반 셀에 cursor를 두면 table 전체 상단 경계에 `Delete Table` Tooltip이 표시된다.
+- [ ] header 셀과 table 내부 text selection에서도 Tooltip이 표시된다.
+- [ ] table 밖으로 cursor를 옮기면 Tooltip이 숨겨진다.
+- [ ] `Alt+Shift+F10`으로 Tooltip 버튼에 접근하고 `Escape`로 Editor에 복귀할 수 있다.
+- [ ] Tooltip이 좁은 pane, 화면 가장자리 및 가로 스크롤된 table에서도 잘리지 않는다.
+- [ ] `Delete Table`을 실행하면 활성 table만 삭제되고 주변 내용과 다른 table은 유지된다.
+- [ ] 한 번의 Undo로 table이 복원되고 Redo로 다시 삭제된다.
+- [ ] 삭제 직후 cursor가 유효하고 Tooltip이 즉시 숨겨진다.
+- [ ] Badge, Attachment 또는 Table Size dialog가 열려 있으면 Tooltip이 겹쳐 표시되지 않는다.
+- [ ] Source Mode에서는 Tooltip이 표시되지 않는다.
+
+### Visual/Source Mode
+
+- [ ] 새 Custom Editor가 Visual Mode로 시작한다.
+- [ ] `Visual | Source`가 Toolbar 오른쪽에 항상 표시되고 mouse, Tab, Enter, Space 및 좌우 화살표로 전환된다.
+- [ ] Source 전환 시 최신 Markdown 원문과 syntax highlighting이 표시된다.
+- [ ] Source에서 한글, Emoji, 긴 줄, code fence를 편집하고 copy/paste할 수 있다.
+- [ ] Source 편집 후 dirty state가 표시되고 `Cmd+S` 또는 `Ctrl+S`로 저장된다.
+- [ ] Source Undo/Redo가 동작하고 Visual Undo/Redo도 기존대로 동작한다.
+- [ ] Source 변경 후 Visual로 전환하면 변경 내용이 렌더링된다.
+- [ ] Visual 변경 후 Source로 전환하면 최신 Markdown이 표시된다.
+- [ ] 편집 없이 Visual → Source → Visual로 전환해도 dirty state와 파일 byte가 변경되지 않는다.
+- [ ] Source Mode에서 Visual Toolbar action이 비활성화되고 숨겨진 Milkdown selection을 변경하지 않는다.
+- [ ] 각 Mode로 돌아오면 focus, selection 및 scroll 위치가 합리적으로 복원된다.
+- [ ] 외부 Markdown 변경이 활성 Mode와 비활성 Editor 양쪽에 반영되고 feedback loop가 발생하지 않는다.
+- [ ] Light, Dark 및 High Contrast theme에서 Source text, selection, cursor, gutter와 Segmented Control을 읽을 수 있다.
+- [ ] Front matter, HTML comment, raw HTML, table, Badge, 상대 image, 한글, Emoji 및 Unicode가 무편집 Mode 왕복에서 보존된다.
+
+### 기본 Custom Editor 및 기존 기능
+
+- [ ] 새 VS Code window와 workspace에서 `.md`, README 및 중첩 Markdown 파일을 double click하면 Visual Editor가 기본으로 열린다.
+- [ ] **Reopen Editor With... → Text Editor**로 기본 Markdown Text Editor를 선택할 수 있다.
+- [ ] 확장을 비활성화하면 기본 Markdown Text Editor를 사용할 수 있다.
+- [ ] Heading, list, task list, blockquote, code block 및 Floating Toolbar가 기존대로 동작한다.
+- [ ] Table 삽입과 기존 row/column 편집 UI가 유지된다.
+- [ ] Badge Builder, Local File Attachment 및 상대 image 표시가 기존대로 동작한다.
+- [ ] 한글 IME, 저장, dirty state, 외부 변경 동기화와 여러 Markdown tab이 기존대로 동작한다.
+- [ ] 저장 후 닫고 다시 열어 Visual/Source 양쪽에서 최종 내용이 일치한다.
+
+### 현재 제한
+
+- Visual Mode와 Source Mode는 각각의 Undo history를 사용하며 Mode를 넘나드는 하나의 통합 history는 보장하지 않는다.
+- Source와 Visual을 동시에 표시하는 split view는 지원하지 않는다.
+- 마지막으로 선택한 Mode를 workspace에 영구 저장하지 않으며 새 Editor는 Visual Mode로 시작한다.
