@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   badgeCategoryLabels,
+  filterTechnologyBadgePresets,
   technologyBadgePresets,
 } from './badgePresets';
 
@@ -66,5 +67,22 @@ describe('technologyBadgePresets', () => {
     for (const { category } of technologyBadgePresets) {
       expect(badgeCategoryLabels[category]).toBeTruthy();
     }
+  });
+
+  it('filters by name, metadata, and category using every search term', () => {
+    expect(filterTechnologyBadgePresets('  REACT mobile  ').map(
+      ({ name }) => name,
+    )).toEqual(['React Native']);
+    expect(filterTechnologyBadgePresets('dotnet').map(
+      ({ name }) => name,
+    )).toEqual(['C#', 'ASP.NET Core']);
+    expect(filterTechnologyBadgePresets('cloud devops')).toHaveLength(23);
+  });
+
+  it('returns the full catalog for a blank query and none for no match', () => {
+    expect(filterTechnologyBadgePresets('   ')).toBe(
+      technologyBadgePresets,
+    );
+    expect(filterTechnologyBadgePresets('no-such-technology')).toEqual([]);
   });
 });

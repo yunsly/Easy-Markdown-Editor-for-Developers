@@ -86,6 +86,12 @@
   background: var(--vscode-input-background);
 }
 
+.badge-builder__search-status {
+  min-height: 15px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
 .badge-builder__palette-options {
   display: grid;
   gap: 6px;

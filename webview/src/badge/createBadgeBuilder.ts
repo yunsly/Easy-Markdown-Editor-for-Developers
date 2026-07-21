@@ -4,6 +4,7 @@ import { applyBadgePalette } from './applyBadgePalette';
 import {
   badgeCategoryLabels,
   badgePalettes,
+  filterTechnologyBadgePresets,
   technologyBadgePresets,
 } from './badgePresets';
 import type {
@@ -40,6 +41,10 @@ export const createBadgeBuilder = (
   const title = document.createElement('h2');
   const description = document.createElement('p');
   const controls = document.createElement('div');
+  const technologySearchField = document.createElement('div');
+  const technologySearchLabel = document.createElement('label');
+  const technologySearchInput = document.createElement('input');
+  const technologySearchStatus = document.createElement('span');
   const technologyField = document.createElement('label');
   const technologyLabel = document.createElement('span');
   const technologySelect = document.createElement('select');
@@ -69,7 +74,11 @@ export const createBadgeBuilder = (
   const cancelButton = document.createElement('button');
   const insertButton = document.createElement('button');
   const titleId = 'badge-builder-title';
+  const technologySearchInputId = 'badge-builder-technology-search';
+  const technologySelectId = 'badge-builder-technology';
+  const technologySearchStatusId = 'badge-builder-search-status';
   let isDestroyed = false;
+  let hasTechnologyMatches = true;
   let isLabelDirty = false;
   let shouldRestoreAnchorFocus = true;
 
@@ -82,15 +91,41 @@ export const createBadgeBuilder = (
   description.textContent =
     'Choose badge options and insert the result into Markdown.';
   controls.className = 'badge-builder__controls';
+  technologySearchField.className = 'badge-builder__field';
+  technologySearchLabel.className = 'badge-builder__label';
+  technologySearchLabel.textContent = 'Search technologies';
+  technologySearchLabel.htmlFor = technologySearchInputId;
+  technologySearchInput.className = 'badge-builder__input';
+  technologySearchInput.id = technologySearchInputId;
+  technologySearchInput.type = 'search';
+  technologySearchInput.placeholder = 'Search by name or category';
+  technologySearchInput.autocomplete = 'off';
+  technologySearchInput.spellcheck = false;
+  technologySearchInput.setAttribute('aria-controls', technologySelectId);
+  technologySearchInput.setAttribute(
+    'aria-describedby',
+    technologySearchStatusId,
+  );
+  technologySearchStatus.id = technologySearchStatusId;
+  technologySearchStatus.className = 'badge-builder__search-status';
+  technologySearchStatus.setAttribute('role', 'status');
+  technologySearchStatus.setAttribute('aria-live', 'polite');
+  technologySearchField.append(
+    technologySearchLabel,
+    technologySearchInput,
+    technologySearchStatus,
+  );
   technologyField.className = 'badge-builder__field';
   technologyLabel.className = 'badge-builder__label';
   technologyLabel.textContent = 'Technology';
   technologySelect.className = 'badge-builder__select';
+  technologySelect.id = technologySelectId;
 
   const technologyGroups = new Map<
     BadgeCategory,
     HTMLOptGroupElement
   >();
+  const technologyOptions = new Map<string, HTMLOptionElement>();
 
   for (const preset of technologyBadgePresets) {
     let group = technologyGroups.get(preset.category);
@@ -105,6 +140,7 @@ export const createBadgeBuilder = (
     const option = document.createElement('option');
     option.value = preset.id;
     option.textContent = preset.name;
+    technologyOptions.set(preset.id, option);
     group.append(option);
   }
 
@@ -183,6 +219,7 @@ export const createBadgeBuilder = (
   previewContainer.append(previewImage, previewStatus);
   previewField.append(previewLabel, previewContainer);
   controls.append(
+    technologySearchField,
     technologyField,
     paletteField,
     labelOptions,
@@ -218,6 +255,52 @@ export const createBadgeBuilder = (
     labelInput.disabled = !showLabelInput.checked;
   };
 
+  const applyTechnologyFilter = (): boolean => {
+    const query = technologySearchInput.value.trim();
+    const matches = filterTechnologyBadgePresets(query);
+    const matchingIds = new Set(matches.map(({ id }) => id));
+
+    for (const preset of technologyBadgePresets) {
+      const option = technologyOptions.get(preset.id);
+
+      if (option !== undefined) {
+        const isMatch = matchingIds.has(preset.id);
+        option.disabled = !isMatch;
+        option.hidden = !isMatch;
+      }
+    }
+
+    for (const [category, group] of technologyGroups) {
+      group.hidden = !matches.some(
+        (preset) => preset.category === category,
+      );
+    }
+
+    const selectedOption = technologyOptions.get(technologySelect.value);
+    const firstMatch = matches[0];
+
+    if (selectedOption?.hidden !== false) {
+      technologySelect.value = firstMatch?.id ?? '';
+    }
+
+    const hasMatches = firstMatch !== undefined;
+    hasTechnologyMatches = hasMatches;
+    technologySelect.disabled = !hasMatches;
+    insertButton.disabled = !hasMatches;
+
+    if (query.length === 0) {
+      technologySearchStatus.textContent = '';
+    } else if (matches.length === 0) {
+      technologySearchStatus.textContent = 'No technologies found.';
+    } else {
+      technologySearchStatus.textContent = matches.length === 1
+        ? '1 technology found.'
+        : `${matches.length} technologies found.`;
+    }
+
+    return hasMatches;
+  };
+
   const getDefinition = (): BadgeDefinition => {
     const definition = applyBadgePalette(
       getSelectedTechnology(),
@@ -241,6 +324,13 @@ export const createBadgeBuilder = (
   };
 
   const updatePreview = (): void => {
+    if (!hasTechnologyMatches) {
+      previewImage.hidden = true;
+      previewStatus.hidden = false;
+      previewStatus.textContent = 'Choose a matching technology to preview.';
+      return;
+    }
+
     const definition = getDefinition();
     previewImage.hidden = true;
     previewImage.alt = definition.label === undefined
@@ -325,6 +415,15 @@ export const createBadgeBuilder = (
     updatePreview();
   };
 
+  const handleTechnologySearchInput = (): void => {
+    if (applyTechnologyFilter()) {
+      handleTechnologyChange();
+      return;
+    }
+
+    updatePreview();
+  };
+
   const handlePaletteChange = (): void => {
     updatePreview();
   };
@@ -348,11 +447,20 @@ export const createBadgeBuilder = (
   };
 
   const handlePreviewLoad = (): void => {
+    if (!hasTechnologyMatches) {
+      previewImage.hidden = true;
+      return;
+    }
+
     previewImage.hidden = false;
     previewStatus.hidden = true;
   };
 
   const handlePreviewError = (): void => {
+    if (!hasTechnologyMatches) {
+      return;
+    }
+
     previewImage.hidden = true;
     previewStatus.hidden = false;
     previewStatus.textContent =
@@ -364,6 +472,10 @@ export const createBadgeBuilder = (
   dialog.addEventListener('cancel', handleDialogCancel);
   dialog.addEventListener('close', handleDialogClose);
   technologySelect.addEventListener('change', handleTechnologyChange);
+  technologySearchInput.addEventListener(
+    'input',
+    handleTechnologySearchInput,
+  );
   showLabelInput.addEventListener('change', handleShowLabelChange);
   labelInput.addEventListener('input', handleLabelInput);
   styleSelect.addEventListener('change', handleStyleChange);
@@ -385,6 +497,10 @@ export const createBadgeBuilder = (
       dialog.removeEventListener('cancel', handleDialogCancel);
       dialog.removeEventListener('close', handleDialogClose);
       technologySelect.removeEventListener('change', handleTechnologyChange);
+      technologySearchInput.removeEventListener(
+        'input',
+        handleTechnologySearchInput,
+      );
       showLabelInput.removeEventListener('change', handleShowLabelChange);
       labelInput.removeEventListener('input', handleLabelInput);
       styleSelect.removeEventListener('change', handleStyleChange);
@@ -407,6 +523,7 @@ export const createBadgeBuilder = (
       }
 
       technologySelect.value = technologyBadgePresets[0].id;
+      technologySearchInput.value = '';
       for (const [index, input] of paletteInputs.entries()) {
         input.checked = index === 0;
       }
@@ -418,10 +535,11 @@ export const createBadgeBuilder = (
       clickUrlInput.value = '';
       clickUrlInput.setCustomValidity('');
       updateLabelAvailability();
+      applyTechnologyFilter();
       updatePreview();
       anchor.setAttribute('aria-expanded', 'true');
       dialog.showModal();
-      technologySelect.focus({ preventScroll: true });
+      technologySearchInput.focus({ preventScroll: true });
     },
   };
 };

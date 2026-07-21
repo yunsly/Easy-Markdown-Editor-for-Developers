@@ -246,6 +246,28 @@ export const technologyBadgePresets = [
   defineTechnologyBadgePreset('ubuntu', 'Ubuntu', 'tool', 'ubuntu', 'E95420', 'https://ubuntu.com/'),
 ] as const satisfies readonly TechnologyBadgePreset[];
 
+export const filterTechnologyBadgePresets = (
+  query: string,
+): readonly TechnologyBadgePreset[] => {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+  if (terms.length === 0) {
+    return technologyBadgePresets;
+  }
+
+  return technologyBadgePresets.filter((preset) => {
+    const searchableText = [
+      preset.name,
+      preset.id,
+      preset.logoSlug,
+      preset.defaultLabel,
+      badgeCategoryLabels[preset.category],
+    ].join(' ').toLowerCase();
+
+    return terms.every((term) => searchableText.includes(term));
+  });
+};
+
 export const badgePalettes = [
   {
     id: 'brand',
