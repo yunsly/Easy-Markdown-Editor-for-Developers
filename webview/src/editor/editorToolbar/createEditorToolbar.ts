@@ -11,7 +11,6 @@ export type EditorToolbarAction =
   | 'blockquote'
   | 'bullet-list'
   | 'code-block'
-  | 'delete-table'
   | 'heading-1'
   | 'heading-2'
   | 'heading-3'
@@ -55,7 +54,6 @@ const toolbarButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'blockquote', label: 'Blockquote', text: 'Quote' },
   { action: 'code-block', label: 'Code Block', text: '</>' },
   { action: 'table', label: 'Insert Table', text: 'Table' },
-  { action: 'delete-table', label: 'Delete Table', text: 'Delete Table' },
   { action: 'badge', label: 'Insert Badge', text: 'Badge' },
   { action: 'attach', label: 'Attach file', text: 'Attach' },
 ];
