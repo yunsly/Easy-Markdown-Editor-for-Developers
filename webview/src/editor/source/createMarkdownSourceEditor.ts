@@ -8,7 +8,6 @@ import {
   HighlightStyle,
   syntaxHighlighting,
 } from '@codemirror/language';
-import { Annotation, Transaction } from '@codemirror/state';
 import {
   drawSelection,
   dropCursor,
@@ -20,6 +19,11 @@ import {
   lineNumbers,
 } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
+
+import {
+  createSourceDocumentReplacement,
+  isUserSourceDocumentUpdate,
+} from './sourceDocumentUpdates';
 
 interface MarkdownSourceEditorOptions {
   markdown: string;
@@ -34,8 +38,6 @@ export interface MarkdownSourceEditor {
   getMarkdown: () => string;
   replaceMarkdown: (markdown: string) => void;
 }
-
-const programmaticUpdate = Annotation.define<boolean>();
 
 const sourceTheme = EditorView.theme({
   '&': {
@@ -141,13 +143,10 @@ export const createMarkdownSourceEditor = (
       sourceTheme,
       EditorView.cspNonce.of(options.styleNonce),
       EditorView.updateListener.of((update) => {
-        if (
-          !update.docChanged ||
-          update.transactions.some(
-            (transaction) =>
-              transaction.annotation(programmaticUpdate) === true,
-          )
-        ) {
+        if (!isUserSourceDocumentUpdate(
+          update.docChanged,
+          update.transactions,
+        )) {
           return;
         }
 
@@ -168,29 +167,14 @@ export const createMarkdownSourceEditor = (
     },
     getMarkdown: () => editorView.state.doc.toString(),
     replaceMarkdown: (markdownText) => {
-      const currentMarkdown = editorView.state.doc.toString();
+      const replacement = createSourceDocumentReplacement(
+        editorView.state,
+        markdownText,
+      );
 
-      if (markdownText === currentMarkdown) {
-        return;
+      if (replacement !== undefined) {
+        editorView.dispatch(replacement);
       }
-
-      const { anchor, head } = editorView.state.selection.main;
-      const nextLength = markdownText.length;
-      editorView.dispatch({
-        annotations: [
-          programmaticUpdate.of(true),
-          Transaction.addToHistory.of(false),
-        ],
-        changes: {
-          from: 0,
-          to: currentMarkdown.length,
-          insert: markdownText,
-        },
-        selection: {
-          anchor: Math.min(anchor, nextLength),
-          head: Math.min(head, nextLength),
-        },
-      });
     },
   };
 };
