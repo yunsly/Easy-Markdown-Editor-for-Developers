@@ -1,4 +1,5 @@
 import { Schema } from '@milkdown/kit/prose/model';
+import { history, redo, undo } from '@milkdown/kit/prose/history';
 import {
   EditorState,
   NodeSelection,
@@ -7,6 +8,7 @@ import {
 import { tableNodes } from '@milkdown/kit/prose/tables';
 import { describe, expect, it } from 'vitest';
 
+import { deleteActiveTable } from './createTableDeleteTooltip';
 import { getActiveTableContext } from './tableContext';
 
 const tableSpecs = tableNodes({
@@ -116,5 +118,32 @@ describe('getActiveTableContext', () => {
     expect(
       getActiveTableContext(nextState.selection, schema.nodes.table),
     ).toBeUndefined();
+  });
+});
+
+describe('deleteActiveTable', () => {
+  it('deletes only the active table in one undoable transaction', () => {
+    let state = EditorState.create({
+      doc: documentNode,
+      plugins: [history()],
+      selection: TextSelection.create(
+        documentNode,
+        findTextPosition('Body') + 1,
+      ),
+    });
+    const dispatch = (transaction: Parameters<typeof state.apply>[0]) => {
+      state = state.apply(transaction);
+    };
+
+    expect(deleteActiveTable(state, dispatch, schema.nodes.table)).toBe(true);
+    expect(state.doc.textContent).toBe('BeforeAfter');
+    expect(state.doc.childCount).toBe(2);
+
+    expect(undo(state, dispatch)).toBe(true);
+    expect(state.doc.childCount).toBe(3);
+    expect(state.doc.textContent).toBe('BeforeHeaderBodyAfter');
+
+    expect(redo(state, dispatch)).toBe(true);
+    expect(state.doc.childCount).toBe(2);
   });
 });

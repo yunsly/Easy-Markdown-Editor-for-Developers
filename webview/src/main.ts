@@ -34,6 +34,7 @@ import {
 import { updateEditorToolbarState } from './editor/editorToolbar/editorToolbarState';
 import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
 import { registerWorkspaceImageView } from './editor/registerWorkspaceImageView';
+import { registerTableDeleteTooltip } from './editor/table/createTableDeleteTooltip';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
 
@@ -513,6 +514,9 @@ const initializeEditor = async (
   }
 
   registerFloatingToolbar(editor.editor);
+  registerTableDeleteTooltip(editor.editor, {
+    canShow: () => !isDisposed && !isReplacingDocument,
+  });
 
   editor.on((listener) => {
     listener.mounted((context) => {
