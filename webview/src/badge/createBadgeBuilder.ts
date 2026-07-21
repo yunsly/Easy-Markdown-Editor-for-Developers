@@ -2,10 +2,15 @@ import './badgeBuilder.css';
 
 import { applyBadgePalette } from './applyBadgePalette';
 import {
+  badgeCategoryLabels,
   badgePalettes,
   technologyBadgePresets,
 } from './badgePresets';
-import type { BadgeDefinition, BadgeStyle } from './badgeTypes';
+import type {
+  BadgeCategory,
+  BadgeDefinition,
+  BadgeStyle,
+} from './badgeTypes';
 import { createShieldsBadgeUrl } from './createShieldsBadgeUrl';
 
 const badgeStyles = [
@@ -82,11 +87,25 @@ export const createBadgeBuilder = (
   technologyLabel.textContent = 'Technology';
   technologySelect.className = 'badge-builder__select';
 
+  const technologyGroups = new Map<
+    BadgeCategory,
+    HTMLOptGroupElement
+  >();
+
   for (const preset of technologyBadgePresets) {
+    let group = technologyGroups.get(preset.category);
+
+    if (group === undefined) {
+      group = document.createElement('optgroup');
+      group.label = badgeCategoryLabels[preset.category];
+      technologyGroups.set(preset.category, group);
+      technologySelect.append(group);
+    }
+
     const option = document.createElement('option');
     option.value = preset.id;
     option.textContent = preset.name;
-    technologySelect.append(option);
+    group.append(option);
   }
 
   technologyField.append(technologyLabel, technologySelect);

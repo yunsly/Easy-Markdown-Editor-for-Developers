@@ -5,6 +5,8 @@ export type BadgeCategory =
   | 'mobile-xr'
   | 'cloud'
   | 'database'
+  | 'data-ai'
+  | 'testing'
   | 'tool'
   | 'project';
 

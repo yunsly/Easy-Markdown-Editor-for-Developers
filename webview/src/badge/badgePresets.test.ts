@@ -1,47 +1,28 @@
 import { describe, expect, it } from 'vitest';
 
-import { technologyBadgePresets } from './badgePresets';
-
-const expectedNames = [
-  'Swift',
-  'TypeScript',
-  'JavaScript',
-  'Python',
-  'Java',
-  'Kotlin',
-  'C',
-  'C++',
-  'React',
-  'Vue.js',
-  'HTML5',
-  'CSS3',
-  'Vite',
-  'Node.js',
-  'Spring Boot',
-  'Express',
-  'FastAPI',
-  'iOS',
-  'Android',
-  'visionOS',
-  'SwiftUI',
-  'Unity',
-  'AWS',
-  'Docker',
-  'Kubernetes',
-  'MySQL',
-  'PostgreSQL',
-  'MongoDB',
-  'Git',
-  'GitHub',
-  'Visual Studio Code',
-  'Xcode',
-  'Figma',
-] as const;
+import {
+  badgeCategoryLabels,
+  technologyBadgePresets,
+} from './badgePresets';
 
 describe('technologyBadgePresets', () => {
-  it('contains the complete recommended technology set', () => {
+  it('contains an expanded technology catalog', () => {
+    expect(technologyBadgePresets).toHaveLength(164);
     expect(technologyBadgePresets.map(({ name }) => name)).toEqual(
-      expectedNames,
+      expect.arrayContaining([
+        'Swift',
+        'Rust',
+        'React',
+        'Next.js',
+        'Spring Boot',
+        'Django',
+        'Flutter',
+        'Kubernetes',
+        'PostgreSQL',
+        'TensorFlow',
+        'Vitest',
+        'Visual Studio Code',
+      ]),
     );
   });
 
@@ -69,13 +50,21 @@ describe('technologyBadgePresets', () => {
     );
 
     expect(categoryCounts).toEqual({
-      language: 8,
-      frontend: 5,
-      backend: 4,
-      'mobile-xr': 5,
-      cloud: 3,
-      database: 3,
-      tool: 5,
+      language: 20,
+      frontend: 24,
+      backend: 18,
+      'mobile-xr': 11,
+      cloud: 23,
+      database: 15,
+      'data-ai': 14,
+      testing: 10,
+      tool: 29,
     });
+  });
+
+  it('provides a label for every populated category', () => {
+    for (const { category } of technologyBadgePresets) {
+      expect(badgeCategoryLabels[category]).toBeTruthy();
+    }
   });
 });
