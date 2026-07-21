@@ -38,3 +38,30 @@ export async function resolveAttachmentFileName(
 
   return `${baseName}-${suffix}${extension}`;
 }
+
+const normalizePathSeparators = (value: string): string =>
+  value.replaceAll('\\', '/');
+
+export function createMarkdownRelativePath(
+  documentPath: string,
+  attachmentPath: string,
+): string {
+  const normalizedDocumentPath = normalizePathSeparators(documentPath);
+  const normalizedAttachmentPath = normalizePathSeparators(attachmentPath);
+
+  return path.posix.relative(
+    path.posix.dirname(normalizedDocumentPath),
+    normalizedAttachmentPath,
+  );
+}
+
+export function escapeMarkdownDestination(destination: string): string {
+  return destination.replaceAll('\\', '\\\\').replaceAll('(', '\\(')
+    .replaceAll(')', '\\)');
+}
+
+export function encodeMarkdownPathForUrl(markdownPath: string): string {
+  return markdownPath.split('/').map((segment) =>
+    encodeURIComponent(segment).replaceAll('(', '%28').replaceAll(')', '%29')
+  ).join('/');
+}

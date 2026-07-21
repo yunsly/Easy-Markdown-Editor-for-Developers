@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   classifyAttachment,
+  createMarkdownRelativePath,
+  encodeMarkdownPathForUrl,
+  escapeMarkdownDestination,
   resolveAttachmentFileName,
 } from '../src/editor/attachment/attachmentPaths';
 
@@ -60,5 +63,53 @@ describe('resolveAttachmentFileName', () => {
       fileName,
       (candidate) => candidate === fileName,
     )).resolves.toBe(expected);
+  });
+});
+
+describe('createMarkdownRelativePath', () => {
+  it('creates a path relative to the Markdown document directory', () => {
+    expect(createMarkdownRelativePath(
+      '/project/docs/guide.md',
+      '/project/assets/preview.png',
+    )).toBe('../assets/preview.png');
+  });
+
+  it('handles attachments in the same directory', () => {
+    expect(createMarkdownRelativePath(
+      '/project/README.md',
+      '/project/manual.pdf',
+    )).toBe('manual.pdf');
+  });
+
+  it('normalizes Windows path separators', () => {
+    expect(createMarkdownRelativePath(
+      String.raw`C:\project\docs\guide.md`,
+      String.raw`C:\project\assets\preview.png`,
+    )).toBe('../assets/preview.png');
+  });
+
+  it('preserves readable Unicode and special characters', () => {
+    expect(createMarkdownRelativePath(
+      '/project/docs/가이드.md',
+      '/project/docs/assets/편집 화면 (최종) #100%.png',
+    )).toBe('assets/편집 화면 (최종) #100%.png');
+  });
+});
+
+describe('Markdown attachment path encoding', () => {
+  it('escapes Markdown destination delimiters without URL encoding', () => {
+    expect(escapeMarkdownDestination(
+      String.raw`assets/편집 화면 (최종) #100%\preview.png`,
+    )).toBe(
+      String.raw`assets/편집 화면 \(최종\) #100%\\preview.png`,
+    );
+  });
+
+  it('URL-encodes path segments while preserving path separators', () => {
+    expect(encodeMarkdownPathForUrl(
+      '../assets/편집 화면 (최종) #100%.png',
+    )).toBe(
+      '../assets/%ED%8E%B8%EC%A7%91%20%ED%99%94%EB%A9%B4%20%28%EC%B5%9C%EC%A2%85%29%20%23100%25.png',
+    );
   });
 });
