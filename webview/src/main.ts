@@ -21,6 +21,7 @@ import {
   postMessageToExtension,
 } from './vscodeApi';
 import { createBadgeBuilder } from './badge/createBadgeBuilder';
+import { createAttachmentDialog } from './attachment/createAttachmentDialog';
 import {
   createEditorToolbar,
   type EditorToolbarAction,
@@ -66,13 +67,34 @@ errorBanner.hidden = true;
 const editorRoot = document.createElement('div');
 editorRoot.className = 'editor-root';
 const editorToolbar = createEditorToolbar(handleEditorToolbarAction);
-const badgeButton = editorToolbar.buttons.get('badge');
+const getToolbarButton = (
+  action: EditorToolbarAction,
+): HTMLButtonElement => {
+  const button = editorToolbar.buttons.get(action);
 
-if (badgeButton === undefined) {
-  throw new Error('Missing Badge Toolbar button.');
-}
+  if (button === undefined) {
+    throw new Error(`Missing ${action} Toolbar button.`);
+  }
+
+  return button;
+};
+const badgeButton = getToolbarButton('badge');
 
 const badgeBuilder = createBadgeBuilder(badgeButton, insertBadgeImage);
+const attachButton = getToolbarButton('attach');
+
+const attachmentDialog = createAttachmentDialog(
+  attachButton,
+  (request) => {
+    postMessageToExtension({ type: 'copyAttachment', ...request });
+  },
+  (requestId) => {
+    if (requestId === pendingAttachmentRequestId) {
+      pendingAttachmentRequestId = undefined;
+      attachButton.disabled = false;
+    }
+  },
+);
 container.replaceChildren(errorBanner, editorToolbar.element, editorRoot);
 
 const showError = (message: string): void => {
@@ -114,6 +136,7 @@ let isCreatingEditor = false;
 let isComposing = false;
 let isDisposed = false;
 let isReplacingDocument = false;
+let pendingAttachmentRequestId: string | undefined;
 
 const reportEditorError = (error: unknown, fallback: string): void => {
   const message = error instanceof Error ? error.message : fallback;
@@ -161,6 +184,18 @@ function handleEditorToolbarAction(
   try {
     if (action === 'badge') {
       badgeBuilder.open();
+      return;
+    }
+
+    if (action === 'attach') {
+      if (pendingAttachmentRequestId !== undefined) {
+        return;
+      }
+
+      const requestId = crypto.randomUUID();
+      pendingAttachmentRequestId = requestId;
+      attachButton.disabled = true;
+      postMessageToExtension({ type: 'requestAttachmentSource', requestId });
       return;
     }
 
@@ -562,6 +597,22 @@ const disposeMessageListener = onMessageFromExtension((message) => {
     handleReplaceDocument(message.text, message.version);
   } else if (message.type === 'showError') {
     showError(message.message);
+  } else if (message.type === 'attachmentSourceSelected') {
+    if (message.requestId === pendingAttachmentRequestId) {
+      attachmentDialog.open(message);
+    }
+  } else if (message.type === 'attachmentCancelled') {
+    if (message.requestId === pendingAttachmentRequestId) {
+      pendingAttachmentRequestId = undefined;
+      attachButton.disabled = false;
+      attachButton.focus({ preventScroll: true });
+    }
+  } else if (message.type === 'attachmentFailed') {
+    if (!attachmentDialog.fail(message.requestId, message.message)) {
+      showError(message.message);
+      pendingAttachmentRequestId = undefined;
+      attachButton.disabled = false;
+    }
   }
 });
 
@@ -571,6 +622,7 @@ window.addEventListener(
     isDisposed = true;
     disposeMessageListener();
     badgeBuilder.destroy();
+    attachmentDialog.destroy();
     editorToolbar.destroy();
     editorRoot.removeEventListener(
       'compositionstart',

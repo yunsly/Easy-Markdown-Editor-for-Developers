@@ -1,0 +1,108 @@
+.attachment-dialog {
+  box-sizing: border-box;
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 20px;
+  color: var(--vscode-editorWidget-foreground);
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px var(--vscode-widget-shadow);
+}
+
+.attachment-dialog::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+
+.attachment-dialog__title {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+
+.attachment-dialog__field {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+
+.attachment-dialog__label {
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.attachment-dialog__input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 7px 8px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 3px;
+  font: inherit;
+}
+
+.attachment-dialog__input:focus-visible,
+.attachment-dialog__button:focus-visible {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+.attachment-dialog__value {
+  overflow-wrap: anywhere;
+  color: var(--vscode-descriptionForeground);
+}
+
+.attachment-dialog__fieldset {
+  display: flex;
+  gap: 16px;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+.attachment-dialog__fieldset .attachment-dialog__label {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.attachment-dialog__radio {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.attachment-dialog__status {
+  min-height: 18px;
+  margin: 0 0 12px;
+  color: var(--vscode-errorForeground);
+  font-size: 12px;
+}
+
+.attachment-dialog__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.attachment-dialog__button {
+  min-width: 76px;
+  padding: 6px 12px;
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+  border: 0;
+  border-radius: 3px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.attachment-dialog__button--primary {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+}
+
+.attachment-dialog__button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
