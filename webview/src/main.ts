@@ -33,6 +33,7 @@ import {
 } from './editor/editorToolbar/editorToolbarActions';
 import { updateEditorToolbarState } from './editor/editorToolbar/editorToolbarState';
 import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
+import { registerWorkspaceImageView } from './editor/registerWorkspaceImageView';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
 
@@ -491,6 +492,7 @@ editorRoot.addEventListener('keydown', handleWorkbenchShortcutKeydown);
 const initializeEditor = async (
   markdown: string,
   version: number,
+  resourceBaseUri?: string,
 ): Promise<void> => {
   if (isDisposed || isCreatingEditor || crepe !== undefined) {
     return;
@@ -504,6 +506,11 @@ const initializeEditor = async (
     features,
     featureConfigs,
   });
+
+  if (resourceBaseUri !== undefined) {
+    registerWorkspaceImageView(editor.editor, resourceBaseUri);
+  }
+
   registerFloatingToolbar(editor.editor);
 
   editor.on((listener) => {
@@ -593,7 +600,11 @@ const initializeEditor = async (
 
 const disposeMessageListener = onMessageFromExtension((message) => {
   if (message.type === 'initDocument') {
-    void initializeEditor(message.text, message.version);
+    void initializeEditor(
+      message.text,
+      message.version,
+      message.resourceBaseUri,
+    );
   } else if (message.type === 'documentApplied') {
     handleDocumentApplied(message.changeId, message.version);
   } else if (message.type === 'replaceDocument') {
