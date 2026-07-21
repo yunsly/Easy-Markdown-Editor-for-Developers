@@ -1,5 +1,40 @@
 # 수동 테스트 기록
 
+## Local File Attachment 회귀 테스트
+
+- 실행일: 미실행
+- 환경: Extension Development Host
+- 대상: workspace root의 `README.md`, 중첩된 `docs/guide.md`
+- 편집기: Visual Markdown Editor
+- 결과: 사용자 검증 필요
+
+### 확인 항목
+
+- [ ] Attach 버튼이 단일 파일 picker를 열고 picker 취소 시 문서와 workspace가 변경되지 않는다.
+- [ ] 기본 목적지가 현재 Markdown 파일 옆의 `assets/`로 제안된다.
+- [ ] 존재하지 않는 목적지 폴더가 Attach 시 생성된다.
+- [ ] PNG 파일이 복사되고 현재 cursor 위치에 상대 경로 image로 삽입된다.
+- [ ] PDF 파일이 복사되고 현재 cursor 위치에 상대 경로 link로 삽입된다.
+- [ ] `docs/guide.md`에서 root `assets/`를 지정하면 `../assets/...` 경로가 저장된다.
+- [ ] 동일한 파일명을 다시 첨부하면 `-2`, `-3` suffix가 붙고 기존 파일은 변경되지 않는다.
+- [ ] 한글, 공백, 괄호, `#`, `%`가 포함된 파일명이 복사·표시·저장된다.
+- [ ] Image/Link 기본 판별을 사용자가 반대로 변경할 수 있다.
+- [ ] 잘못된 상대 폴더, `..`, 절대 경로, separator가 포함된 파일명이 차단된다.
+- [ ] 복사 실패 시 Markdown이 삽입되지 않고 dialog에서 다시 시도할 수 있다.
+- [ ] Undo가 Markdown 삽입만 제거하고 복사된 실제 파일은 유지한다.
+- [ ] Redo가 image 또는 link 삽입을 복원한다.
+- [ ] 저장 후 Visual Editor를 다시 열어 상대 image와 link가 유지된다.
+- [ ] 로컬 image가 Visual Editor와 GitHub Markdown에서 모두 표시된다.
+- [ ] H1, 표, Badge Builder, Floating Toolbar, 한글 IME, 저장 및 외부 변경 동기화가 기존과 동일하게 동작한다.
+
+### 현재 제한
+
+- 한 번에 한 파일만 첨부한다.
+- Undo는 복사된 실제 파일을 삭제하지 않는다.
+- local desktop workspace만 지원하며 remote, virtual 및 web workspace는 검증하지 않았다.
+- drag and drop, clipboard image 저장, image resize 및 압축은 지원하지 않는다.
+- 파일 복사 성공 후 예기치 않게 Milkdown 삽입이 실패하면 복사된 파일을 자동 삭제하지 않고 상대 경로를 오류로 안내한다.
+
 ## 한글 IME Smoke Test
 
 - 실행일: 2026-07-16

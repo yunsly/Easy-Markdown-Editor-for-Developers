@@ -8,6 +8,7 @@ Easy Markdown Editor for Developers is a VS Code custom editor for editing Markd
 - Format selected text with bold, italic, strikethrough, inline code, and links.
 - Insert and remove tables with a keyboard-accessible size picker.
 - Build Shields.io technology badges from presets, with optional labels and click-through links.
+- Attach one local file at the cursor as a relative Markdown image or link.
 - Keep multiple Markdown tabs synchronized with their own VS Code documents.
 - Follow VS Code light and dark themes.
 - Support Korean IME and mixed-language editing without replacing the editor during normal typing.
@@ -18,6 +19,12 @@ Easy Markdown Editor for Developers is a VS Code custom editor for editing Markd
 2. Open the editor picker from the tab or Explorer context menu.
 3. Select **Easy Markdown Editor for Developers**.
 4. Edit the rendered document and save with the standard VS Code save command.
+
+To attach a file, select **Attach** in the editor toolbar, choose one local
+file, confirm a workspace-relative destination and file name, then choose
+whether to insert it as an image or link. The default destination is an
+`assets/` folder beside the current Markdown document. Existing destination
+files are never overwritten; a numeric suffix is added automatically.
 
 The built-in Markdown text editor remains available from **Reopen Editor With...** whenever source-level editing is preferable.
 
@@ -55,4 +62,4 @@ The package command runs a production build first and writes `easy-markdown-edit
 
 ## Current Scope
 
-This project prioritizes Markdown data safety, document synchronization, and stable Korean IME input. Advanced table editing, image uploads, Mermaid, mathematics, slash commands, block drag and drop, real-time collaboration, and split visual/source editing are outside the current scope.
+This project prioritizes Markdown data safety, document synchronization, and stable Korean IME input. Local attachment supports one file at a time in saved Markdown files inside local workspaces. Undo removes the inserted Markdown but intentionally keeps the copied file. Remote workspaces, multiple-file attachment, drag and drop, clipboard image capture, image processing, Mermaid, mathematics, slash commands, real-time collaboration, and split visual/source editing are outside the current scope.
