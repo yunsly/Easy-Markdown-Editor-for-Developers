@@ -13,8 +13,8 @@
   z-index: 5;
   top: 6px;
   right: max(20px, calc((100% - 960px) / 2 + 16px));
-  width: 68px;
-  height: 68px;
+  width: 78px;
+  height: 72px;
   pointer-events: none;
   user-select: none;
   animation: cat-peek-in 500ms ease-out both;
@@ -35,11 +35,12 @@
   fill: #111111;
   stroke: #f6ead7;
   stroke-linejoin: round;
-  stroke-width: 2;
+  stroke-width: 2.25;
 }
 
 .cat-mascot__ear-detail {
-  fill: #27231f;
+  fill: #6d5143;
+  opacity: 0.72;
 }
 
 .cat-mascot__tail-outline,
@@ -61,9 +62,8 @@
 
 .cat-mascot__paw,
 .cat-mascot__eye,
-.cat-mascot__nose,
 .cat-mascot__mouth,
-.cat-mascot__cheek {
+.cat-mascot__whisker {
   fill: none;
   stroke: #f6ead7;
   stroke-linecap: round;
@@ -71,22 +71,29 @@
 }
 
 .cat-mascot__paw {
-  stroke-width: 2;
+  stroke-width: 2.25;
 }
 
 .cat-mascot__eye {
-  stroke-width: 6;
+  stroke-width: 5.5;
 }
 
-.cat-mascot__nose,
 .cat-mascot__mouth {
-  stroke-width: 3;
+  stroke-width: 2.75;
 }
 
-.cat-mascot__cheek {
-  opacity: 0.6;
-  stroke: #d3a77b;
-  stroke-width: 2.5;
+.cat-mascot__nose {
+  fill: #f6ead7;
+}
+
+.cat-mascot__blush {
+  fill: #d99a84;
+  opacity: 0.72;
+}
+
+.cat-mascot__whisker {
+  opacity: 0.82;
+  stroke-width: 2;
 }
 
 .cat-mascot__body {
@@ -162,8 +169,8 @@
   .cat-mascot-overlay {
     top: 5px;
     right: 8px;
-    width: 48px;
-    height: 48px;
+    width: 54px;
+    height: 50px;
   }
 }
 
