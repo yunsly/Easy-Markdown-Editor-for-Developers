@@ -28,6 +28,12 @@ const textBlockActions = [
   'heading-3',
 ] as const satisfies readonly EditorToolbarAction[];
 
+const textAlignmentActions = [
+  'align-left',
+  'align-center',
+  'align-right',
+] as const satisfies readonly EditorToolbarAction[];
+
 const getActiveTextBlockAction = (
   context: Ctx,
   state: EditorState,
@@ -136,6 +142,22 @@ export const updateEditorToolbarState = (
 
   for (const action of textBlockActions) {
     updateButtonState(toolbar, action, action === activeAction);
+  }
+
+  const textAlign = state.selection.$from.parent.attrs.textAlign as unknown;
+
+  for (const action of textAlignmentActions) {
+    const actionAlignment = action === 'align-center'
+      ? 'center'
+      : action === 'align-right'
+        ? 'right'
+        : null;
+    updateButtonState(toolbar, action, textAlign === actionAlignment);
+    const button = toolbar.buttons.get(action);
+
+    if (button !== undefined) {
+      button.disabled = isTableActive || activeAction === undefined;
+    }
   }
 
   updateButtonState(

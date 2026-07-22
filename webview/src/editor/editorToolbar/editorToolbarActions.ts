@@ -1,5 +1,6 @@
 import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
 import type { Editor } from '@milkdown/kit/core';
+import type { MilkdownPlugin } from '@milkdown/kit/ctx';
 import { lift, wrapIn } from '@milkdown/kit/prose/commands';
 import type {
   NodeType,
@@ -12,12 +13,17 @@ import {
   bulletListSchema,
   codeBlockSchema,
   createCodeBlockCommand,
+  headingAttr,
+  headingIdGenerator,
+  headingSchema,
   imageSchema,
   insertImageCommand,
   liftListItemCommand,
   linkSchema,
   listItemSchema,
   orderedListSchema,
+  paragraphAttr,
+  paragraphSchema,
   turnIntoTextCommand,
   wrapInBulletListCommand,
   wrapInBlockquoteCommand,
@@ -28,6 +34,8 @@ import {
   insertTableCommand,
   tableSchema,
 } from '@milkdown/kit/preset/gfm';
+import type { Node as MarkdownNode } from '@milkdown/kit/transformer';
+import { $remark } from '@milkdown/kit/utils';
 
 import type {
   EditorToolbarAction,
@@ -39,6 +47,146 @@ export interface CopiedAttachment {
   src: string;
   text: string;
 }
+
+type TextAlignment = 'center' | 'right';
+
+const alignmentMarkerPattern =
+  /^<!--\s*easy-markdown-editor-align:(center|right)\s*-->$/;
+
+const getMarkerValue = (node: MarkdownNode): string | undefined => {
+  if (node.type === 'html' && 'value' in node) {
+    return typeof node.value === 'string' ? node.value : undefined;
+  }
+
+  if (
+    node.type === 'paragraph' &&
+    'children' in node &&
+    Array.isArray(node.children) &&
+    node.children.length === 1
+  ) {
+    return getMarkerValue(node.children[0] as MarkdownNode);
+  }
+
+  return undefined;
+};
+
+const restoreTextAlignment = (node: MarkdownNode): void => {
+  if (!('children' in node) || !Array.isArray(node.children)) {
+    return;
+  }
+
+  const children = node.children as MarkdownNode[];
+
+  for (let index = 0; index < children.length; index += 1) {
+    const current = children[index];
+    const next = children[index + 1];
+    const markerMatch = current === undefined
+      ? undefined
+      : getMarkerValue(current)?.trim().match(alignmentMarkerPattern);
+
+    if (
+      markerMatch != null &&
+      markerMatch[1] !== undefined &&
+      next !== undefined &&
+      (next.type === 'paragraph' || next.type === 'heading')
+    ) {
+      (next as MarkdownNode & { textAlign?: string }).textAlign = markerMatch[1];
+      children.splice(index, 1);
+      index -= 1;
+      continue;
+    }
+
+    if (current !== undefined) {
+      restoreTextAlignment(current);
+    }
+  }
+};
+
+const remarkTextAlignment = $remark(
+  'remarkTextAlignment',
+  () => () => restoreTextAlignment,
+);
+
+const extendTextBlockSchema = (
+  baseSchema: typeof paragraphSchema | typeof headingSchema,
+) => baseSchema.extendSchema((previous) => (context) => {
+  const schema = previous(context);
+
+  return {
+    ...schema,
+    attrs: {
+      ...schema.attrs,
+      textAlign: {
+        default: null,
+        validate: 'string|null',
+      },
+    },
+    toDOM: (node) => {
+      const textAlign = node.attrs.textAlign as TextAlignment | null;
+      const element = node.type.name === 'heading'
+        ? `h${String(node.attrs.level)}`
+        : 'p';
+      const headingId = node.attrs.id as unknown;
+      const attributes = node.type.name === 'heading'
+        ? {
+          ...context.get(headingAttr.key)(node),
+          id: typeof headingId === 'string' && headingId.length > 0
+            ? headingId
+            : context.get(headingIdGenerator.key)(node),
+        }
+        : context.get(paragraphAttr.key)(node);
+
+      return [
+        element,
+        textAlign === null
+          ? attributes
+          : { ...attributes, align: textAlign },
+        0,
+      ];
+    },
+    parseMarkdown: {
+      ...schema.parseMarkdown,
+      runner: (state, node, type) => {
+        const textAlign = node.textAlign === 'center' ||
+            node.textAlign === 'right'
+          ? node.textAlign
+          : null;
+        const attrs = node.type === 'heading'
+          ? { level: node.depth as number, textAlign }
+          : { textAlign };
+
+        state.openNode(type, attrs);
+        state.next(node.children);
+        state.closeNode();
+      },
+    },
+    toMarkdown: {
+      ...schema.toMarkdown,
+      runner: (state, node) => {
+        const textAlign = node.attrs.textAlign as TextAlignment | null;
+
+        if (textAlign !== null) {
+          state.addNode(
+            'html',
+            undefined,
+            `<!-- easy-markdown-editor-align:${textAlign} -->`,
+          );
+        }
+
+        schema.toMarkdown.runner(state, node);
+      },
+    },
+  };
+});
+
+const paragraphTextAlignmentSchema = extendTextBlockSchema(paragraphSchema);
+const headingTextAlignmentSchema = extendTextBlockSchema(headingSchema);
+
+export const textAlignmentPlugins: MilkdownPlugin[] = [
+  remarkTextAlignment,
+  paragraphTextAlignmentSchema,
+  headingTextAlignmentSchema,
+].flat();
 
 const findAncestorDepth = (
   position: ResolvedPos,
@@ -182,6 +330,59 @@ export const runEditorToolbarAction = (
           ? turnIntoTextCommand.key
           : createCodeBlockCommand.key,
       );
+    } else if (
+      action === 'align-left' ||
+      action === 'align-center' ||
+      action === 'align-right'
+    ) {
+      if (isInTable(view.state)) {
+        view.focus();
+        return;
+      }
+
+      const textAlign = action === 'align-center'
+        ? 'center'
+        : action === 'align-right'
+          ? 'right'
+          : null;
+      const paragraphType = paragraphSchema.type(context);
+      const headingType = headingSchema.type(context);
+      const { selection } = view.state;
+      const positions = new Map<number, NodeType>();
+
+      if (selection.empty) {
+        const { $from } = selection;
+
+        if ($from.parent.type === paragraphType || $from.parent.type === headingType) {
+          positions.set($from.before($from.depth), $from.parent.type);
+        }
+      } else {
+        view.state.doc.nodesBetween(selection.from, selection.to, (node, position) => {
+          if (node.type === paragraphType || node.type === headingType) {
+            positions.set(position, node.type);
+            return false;
+          }
+
+          return true;
+        });
+      }
+
+      let transaction = view.state.tr;
+
+      for (const [position] of positions) {
+        const node = transaction.doc.nodeAt(position);
+
+        if (node !== null) {
+          transaction = transaction.setNodeMarkup(position, undefined, {
+            ...node.attrs,
+            textAlign,
+          });
+        }
+      }
+
+      if (transaction.docChanged) {
+        view.dispatch(transaction.scrollIntoView());
+      }
     } else if (action === 'badge' && options.image !== undefined) {
       const { alt, linkUrl, src } = options.image;
 

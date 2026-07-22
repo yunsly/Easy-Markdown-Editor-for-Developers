@@ -12,6 +12,9 @@ import {
 
 export type EditorToolbarAction =
   | 'attach'
+  | 'align-center'
+  | 'align-left'
+  | 'align-right'
   | 'badge'
   | 'blockquote'
   | 'bullet-list'
@@ -54,6 +57,9 @@ const toolbarButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'heading-1', label: 'Heading 1', text: 'H1' },
   { action: 'heading-2', label: 'Heading 2', text: 'H2' },
   { action: 'heading-3', label: 'Heading 3', text: 'H3' },
+  { action: 'align-left', label: 'Align Left', text: '≡←' },
+  { action: 'align-center', label: 'Align Center', text: '≡↔' },
+  { action: 'align-right', label: 'Align Right', text: '→≡' },
   { action: 'bullet-list', label: 'Bulleted List', text: '• List' },
   { action: 'ordered-list', label: 'Numbered List', text: '1. List' },
   { action: 'task-list', label: 'Task List', text: 'Task' },
