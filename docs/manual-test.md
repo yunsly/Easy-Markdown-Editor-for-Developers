@@ -1,38 +1,5 @@
 # 수동 테스트 기록
 
-## Visual Editor Cat Mascot MVP 회귀 테스트
-
-- 실행일: 미실행
-- 환경: Extension Development Host
-- 대상: `fixtures/korean.md`, `fixtures/table.md`, 임시 Markdown 파일
-- 편집기: Visual Markdown Editor
-- 설정: `easy-markdown-editor-for-developers.mascot.enabled`
-- 결과: 사용자 검증 필요
-
-### 확인 항목
-
-- [ ] Visual Mode에서 문서 오른쪽 위에 검은 고양이가 표시된다.
-- [ ] 고양이의 꼬리가 천천히 흔들리고, 눈 깜빡임과 몸 움직임이 산만하지 않다.
-- [ ] Source Mode로 전환하면 고양이가 숨겨지고 Visual Mode로 돌아오면 다시 표시된다.
-- [ ] 모드 전환 전후의 문서 내용, 선택, scroll 위치와 dirty state가 유지된다.
-- [ ] 설정을 끄면 열린 Editor에서 즉시 숨겨지고 전용 상단 여백도 제거된다.
-- [ ] 설정을 켜면 열린 Editor에서 고양이가 한 번만 생성되어 다시 표시된다.
-- [ ] 고양이 아래의 텍스트와 링크를 클릭하고 drag selection을 할 수 있다.
-- [ ] Table 편집, Delete Table Tooltip, Badge Builder와 Attachment dialog를 방해하지 않는다.
-- [ ] 520px 이하 pane에서 고양이가 축소되고 360px 이하에서 숨겨진다.
-- [ ] Light, Dark 및 High Contrast Theme에서 고양이 형태를 구분할 수 있다.
-- [ ] 운영체제의 Reduce Motion 설정에서 모든 마스코트 애니메이션이 정지한다.
-- [ ] 한글 IME 입력, Undo/Redo, 저장 및 외부 문서 변경 동기화가 기존과 동일하게 동작한다.
-- [ ] 설정 및 모드 변경만으로 Markdown 파일 내용이나 VS Code dirty state가 변경되지 않는다.
-- [ ] Editor를 닫은 뒤 설정을 변경해도 닫힌 Webview 관련 오류가 발생하지 않는다.
-
-### 현재 제한
-
-- 고양이는 문서 위를 이동하거나 cursor 및 pointer를 추적하지 않는다.
-- 클릭, 저장 및 편집 이벤트에 반응하지 않는다.
-- 여러 표정이나 skin을 선택할 수 없다.
-- Source Mode에서는 표시하지 않는다.
-
 ## Local File Attachment 회귀 테스트
 
 - 실행일: 미실행

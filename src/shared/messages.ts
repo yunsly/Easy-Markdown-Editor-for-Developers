@@ -3,7 +3,6 @@ export type ExtensionToWebviewMessage =
       type: 'initDocument';
       text: string;
       version: number;
-      mascotEnabled: boolean;
       resourceBaseUri?: string;
     }
   | {
@@ -19,10 +18,6 @@ export type ExtensionToWebviewMessage =
   | {
       type: 'showError';
       message: string;
-    }
-  | {
-      type: 'updateUiPreferences';
-      mascotEnabled: boolean;
     }
   | {
       type: 'attachmentSourceSelected';
@@ -107,7 +102,6 @@ export function isExtensionToWebviewMessage(
       return (
         typeof value.text === 'string' &&
         isNonNegativeSafeInteger(value.version) &&
-        typeof value.mascotEnabled === 'boolean' &&
         (
           value.resourceBaseUri === undefined ||
           typeof value.resourceBaseUri === 'string'
@@ -125,8 +119,6 @@ export function isExtensionToWebviewMessage(
       );
     case 'showError':
       return typeof value.message === 'string';
-    case 'updateUiPreferences':
-      return typeof value.mascotEnabled === 'boolean';
     case 'attachmentSourceSelected':
       return (
         hasRequestId(value) &&

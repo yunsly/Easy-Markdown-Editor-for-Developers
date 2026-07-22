@@ -15,7 +15,6 @@ import { callCommand, replaceAll } from '@milkdown/kit/utils';
 import './styles.css';
 import './vscode-theme.css';
 import './document-layout.css';
-import './editor/mascot/catMascot.css';
 
 import {
   onMessageFromExtension,
@@ -38,10 +37,6 @@ import {
 } from './editor/editorToolbar/editorToolbarActions';
 import { updateEditorToolbarState } from './editor/editorToolbar/editorToolbarState';
 import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
-import {
-  createCatMascot,
-  isCatMascotVisible,
-} from './editor/mascot/createCatMascot';
 import { registerWorkspaceImageView } from './editor/registerWorkspaceImageView';
 import {
   createMarkdownSourceEditor,
@@ -92,31 +87,6 @@ const sourceEditorRoot = document.createElement('div');
 sourceEditorRoot.className = 'source-editor-root';
 sourceEditorRoot.hidden = true;
 const editorModeState = createEditorModeState();
-const editorViewport = document.createElement('div');
-editorViewport.className = 'editor-viewport';
-let catMascot: HTMLElement | undefined;
-let mascotEnabled = false;
-const syncCatMascotVisibility = (mode = editorModeState.getMode()): void => {
-  editorViewport.classList.toggle(
-    'editor-viewport--mascot-enabled',
-    mascotEnabled,
-  );
-
-  if (!mascotEnabled) {
-    catMascot?.remove();
-    catMascot = undefined;
-    return;
-  }
-
-  catMascot ??= createCatMascot();
-
-  if (!catMascot.isConnected) {
-    editorViewport.append(catMascot);
-  }
-
-  catMascot.hidden = !isCatMascotVisible(mode, mascotEnabled);
-};
-editorViewport.replaceChildren(editorRoot, sourceEditorRoot);
 const editorToolbar = createEditorToolbar(
   handleEditorToolbarAction,
   handleEditorModeRequest,
@@ -124,7 +94,6 @@ const editorToolbar = createEditorToolbar(
 editorToolbar.modeControl.setEnabled('source', false);
 const unsubscribeEditorMode = editorModeState.subscribe((mode) => {
   editorToolbar.modeControl.setMode(mode);
-  syncCatMascotVisibility(mode);
 });
 const getToolbarButton = (
   action: EditorToolbarAction,
@@ -158,7 +127,8 @@ const attachmentDialog = createAttachmentDialog(
 container.replaceChildren(
   errorBanner,
   editorToolbar.element,
-  editorViewport,
+  editorRoot,
+  sourceEditorRoot,
 );
 
 const showError = (message: string): void => {
@@ -862,8 +832,6 @@ const initializeEditor = async (
 
 const disposeMessageListener = onMessageFromExtension((message) => {
   if (message.type === 'initDocument') {
-    mascotEnabled = message.mascotEnabled;
-    syncCatMascotVisibility();
     void initializeEditor(
       message.text,
       message.version,
@@ -875,9 +843,6 @@ const disposeMessageListener = onMessageFromExtension((message) => {
     handleReplaceDocument(message.text, message.version);
   } else if (message.type === 'showError') {
     showError(message.message);
-  } else if (message.type === 'updateUiPreferences') {
-    mascotEnabled = message.mascotEnabled;
-    syncCatMascotVisibility();
   } else if (message.type === 'attachmentSourceSelected') {
     if (message.requestId === pendingAttachmentRequestId) {
       attachmentDialog.open(message);
@@ -941,8 +906,6 @@ window.addEventListener(
     badgeBuilder.destroy();
     attachmentDialog.destroy();
     unsubscribeEditorMode();
-    catMascot?.remove();
-    catMascot = undefined;
     editorToolbar.destroy();
     editorRoot.removeEventListener(
       'compositionstart',
