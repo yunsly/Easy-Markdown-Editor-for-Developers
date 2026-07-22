@@ -5,7 +5,7 @@
 }
 
 .editor-viewport--mascot-enabled .editor-root .milkdown .ProseMirror {
-  padding-top: clamp(82px, 9vw, 96px);
+  padding-top: clamp(100px, 11vw, 112px);
 }
 
 .cat-mascot-overlay {
@@ -13,8 +13,8 @@
   z-index: 5;
   top: 6px;
   right: max(20px, calc((100% - 960px) / 2 + 16px));
-  width: 78px;
-  height: 72px;
+  width: 92px;
+  height: 90px;
   pointer-events: none;
   user-select: none;
   animation: cat-peek-in 500ms ease-out both;
@@ -31,16 +31,25 @@
   overflow: visible;
 }
 
-.cat-mascot__shape {
+.cat-mascot__head,
+.cat-mascot__body-shape {
   fill: #111111;
-  stroke: #f6ead7;
+  stroke: #74767c;
   stroke-linejoin: round;
-  stroke-width: 2.25;
+  stroke-width: 1.5;
 }
 
 .cat-mascot__ear-detail {
-  fill: #6d5143;
-  opacity: 0.72;
+  fill: #fff0cf;
+}
+
+.cat-mascot__ear-warmth {
+  fill: #f2a07d;
+}
+
+.cat-mascot__shadow {
+  fill: #000000;
+  opacity: 0.32;
 }
 
 .cat-mascot__tail-outline,
@@ -51,16 +60,15 @@
 }
 
 .cat-mascot__tail-outline {
-  stroke: #f6ead7;
-  stroke-width: 14;
+  stroke: #74767c;
+  stroke-width: 16;
 }
 
 .cat-mascot__tail-fill {
   stroke: #111111;
-  stroke-width: 10;
+  stroke-width: 13;
 }
 
-.cat-mascot__paw,
 .cat-mascot__eye,
 .cat-mascot__mouth,
 .cat-mascot__whisker {
@@ -70,8 +78,47 @@
   stroke-linejoin: round;
 }
 
-.cat-mascot__paw {
-  stroke-width: 2.25;
+.cat-mascot__tail-highlight,
+.cat-mascot__fur-highlight,
+.cat-mascot__front-toes {
+  fill: none;
+  stroke: #66686e;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cat-mascot__tail-highlight {
+  stroke-width: 2.5;
+}
+
+.cat-mascot__chest {
+  fill: #292a2e;
+}
+
+.cat-mascot__front-leg {
+  fill: #171719;
+  stroke: #55575d;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.25;
+}
+
+.cat-mascot__back-paw {
+  fill: #fff0cf;
+  stroke: #d6c19c;
+  stroke-width: 1;
+}
+
+.cat-mascot__toe-bean {
+  fill: #f47f72;
+}
+
+.cat-mascot__fur-highlight {
+  stroke-width: 1.5;
+}
+
+.cat-mascot__front-toes {
+  stroke-width: 1.2;
 }
 
 .cat-mascot__eye {
@@ -83,12 +130,7 @@
 }
 
 .cat-mascot__nose {
-  fill: #f6ead7;
-}
-
-.cat-mascot__blush {
-  fill: #d99a84;
-  opacity: 0.72;
+  fill: #fff0cf;
 }
 
 .cat-mascot__whisker {
@@ -96,7 +138,7 @@
   stroke-width: 2;
 }
 
-.cat-mascot__body {
+.cat-mascot__cat {
   transform-box: fill-box;
   transform-origin: center bottom;
   animation: cat-idle-bob 5.8s ease-in-out infinite;
@@ -163,14 +205,14 @@
 
 @media (max-width: 520px) {
   .editor-viewport--mascot-enabled .editor-root .milkdown .ProseMirror {
-    padding-top: 66px;
+    padding-top: 76px;
   }
 
   .cat-mascot-overlay {
     top: 5px;
     right: 8px;
-    width: 54px;
-    height: 50px;
+    width: 64px;
+    height: 62px;
   }
 }
 
@@ -186,7 +228,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .cat-mascot-overlay,
-  .cat-mascot__body,
+  .cat-mascot__cat,
   .cat-mascot__tail,
   .cat-mascot__eyes {
     animation: none !important;
