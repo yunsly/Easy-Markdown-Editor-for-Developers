@@ -15,6 +15,7 @@ import { callCommand, replaceAll } from '@milkdown/kit/utils';
 import './styles.css';
 import './vscode-theme.css';
 import './document-layout.css';
+import './editor/mascot/catMascot.css';
 
 import {
   onMessageFromExtension,
@@ -37,6 +38,10 @@ import {
 } from './editor/editorToolbar/editorToolbarActions';
 import { updateEditorToolbarState } from './editor/editorToolbar/editorToolbarState';
 import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
+import {
+  createCatMascot,
+  isCatMascotVisible,
+} from './editor/mascot/createCatMascot';
 import { registerWorkspaceImageView } from './editor/registerWorkspaceImageView';
 import {
   createMarkdownSourceEditor,
@@ -87,6 +92,13 @@ const sourceEditorRoot = document.createElement('div');
 sourceEditorRoot.className = 'source-editor-root';
 sourceEditorRoot.hidden = true;
 const editorModeState = createEditorModeState();
+const editorViewport = document.createElement('div');
+editorViewport.className = 'editor-viewport';
+const catMascot = createCatMascot();
+const syncCatMascotVisibility = (mode: EditorMode): void => {
+  catMascot.hidden = !isCatMascotVisible(mode, true);
+};
+editorViewport.replaceChildren(editorRoot, sourceEditorRoot, catMascot);
 const editorToolbar = createEditorToolbar(
   handleEditorToolbarAction,
   handleEditorModeRequest,
@@ -94,6 +106,7 @@ const editorToolbar = createEditorToolbar(
 editorToolbar.modeControl.setEnabled('source', false);
 const unsubscribeEditorMode = editorModeState.subscribe((mode) => {
   editorToolbar.modeControl.setMode(mode);
+  syncCatMascotVisibility(mode);
 });
 const getToolbarButton = (
   action: EditorToolbarAction,
@@ -127,8 +140,7 @@ const attachmentDialog = createAttachmentDialog(
 container.replaceChildren(
   errorBanner,
   editorToolbar.element,
-  editorRoot,
-  sourceEditorRoot,
+  editorViewport,
 );
 
 const showError = (message: string): void => {
