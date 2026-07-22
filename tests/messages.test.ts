@@ -88,6 +88,7 @@ describe('document resource base message validation', () => {
       type: 'initDocument',
       text: '# Document',
       version: 1,
+      mascotEnabled: true,
       resourceBaseUri: 'https://file+.vscode-resource.vscode-cdn.net/project',
     })).toBe(true);
   });
@@ -97,7 +98,33 @@ describe('document resource base message validation', () => {
       type: 'initDocument',
       text: '# Document',
       version: 1,
+      mascotEnabled: true,
       resourceBaseUri: 42,
+    })).toBe(false);
+  });
+
+  it('requires a Boolean mascot preference in the initial document', () => {
+    expect(isExtensionToWebviewMessage({
+      type: 'initDocument',
+      text: '# Document',
+      version: 1,
+      mascotEnabled: 'yes',
+    })).toBe(false);
+  });
+});
+
+describe('UI preference message validation', () => {
+  it('accepts a Boolean mascot visibility update', () => {
+    expect(isExtensionToWebviewMessage({
+      type: 'updateUiPreferences',
+      mascotEnabled: false,
+    })).toBe(true);
+  });
+
+  it('rejects a non-Boolean mascot visibility update', () => {
+    expect(isExtensionToWebviewMessage({
+      type: 'updateUiPreferences',
+      mascotEnabled: 'false',
     })).toBe(false);
   });
 });

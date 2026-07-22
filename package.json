@@ -19,6 +19,16 @@
   "icon": "images/icon.png",
   "activationEvents": [],
   "contributes": {
+    "configuration": {
+      "title": "Easy Markdown Editor for Developers",
+      "properties": {
+        "easy-markdown-editor-for-developers.mascot.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the animated cat mascot in Visual mode."
+        }
+      }
+    },
     "customEditors": [
       {
         "viewType": "visualMarkdown.editor",

@@ -94,11 +94,29 @@ sourceEditorRoot.hidden = true;
 const editorModeState = createEditorModeState();
 const editorViewport = document.createElement('div');
 editorViewport.className = 'editor-viewport';
-const catMascot = createCatMascot();
-const syncCatMascotVisibility = (mode: EditorMode): void => {
-  catMascot.hidden = !isCatMascotVisible(mode, true);
+let catMascot: HTMLElement | undefined;
+let mascotEnabled = false;
+const syncCatMascotVisibility = (mode = editorModeState.getMode()): void => {
+  editorViewport.classList.toggle(
+    'editor-viewport--mascot-enabled',
+    mascotEnabled,
+  );
+
+  if (!mascotEnabled) {
+    catMascot?.remove();
+    catMascot = undefined;
+    return;
+  }
+
+  catMascot ??= createCatMascot();
+
+  if (!catMascot.isConnected) {
+    editorViewport.append(catMascot);
+  }
+
+  catMascot.hidden = !isCatMascotVisible(mode, mascotEnabled);
 };
-editorViewport.replaceChildren(editorRoot, sourceEditorRoot, catMascot);
+editorViewport.replaceChildren(editorRoot, sourceEditorRoot);
 const editorToolbar = createEditorToolbar(
   handleEditorToolbarAction,
   handleEditorModeRequest,
@@ -844,6 +862,8 @@ const initializeEditor = async (
 
 const disposeMessageListener = onMessageFromExtension((message) => {
   if (message.type === 'initDocument') {
+    mascotEnabled = message.mascotEnabled;
+    syncCatMascotVisibility();
     void initializeEditor(
       message.text,
       message.version,
@@ -855,6 +875,9 @@ const disposeMessageListener = onMessageFromExtension((message) => {
     handleReplaceDocument(message.text, message.version);
   } else if (message.type === 'showError') {
     showError(message.message);
+  } else if (message.type === 'updateUiPreferences') {
+    mascotEnabled = message.mascotEnabled;
+    syncCatMascotVisibility();
   } else if (message.type === 'attachmentSourceSelected') {
     if (message.requestId === pendingAttachmentRequestId) {
       attachmentDialog.open(message);
@@ -918,6 +941,8 @@ window.addEventListener(
     badgeBuilder.destroy();
     attachmentDialog.destroy();
     unsubscribeEditorMode();
+    catMascot?.remove();
+    catMascot = undefined;
     editorToolbar.destroy();
     editorRoot.removeEventListener(
       'compositionstart',

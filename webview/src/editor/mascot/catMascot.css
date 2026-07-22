@@ -4,7 +4,7 @@
   min-height: 100vh;
 }
 
-.editor-viewport .editor-root .milkdown .ProseMirror {
+.editor-viewport--mascot-enabled .editor-root .milkdown .ProseMirror {
   padding-top: clamp(82px, 9vw, 96px);
 }
 
@@ -155,7 +155,7 @@
 }
 
 @media (max-width: 520px) {
-  .editor-viewport .editor-root .milkdown .ProseMirror {
+  .editor-viewport--mascot-enabled .editor-root .milkdown .ProseMirror {
     padding-top: 66px;
   }
 
@@ -168,7 +168,7 @@
 }
 
 @media (max-width: 360px) {
-  .editor-viewport .editor-root .milkdown .ProseMirror {
+  .editor-viewport--mascot-enabled .editor-root .milkdown .ProseMirror {
     padding-top: 32px;
   }
 

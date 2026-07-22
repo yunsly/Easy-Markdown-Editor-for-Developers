@@ -44,6 +44,11 @@ interface PendingDocumentApply {
   expectedMarkdown: string;
 }
 
+const EXTENSION_CONFIGURATION_SECTION =
+  'easy-markdown-editor-for-developers';
+const MASCOT_CONFIGURATION_KEY = 'mascot.enabled';
+const MASCOT_CONFIGURATION_SECTION = `${EXTENSION_CONFIGURATION_SECTION}.${MASCOT_CONFIGURATION_KEY}`;
+
 export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
   public static readonly viewType = 'visualMarkdown.editor';
 
@@ -82,6 +87,10 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
     let pendingDocumentApply: PendingDocumentApply | undefined;
     let isSelectingAttachment = false;
     const pendingAttachmentSources = new Map<string, Uri>();
+    const getMascotEnabled = (): boolean =>
+      workspace
+        .getConfiguration(EXTENSION_CONFIGURATION_SECTION, document.uri)
+        .get<boolean>(MASCOT_CONFIGURATION_KEY, true);
 
     const reportError = (errorMessage: string): void => {
       const showErrorMessage: ExtensionToWebviewMessage = {
@@ -412,6 +421,22 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
       },
     );
 
+    const configurationChangeSubscription =
+      workspace.onDidChangeConfiguration((event) => {
+        if (
+          isDisposed ||
+          !event.affectsConfiguration(MASCOT_CONFIGURATION_SECTION)
+        ) {
+          return;
+        }
+
+        const preferencesMessage: ExtensionToWebviewMessage = {
+          type: 'updateUiPreferences',
+          mascotEnabled: getMascotEnabled(),
+        };
+        void webview.postMessage(preferencesMessage);
+      });
+
     const messageSubscription = webview.onDidReceiveMessage(
       (message: unknown) => {
         if (!isWebviewToExtensionMessage(message)) {
@@ -460,6 +485,7 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
           type: 'initDocument',
           text: document.getText(),
           version: document.version,
+          mascotEnabled: getMascotEnabled(),
           ...(canLoadWorkspaceResources
             ? {
                 resourceBaseUri: webview.asWebviewUri(
@@ -492,6 +518,7 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
       pendingAttachmentSources.clear();
       messageSubscription.dispose();
       documentChangeSubscription.dispose();
+      configurationChangeSubscription.dispose();
     });
 
     webview.html = `<!DOCTYPE html>
