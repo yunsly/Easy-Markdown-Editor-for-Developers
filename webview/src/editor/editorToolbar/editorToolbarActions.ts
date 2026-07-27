@@ -218,6 +218,12 @@ export const runEditorToolbarAction = (
       commands.call(wrapInHeadingCommand.key, 2);
     } else if (action === 'heading-3') {
       commands.call(wrapInHeadingCommand.key, 3);
+    } else if (action === 'heading-4') {
+      commands.call(wrapInHeadingCommand.key, 4);
+    } else if (action === 'heading-5') {
+      commands.call(wrapInHeadingCommand.key, 5);
+    } else if (action === 'heading-6') {
+      commands.call(wrapInHeadingCommand.key, 6);
     } else if (
       action === 'bullet-list' ||
       action === 'ordered-list'
