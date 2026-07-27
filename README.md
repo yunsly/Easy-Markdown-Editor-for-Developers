@@ -1,63 +1,75 @@
 # Easy Markdown Editor for Developers
 
+**English** | [한국어](./README.ko.md)
+
 ***
 
-**Easy Markdown Editor f**or Developers 은 개발자들을 위한 `.md` 파일 편집기입니다.
+**Easy Markdown Editor for Developers** is a `.md` file editor built for developers.
 
-VScode 테마에 맞춘 테마 및 편리한 편집과 함께 **Tech Stack 배지**와 **파일 첨부**가 가능합니다.
+It provides a comfortable editing experience that follows your VS Code theme, with built-in **Tech Stack Badges** and **File Attachments**.
 
 ### Features
 
-- **비주얼 마크다운 편집** — 렌더링된 문서를 바로 편집하고, 같은 탭에서 `Visual`과 `Source` 모드를 전환할 수 있습니다.
-- **테크 스택 배지 빌더** — 기술 프리셋을 검색하고 색상, 스타일, 라벨, 링크를 설정해 Shields.io 배지를 미리 본 뒤 삽입할 수 있습니다.
-- **파일 첨부** — 로컬 파일을 워크스페이스의 상대 경로로 복사하고 이미지 또는 링크로 삽입합니다. 같은 이름의 파일은 덮어쓰지 않고 자동으로 이름을 구분합니다.
-- **풍부한 마크다운 서식** — H1~H6 제목, 굵게, 기울임, 취소선, 인라인 코드, 링크, 목록, 작업 목록, 인용문, 코드 블록을 지원합니다.
-- **표 편집** — 크기를 선택해 표를 삽입하고 행과 열을 편집하며, 열 정렬과 표 삭제를 할 수 있습니다.
-- **VS Code에 자연스럽게 통합** — 저장, 실행 취소·다시 실행, 외부 변경 동기화, 라이트·다크 테마와 한글 IME 입력을 지원합니다.
+* **Visual Markdown Editing** — Edit documents directly and switch easily between `Visual` and `Source` modes.
+
+  * H1–H6 headings, bold, italic, strikethrough, inline code, links, lists, task lists, blockquotes, and code blocks
+  * An accessible floating formatting toolbar
+  * Language selection inside code blocks
+
+* **Tech Stack Badges** — Search technology presets and insert Shields.io badges with ease.
+
+* **File Attachments** — Copy local files to workspace-relative paths and insert them as images or links.
+
+* **Table Editing** — Insert tables, edit rows and columns, align columns, and delete tables with ease.
+
+* **VS Code Integration** — Supports save, undo and redo, external change synchronization, light and dark themes, and stable Korean IME input.
 
 ### Shortcuts
 
-아래 표의 `Cmd`는 macOS, `Ctrl`은 Windows와 Linux 기준입니다. 서식 단축키와 빠른 마크다운 입력은 `Visual` 모드에서 동작합니다.
+* macOS: `Cmd` | Windows/Linux: `Ctrl`
+* Formatting shortcuts and Quick Markdown work in `Visual` mode.
 
-#### 키보드 단축키
+#### Keyboard Shortcuts
 
-| 단축키 | 역할 |
+| Shortcut | Action |
 | --- | --- |
-| `Cmd/Ctrl + B` | 굵게 전환 |
-| `Cmd/Ctrl + I` | 기울임 전환 |
-| `Cmd/Ctrl + E` | 인라인 코드 전환 |
-| `Cmd/Ctrl + Alt + X` | 취소선 전환 |
-| `Cmd/Ctrl + Shift + B` | 인용문 전환 |
-| `Cmd/Ctrl + Alt + 0` | 일반 문단으로 전환 |
-| `Cmd/Ctrl + Alt + 1~6` | H1~H6 제목으로 전환 |
-| `Cmd/Ctrl + Alt + 7` | 번호 목록으로 전환 |
-| `Cmd/Ctrl + Alt + 8` | 글머리 기호 목록으로 전환 |
-| `Cmd/Ctrl + Alt + C` | 코드 블록으로 전환 |
-| `Shift + Enter` | 줄바꿈 삽입 |
-| `Tab` / `Cmd/Ctrl + ]` | 목록 항목 들여쓰기 또는 다음 표 셀로 이동 |
-| `Shift + Tab` / `Cmd/Ctrl + [` | 목록 항목 내어쓰기 또는 이전 표 셀로 이동 |
-| `Enter` | 다음 목록 항목 생성 또는 표 아래 새 문단으로 이동 |
-| `Backspace` / `Delete` | 제목 단계 낮추기 또는 목록에서 빠져나오기 |
-| `Alt + F10` | 선택한 텍스트의 플로팅 서식 도구 모음으로 이동 |
-| `Esc` | 열린 메뉴나 도구 모음을 닫고 편집기로 복귀 |
-| `Cmd/Ctrl + Z` | 실행 취소 |
-| `Cmd/Ctrl + Shift + Z` / `Ctrl + Y` | 다시 실행 |
-| `Cmd/Ctrl + S` | 문서 저장 |
+| `Cmd/Ctrl + B` | Toggle bold |
+| `Cmd/Ctrl + I` | Toggle italic |
+| `Cmd/Ctrl + E` | Toggle inline code |
+| `Cmd/Ctrl + Alt + X` | Toggle strikethrough |
+| `Cmd/Ctrl + Shift + B` | Toggle blockquote |
+| `Cmd/Ctrl + Alt + 0` | Convert to a paragraph |
+| `Cmd/Ctrl + Alt + 1~6` | Convert to an H1–H6 heading |
+| `Cmd/Ctrl + Alt + 7` | Convert to an ordered list |
+| `Cmd/Ctrl + Alt + 8` | Convert to a bullet list |
+| `Cmd/Ctrl + Alt + C` | Convert to a code block |
+| `Shift + Enter` | Insert a line break |
+| `Tab` / `Cmd/Ctrl + ]` | Indent a list item or move to the next table cell |
+| `Shift + Tab` / `Cmd/Ctrl + [` | Outdent a list item or move to the previous table cell |
+| `Enter` | Create the next list item or move to a new paragraph below a table |
+| `Backspace` / `Delete` | Decrease the heading level or exit a list |
+| `Alt + F10` | Move focus to the floating formatting toolbar for selected text |
+| `Esc` | Close the open menu or toolbar and return to the editor |
+| `Cmd/Ctrl + Z` | Undo |
+| `Cmd/Ctrl + Shift + Z` / `Ctrl + Y` | Redo |
+| `Cmd/Ctrl + S` | Save the document |
 
-#### 빠른 마크다운 입력
+#### Quick Markdown
 
-| 입력 | 역할 |
+| Input | Action |
 | --- | --- |
-| `# + Space` ~ `###### + Space` | H1~H6 제목 생성 |
-| `> + Space` | 인용문 생성 |
-| `- + Space`, `+ + Space`, `* + Space` | 글머리 기호 목록 생성 |
-| `숫자. + Space` | 번호 목록 생성 |
-| `- [ ] + Space`, `- [x] + Space` | 미완료·완료 작업 항목 생성 |
-| `---`, `___ + Space`, `*** + Space` | 구분선 생성 |
-| <code>``` + Space</code> | 코드 블록 생성 |
-| <code>```언어 + Space</code> | 언어가 지정된 코드 블록 생성 (예: <code>```ts + Space</code>) |
-| `*텍스트*`, `_텍스트_` | 기울임 적용 |
-| `**텍스트**`, `__텍스트__` | 굵게 적용 |
-| `~~텍스트~~` | 취소선 적용 |
-| `` `텍스트` `` | 인라인 코드 적용 |
-| <code>&#124;열x행&#124; + Space</code> | 지정한 크기의 표 생성 (예: <code>&#124;2x3&#124; + Space</code>) |
+| `# + Space` ~ `###### + Space` | Create an H1–H6 heading |
+| `> + Space` | Create a blockquote |
+| `- + Space`, `+ + Space`, `* + Space` | Create a bullet list |
+| `number. + Space` | Create an ordered list |
+| `- [ ] + Space`, `- [x] + Space` | Create an incomplete or completed task item |
+| `---`, `___ + Space`, `*** + Space` | Create a horizontal rule |
+| <code>``` + Space</code> | Create a code block |
+| `*text*`, `_text_` | Apply italic formatting |
+| `**text**`, `__text__` | Apply bold formatting |
+| `~~text~~` | Apply strikethrough formatting |
+| `` `text` `` | Apply inline code formatting |
+
+<br />
+
+<br />
