@@ -37,7 +37,7 @@ const textAlignmentActions = [
   'align-right',
 ] as const satisfies readonly EditorToolbarAction[];
 
-const getActiveTextBlockAction = (
+export const getActiveTextBlockAction = (
   context: Ctx,
   state: EditorState,
 ): EditorToolbarAction | undefined => {
