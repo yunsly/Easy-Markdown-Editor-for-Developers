@@ -4,11 +4,15 @@ Easy Markdown Editor for Developers is a VS Code custom editor for editing Markd
 
 ## Features
 
-* Edit headings, paragraphs, blockquotes, code blocks, bulleted lists, numbered lists, and task lists visually.
+* Edit paragraphs, blockquotes, code blocks, bulleted lists, numbered lists, and task lists visually.
+
+* **Extended headings** — Edit Markdown headings from H1 through H6.
 
 * Format selected text with bold, italic, strikethrough, inline code, and links.
 
 * Insert tables with a keyboard-accessible size picker and delete the active table from its contextual tooltip.
+
+* **Table alignment** — Align table columns to the left, center, or right.
 
 * Build Shields.io technology badges from presets, with optional labels and click-through links.
 
@@ -28,10 +32,11 @@ Easy Markdown Editor for Developers is a VS Code custom editor for editing Markd
 2. Use the **Visual | Source** control at the right of the toolbar to switch editing modes in the same tab.
 3. Edit the document and save with the standard VS Code save command.
 
-In Visual mode, place the cursor in any table cell to show **Delete Table**
-above the whole table. The action uses the normal editor transaction, so one
-Undo restores the table. It is intentionally the only command in this
-contextual tooltip; row and column controls remain in the table UI.
+In Visual mode, place the cursor in any table cell to show the table actions
+above the whole table. Use the alignment buttons to align the current column
+left, center, or right, or use **Delete Table** to remove the table. Each action
+uses the normal editor transaction, so it participates in Undo and Redo. Row
+and column controls remain in the table UI.
 
 To attach a file, select **Attach** in the editor toolbar, choose one local
 file, confirm a workspace-relative destination and file name, then choose

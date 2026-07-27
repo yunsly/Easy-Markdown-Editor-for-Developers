@@ -1,5 +1,55 @@
 # 수동 테스트 기록
 
+## H4–H6 및 표 열 정렬 Smoke Test
+
+- 실행일: 미실행
+- 환경: Extension Development Host
+- 대상: `fixtures/basic.md`, `fixtures/table.md` 및 임시 Markdown 파일
+- 편집기: Easy Markdown Editor for Developers
+- 결과: 사용자 검증 필요
+
+### H4–H6
+
+- [ ] Visual Mode의 `H4–H6` 메뉴를 mouse와 keyboard로 열 수 있고 Heading 4, 5, 6 항목에 focus ring과 접근 가능한 이름이 표시된다.
+- [ ] 일반 문단을 H4, H5, H6로 각각 변경하고 H1 → H4, H4 → H2, H5 → Paragraph 전환이 동작한다.
+- [ ] H4, H5, H6 cursor에서 메뉴 label과 active state가 현재 level을 나타내고 일반 문단에서는 active 상태가 해제된다.
+- [ ] 여러 블록 선택에서 기존 H1–H3와 같은 범위 정책으로 H4–H6가 적용된다.
+- [ ] 한글 제목 및 제목 안의 Bold와 Link가 level 변경 후 보존된다.
+- [ ] H4–H6 변경을 Undo 한 번으로 복원하고 Redo로 다시 적용할 수 있다.
+- [ ] Visual에서 H5를 적용하고 Source로 전환하면 `#####`가 표시되며, Visual로 복귀해도 H5가 유지된다.
+- [ ] Source에서 `####`, `#####`, `######` 제목을 편집하고 Visual로 복귀하면 H4, H5, H6로 렌더링된다.
+- [ ] H4, H5, H6가 서로 및 Paragraph와 구분되고 Light, Dark, High Contrast, VS Code zoom 및 editor font size에서 읽기 쉽다.
+
+### 표 열 정렬
+
+- [ ] header cell과 body cell에 cursor를 두면 Tooltip에 Left, Center, Right 및 Delete Table 버튼이 표시된다.
+- [ ] 기본 alignment가 없는 열에서는 Left 버튼이 active로 표시된다.
+- [ ] 각 alignment 버튼에 `aria-label`, `title`, active state 및 keyboard focus ring이 제공된다.
+- [ ] `Alt+Shift+F10`으로 첫 alignment 버튼에 focus하고 Tab으로 모든 alignment 및 Delete Table 버튼을 이동하며 Escape로 Editor에 복귀할 수 있다.
+- [ ] header 또는 body cell에서 Left, Center, Right를 적용하면 해당 header와 모든 body cell이 즉시 같은 방향으로 정렬된다.
+- [ ] 여러 열 CellSelection에서는 selection head가 위치한 한 열만 정렬되고 다른 열은 변경되지 않는다.
+- [ ] 한글 열을 Center로, 숫자 열을 Right로 정렬할 수 있다.
+- [ ] 정렬을 Undo 한 번으로 복원하고 Redo로 다시 적용할 수 있다.
+- [ ] 행 추가 후 현재 열 정렬이 유지되고, 열 추가·삭제 후 나머지 열 정렬이 보존된다.
+- [ ] Source로 전환하면 `:---`, `:---:`, `---:` 형태의 유효한 GFM alignment syntax가 표시된다.
+- [ ] Source에서 alignment marker를 편집하고 Visual로 복귀하면 셀 정렬과 active state가 갱신된다.
+- [ ] 저장하고 Editor를 다시 열어도 열 정렬과 셀 내용이 유지된다.
+- [ ] 표 삭제 직후 stale selection 오류 없이 Tooltip이 숨겨지고 Undo/Redo로 표를 복원·삭제할 수 있다.
+- [ ] Source Mode 및 Badge, Attachment, Link, Table Size UI가 열려 있을 때 기존 Tooltip 표시 정책을 유지한다.
+
+### 기존 기능 회귀
+
+- [ ] H1–H3, Paragraph, 목록, Task list, Blockquote, Code block 및 Floating Toolbar가 기존대로 동작한다.
+- [ ] Table 삽입, 행·열 추가/삭제 및 기존 Table Block 조작 UI가 유지된다.
+- [ ] Badge Builder, Local File Attachment, 상대 image, 한글 IME가 기존대로 동작한다.
+- [ ] Visual/Source 무편집 왕복에서 Front matter, HTML comment, raw HTML, Badge 및 기존 표 내용이 변경되지 않는다.
+- [ ] dirty state, 저장, 외부 변경 동기화 및 여러 Markdown tab이 기존대로 동작한다.
+
+### 현재 정책
+
+- 여러 열에 걸친 CellSelection은 selection head가 위치한 열 하나만 정렬한다.
+- Markdown separator의 spacing은 Milkdown GFM serializer가 결정하며 유효한 동등 표현을 허용한다.
+
 ## Local File Attachment 회귀 테스트
 
 - 실행일: 미실행

@@ -16,7 +16,7 @@
 | 문법 | 상태 | MVP 정책 및 검증 기준 |
 | --- | --- | --- |
 | Paragraph | MVP 지원 | 일반 문단을 입력·수정하고 한글, 영문, Unicode가 의미 손실 없이 직렬화되어야 한다. |
-| Heading 1~3 | MVP 지원 | 제목 레벨 1~3을 생성·변경하고 해당 레벨이 보존되어야 한다. |
+| Heading 1~6 | MVP 지원 | 제목 레벨 1~6을 생성·변경하고 한글과 inline formatting을 포함한 내용 및 레벨이 보존되어야 한다. |
 | Bold | MVP 지원 | 굵게 서식을 적용·해제하고 선택 영역의 의미가 보존되어야 한다. |
 | Italic | MVP 지원 | 기울임 서식을 적용·해제하고 선택 영역의 의미가 보존되어야 한다. |
 | Strikethrough | MVP 지원 | 취소선을 적용·해제하고 Markdown으로 다시 직렬화할 수 있어야 한다. |
@@ -28,7 +28,7 @@
 | Blockquote | MVP 지원 | 인용문을 생성·수정하고 내부 문단 구조를 보존해야 한다. |
 | Code block | MVP 지원 | 여러 줄 코드, 들여쓰기, 언어 식별자가 있는 fenced code block을 검증해야 한다. |
 | Image | MVP 지원 | 로컬 workspace 파일을 상대 경로 image로 첨부하고 Webview에서는 렌더링 전용 URI로 표시한다. 저장되는 `src`는 상대 Markdown 경로여야 하며 공백, 한글, 괄호, `#`, `%` 및 상위 폴더 경로를 검증한다. |
-| Table | 이후 지원 | MVP에서 표 전용 편집 기능을 제공하지 않는다. 기존 표 문법의 보존 여부는 별도 검증 전까지 보장하지 않는다. |
+| Table | MVP 지원 | GFM 표 삽입, 행·열 편집, 삭제 및 현재 열의 Left/Center/Right 정렬을 지원한다. 여러 열 CellSelection에서는 selection head 열만 정렬하며, Source/Visual 왕복과 저장 후 GFM alignment marker 보존을 검증해야 한다. |
 | HTML | 검증 필요 | Raw HTML이 파싱·직렬화 과정에서 변경되거나 제거되는지 확인하기 전까지 Visual Editor 편집을 경고한다. |
 | HTML comment | 검증 필요 | 주석의 내용과 위치가 그대로 보존되는지 확인하기 전까지 Visual Editor 편집을 경고한다. |
 | Front matter | 검증 필요 | 구분자, 키 순서, 값 형식이 보존되는지 확인하기 전까지 Visual Editor 편집을 경고한다. |
