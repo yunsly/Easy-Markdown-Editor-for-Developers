@@ -34,7 +34,6 @@ import {
 import {
   insertCopiedAttachment,
   runEditorToolbarAction,
-  textAlignmentPlugins,
 } from './editor/editorToolbar/editorToolbarActions';
 import { updateEditorToolbarState } from './editor/editorToolbar/editorToolbarState';
 import { registerFloatingToolbar } from './editor/floatingToolbar/createFloatingToolbar';
@@ -724,8 +723,6 @@ const initializeEditor = async (
     featureConfigs,
   });
 
-  editor.editor.use(textAlignmentPlugins);
-
   if (resourceBaseUri !== undefined) {
     registerWorkspaceImageView(editor.editor, resourceBaseUri);
   }
@@ -786,9 +783,6 @@ const initializeEditor = async (
     editorToolbar.buttons.get('heading-5')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-6')?.removeAttribute('disabled');
     editorToolbar.headingMenu.button.removeAttribute('disabled');
-    editorToolbar.buttons.get('align-left')?.removeAttribute('disabled');
-    editorToolbar.buttons.get('align-center')?.removeAttribute('disabled');
-    editorToolbar.buttons.get('align-right')?.removeAttribute('disabled');
     editorToolbar.buttons.get('bullet-list')?.removeAttribute('disabled');
     editorToolbar.buttons.get('ordered-list')?.removeAttribute('disabled');
     editorToolbar.buttons.get('task-list')?.removeAttribute('disabled');
