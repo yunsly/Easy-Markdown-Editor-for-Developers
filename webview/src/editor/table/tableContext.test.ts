@@ -1,3 +1,5 @@
+import { schemaCtx } from '@milkdown/kit/core';
+import type { Ctx } from '@milkdown/kit/ctx';
 import { Schema } from '@milkdown/kit/prose/model';
 import { history, redo, undo } from '@milkdown/kit/prose/history';
 import {
@@ -7,12 +9,17 @@ import {
 } from '@milkdown/kit/prose/state';
 import {
   CellSelection,
+  setCellAttr,
   TableMap,
   tableNodes,
 } from '@milkdown/kit/prose/tables';
-import { describe, expect, it } from 'vitest';
+import type { EditorView } from '@milkdown/kit/prose/view';
+import { describe, expect, it, vi } from 'vitest';
 
-import { deleteActiveTable } from './createTableDeleteTooltip';
+import {
+  alignActiveTableColumn,
+  deleteActiveTable,
+} from './createTableDeleteTooltip';
 import {
   getActiveTableColumnContext,
   getActiveTableContext,
@@ -246,6 +253,216 @@ describe('getActiveTableColumnContext', () => {
     expect(
       getActiveTableColumnContext(selection, schema.nodes.table),
     ).toBeUndefined();
+  });
+});
+
+describe('alignActiveTableColumn', () => {
+  const threeColumnTable = schema.node('table', null, [
+    row([
+      cell('table_header', 'Left header'),
+      cell('table_header', 'Center header', 'center'),
+      cell('table_header', 'Right header', 'right'),
+    ]),
+    row([
+      cell('table_cell', '왼쪽'),
+      cell('table_cell', '가운데', 'center'),
+      cell('table_cell', '100', 'right'),
+    ]),
+  ]);
+  const tablePosition = paragraph('Before').nodeSize;
+
+  const createAlignmentHarness = (selection: TextSelection | CellSelection) => {
+    let state = EditorState.create({
+      doc: selection.$from.doc,
+      plugins: [history()],
+      selection,
+    });
+    const onDocumentChange = vi.fn();
+    const dispatch = (transaction: Parameters<typeof state.apply>[0]) => {
+      state = state.apply(transaction);
+    };
+    const commands = {
+      call: (_command: unknown, payload?: unknown): boolean => {
+        if (
+          typeof payload === 'object' &&
+          payload !== null &&
+          'index' in payload &&
+          typeof payload.index === 'number'
+        ) {
+          const table = state.doc.nodeAt(tablePosition);
+
+          if (table === null) {
+            return false;
+          }
+
+          const map = TableMap.get(table);
+          const firstCell = tablePosition + 1 +
+            map.positionAt(0, payload.index, table);
+          const lastCell = tablePosition + 1 +
+            map.positionAt(map.height - 1, payload.index, table);
+          dispatch(
+            state.tr.setSelection(CellSelection.colSelection(
+              state.doc.resolve(lastCell),
+              state.doc.resolve(firstCell),
+            )),
+          );
+          return true;
+        }
+
+        if (
+          payload === 'left' ||
+          payload === 'center' ||
+          payload === 'right'
+        ) {
+          return setCellAttr('alignment', payload)(state, dispatch);
+        }
+
+        return false;
+      },
+    };
+    const context = {
+      get: (slice: unknown) => slice === schemaCtx ? schema : commands,
+    } as unknown as Ctx;
+    const focus = vi.fn();
+    const view = {
+      dispatch,
+      focus,
+      get state() {
+        return state;
+      },
+    } as unknown as EditorView;
+
+    return {
+      align: (alignment: 'center' | 'left' | 'right') =>
+        alignActiveTableColumn(
+          context,
+          view,
+          alignment,
+          onDocumentChange,
+        ),
+      getColumnAlignments: (columnIndex: number) => {
+        const table = state.doc.nodeAt(tablePosition);
+
+        if (table === null) {
+          return [];
+        }
+
+        const map = TableMap.get(table);
+        return map.cellsInRect({
+          bottom: map.height,
+          left: columnIndex,
+          right: columnIndex + 1,
+          top: 0,
+        }).map((position) =>
+          table.nodeAt(position)?.attrs.alignment as unknown,
+        );
+      },
+      getState: () => state,
+      onDocumentChange,
+      redo: () => redo(state, dispatch),
+      undo: () => undo(state, dispatch),
+    };
+  };
+
+  const createTableDocument = () => schema.node('doc', null, [
+    paragraph('Before'),
+    threeColumnTable,
+    paragraph('After'),
+  ]);
+  const findPosition = (
+    doc: ReturnType<typeof createTableDocument>,
+    text: string,
+  ): number => {
+    let result: number | undefined;
+    doc.descendants((node, position) => {
+      if (node.isText && node.text === text) {
+        result = position + 1;
+        return false;
+      }
+
+      return result === undefined;
+    });
+
+    if (result === undefined) {
+      throw new Error(`Missing table text: ${text}`);
+    }
+
+    return result;
+  };
+
+  it.each([
+    ['Left header', 0, 'right'],
+    ['가운데', 1, 'left'],
+    ['100', 2, 'center'],
+  ] as const)(
+    'aligns the whole column from the %s cell',
+    (text, columnIndex, alignment) => {
+      const doc = createTableDocument();
+      const cursor = findPosition(doc, text);
+      const harness = createAlignmentHarness(
+        TextSelection.create(doc, cursor),
+      );
+
+      expect(harness.align(alignment)).toBe(true);
+      expect(harness.getColumnAlignments(columnIndex)).toEqual([
+        alignment,
+        alignment,
+      ]);
+      expect(harness.getState().selection.from).toBe(cursor);
+      expect(harness.onDocumentChange).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('uses only the selection head column when multiple columns are selected', () => {
+    const doc = createTableDocument();
+    const map = TableMap.get(threeColumnTable);
+    const firstCell = tablePosition + 1 +
+      map.positionAt(0, 0, threeColumnTable);
+    const lastCell = tablePosition + 1 +
+      map.positionAt(1, 2, threeColumnTable);
+    const selection = CellSelection.create(doc, firstCell, lastCell);
+    const harness = createAlignmentHarness(selection);
+
+    expect(harness.align('left')).toBe(true);
+    expect(harness.getColumnAlignments(0)).toEqual(['left', 'left']);
+    expect(harness.getColumnAlignments(1)).toEqual(['center', 'center']);
+    expect(harness.getColumnAlignments(2)).toEqual(['left', 'left']);
+  });
+
+  it('does not create a transaction when the column is already aligned', () => {
+    const doc = createTableDocument();
+    const harness = createAlignmentHarness(TextSelection.create(
+      doc,
+      findPosition(doc, '왼쪽'),
+    ));
+
+    expect(harness.align('left')).toBe(false);
+    expect(harness.onDocumentChange).not.toHaveBeenCalled();
+  });
+
+  it('undoes and redoes a whole-column alignment in one step', () => {
+    const doc = createTableDocument();
+    const harness = createAlignmentHarness(TextSelection.create(
+      doc,
+      findPosition(doc, '100'),
+    ));
+
+    expect(harness.align('left')).toBe(true);
+    expect(harness.getColumnAlignments(2)).toEqual(['left', 'left']);
+
+    expect(harness.undo()).toBe(true);
+    expect(harness.getColumnAlignments(2)).toEqual(['right', 'right']);
+
+    expect(harness.redo()).toBe(true);
+    expect(harness.getColumnAlignments(2)).toEqual(['left', 'left']);
+  });
+
+  it('ignores a stale selection outside a table', () => {
+    const doc = createTableDocument();
+    const harness = createAlignmentHarness(TextSelection.create(doc, 1));
+
+    expect(harness.align('center')).toBe(false);
+    expect(harness.onDocumentChange).not.toHaveBeenCalled();
   });
 });
 
