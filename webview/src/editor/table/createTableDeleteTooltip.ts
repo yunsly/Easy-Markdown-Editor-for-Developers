@@ -1,4 +1,5 @@
 import type { Ctx } from '@milkdown/kit/ctx';
+import { commandsCtx } from '@milkdown/kit/core';
 import type { Editor } from '@milkdown/kit/core';
 import type { NodeType } from '@milkdown/kit/prose/model';
 import type {
@@ -13,9 +14,17 @@ import {
   TooltipProvider,
   tooltipFactory,
 } from '@milkdown/kit/plugin/tooltip';
-import { tableSchema } from '@milkdown/kit/preset/gfm';
+import {
+  selectColCommand,
+  setAlignCommand,
+  tableSchema,
+} from '@milkdown/kit/preset/gfm';
 
-import { getActiveTableContext } from './tableContext';
+import {
+  getActiveTableColumnContext,
+  getActiveTableContext,
+  type TableColumnAlignment,
+} from './tableContext';
 import './tableDeleteTooltip.css';
 
 interface TableDeleteTooltipOptions {
@@ -51,39 +60,120 @@ export const deleteActiveTable = (
   return false;
 };
 
+export const alignActiveTableColumn = (
+  context: Ctx,
+  view: EditorView,
+  alignment: TableColumnAlignment,
+  onDocumentChange: () => void,
+): boolean => {
+  const { state } = view;
+  const column = getActiveTableColumnContext(
+    state.selection,
+    tableSchema.type(context),
+  );
+
+  if (column === undefined || column.alignment === alignment) {
+    return false;
+  }
+
+  const bookmark = state.selection.getBookmark();
+  const commands = context.get(commandsCtx);
+  onDocumentChange();
+  commands.call(selectColCommand.key, {
+    index: column.columnIndex,
+    pos: column.from + 1,
+  });
+  commands.call(setAlignCommand.key, alignment);
+
+  const nextState = view.state;
+  view.dispatch(
+    nextState.tr
+      .setSelection(bookmark.resolve(nextState.doc))
+      .setMeta('addToHistory', false),
+  );
+  view.focus();
+
+  return true;
+};
+
 const createTooltipContent = (
+  alignActiveColumn: (alignment: TableColumnAlignment) => void,
   deleteActiveTable: () => void,
-): { button: HTMLButtonElement; element: HTMLElement } => {
+): {
+  alignmentButtons: ReadonlyMap<TableColumnAlignment, HTMLButtonElement>;
+  deleteButton: HTMLButtonElement;
+  element: HTMLElement;
+} => {
   const tooltip = document.createElement('div');
-  const button = document.createElement('button');
+  const alignmentButtons = new Map<
+    TableColumnAlignment,
+    HTMLButtonElement
+  >();
+  const separator = document.createElement('span');
+  const deleteButton = document.createElement('button');
   tooltip.className = 'table-delete-tooltip';
   tooltip.setAttribute('role', 'toolbar');
   tooltip.setAttribute('aria-label', 'Table actions');
   tooltip.setAttribute('aria-keyshortcuts', 'Alt+Shift+F10');
-  button.className = 'table-delete-tooltip__button';
-  button.type = 'button';
-  button.title = 'Delete table';
-  button.setAttribute('aria-label', 'Delete table');
-  button.textContent = 'Delete Table';
-  button.addEventListener('pointerdown', (event) => {
+
+  for (const [alignment, label, text] of [
+    ['left', 'Align column left', '≡←'],
+    ['center', 'Align column center', '≡↔'],
+    ['right', 'Align column right', '→≡'],
+  ] as const) {
+    const button = document.createElement('button');
+    button.className =
+      'table-delete-tooltip__button table-delete-tooltip__alignment';
+    button.type = 'button';
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    button.setAttribute('aria-pressed', 'false');
+    button.textContent = text;
+    button.addEventListener('pointerdown', (event) => {
+      if (event.button === 0) {
+        event.preventDefault();
+      }
+    });
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      alignActiveColumn(alignment);
+    });
+    alignmentButtons.set(alignment, button);
+    tooltip.append(button);
+  }
+
+  separator.className = 'table-delete-tooltip__separator';
+  separator.setAttribute('role', 'separator');
+  separator.setAttribute('aria-orientation', 'vertical');
+  deleteButton.className =
+    'table-delete-tooltip__button table-delete-tooltip__delete';
+  deleteButton.type = 'button';
+  deleteButton.title = 'Delete table';
+  deleteButton.setAttribute('aria-label', 'Delete table');
+  deleteButton.textContent = 'Delete Table';
+  deleteButton.addEventListener('pointerdown', (event) => {
     if (event.button === 0) {
       event.preventDefault();
     }
   });
-  button.addEventListener('click', (event) => {
+  deleteButton.addEventListener('click', (event) => {
     event.preventDefault();
     deleteActiveTable();
   });
-  tooltip.append(button);
+  tooltip.append(separator, deleteButton);
 
-  return { button, element: tooltip };
+  return { alignmentButtons, deleteButton, element: tooltip };
 };
 
 class TableDeleteTooltipView implements PluginView {
-  readonly #button: HTMLButtonElement;
+  readonly #alignmentButtons: ReadonlyMap<
+    TableColumnAlignment,
+    HTMLButtonElement
+  >;
   readonly #canShow: () => boolean;
   readonly #content: HTMLElement;
   readonly #context: Ctx;
+  readonly #deleteButton: HTMLButtonElement;
   readonly #dialogObserver: MutationObserver;
   readonly #provider: TooltipProvider;
   readonly #view: EditorView;
@@ -98,8 +188,12 @@ class TableDeleteTooltipView implements PluginView {
     this.#view = view;
     this.#canShow = options.canShow;
     this.#onDocumentChange = options.onDocumentChange;
-    const content = createTooltipContent(this.#deleteActiveTable);
-    this.#button = content.button;
+    const content = createTooltipContent(
+      this.#alignActiveColumn,
+      this.#deleteActiveTable,
+    );
+    this.#alignmentButtons = content.alignmentButtons;
+    this.#deleteButton = content.deleteButton;
     this.#content = content.element;
     this.#provider = new TooltipProvider({
       content: this.#content,
@@ -131,6 +225,22 @@ class TableDeleteTooltipView implements PluginView {
 
     this.#provider.hide();
     this.#view.focus();
+  };
+
+  readonly #alignActiveColumn = (
+    alignment: TableColumnAlignment,
+  ): void => {
+    if (!alignActiveTableColumn(
+      this.#context,
+      this.#view,
+      alignment,
+      this.#onDocumentChange,
+    )) {
+      this.#view.focus();
+      return;
+    }
+
+    this.#syncVisibility();
   };
 
   readonly #handleEditorFocus = (): void => {
@@ -174,6 +284,7 @@ class TableDeleteTooltipView implements PluginView {
   #hasBlockingPopover(): boolean {
     return document.querySelector(
       'dialog[open], .editor-table-size-picker:not([hidden]), '
+        + '.editor-heading-menu:not([hidden]), '
         + '.milkdown-link-edit[data-show="true"]',
     ) !== null;
   }
@@ -198,6 +309,18 @@ class TableDeleteTooltipView implements PluginView {
     ) {
       this.#provider.hide();
       return;
+    }
+
+    const column = getActiveTableColumnContext(
+      state.selection,
+      tableSchema.type(this.#context),
+    );
+
+    for (const [alignment, button] of this.#alignmentButtons) {
+      const isActive = column?.alignment === alignment;
+      button.disabled = column === undefined;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', String(isActive));
     }
 
     const tableElement = this.#getTableElement(table.from);
@@ -230,7 +353,10 @@ class TableDeleteTooltipView implements PluginView {
 
     event.preventDefault();
     event.stopImmediatePropagation();
-    this.#button.focus({ preventScroll: true });
+    const firstEnabledButton = this.#content.querySelector<HTMLButtonElement>(
+      'button:not(:disabled)',
+    );
+    (firstEnabledButton ?? this.#deleteButton).focus({ preventScroll: true });
     return true;
   }
 

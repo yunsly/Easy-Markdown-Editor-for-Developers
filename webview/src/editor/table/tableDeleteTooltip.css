@@ -9,6 +9,7 @@
   border: 1px solid var(--vscode-editorWidget-border);
   border-radius: 6px;
   box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+  white-space: nowrap;
 }
 
 .table-delete-tooltip[data-show='false'] {
@@ -36,8 +37,33 @@
 
 .table-delete-tooltip__button:hover,
 .table-delete-tooltip__button:focus-visible {
-  color: var(--vscode-errorForeground);
   background: var(--vscode-toolbar-hoverBackground);
+}
+
+.table-delete-tooltip__button.is-active {
+  background: var(--vscode-toolbar-activeBackground);
+}
+
+.table-delete-tooltip__button:disabled {
+  color: var(--vscode-disabledForeground);
+  cursor: default;
+}
+
+.table-delete-tooltip__delete:hover,
+.table-delete-tooltip__delete:focus-visible {
+  color: var(--vscode-errorForeground);
+}
+
+.table-delete-tooltip__separator {
+  display: inline-block;
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  vertical-align: middle;
+  background: var(
+    --vscode-editorWidget-border,
+    var(--vscode-contrastBorder, currentColor)
+  );
 }
 
 .table-delete-tooltip__button:active {
