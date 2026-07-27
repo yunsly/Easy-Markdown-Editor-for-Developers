@@ -26,6 +26,9 @@ const textBlockActions = [
   'heading-1',
   'heading-2',
   'heading-3',
+  'heading-4',
+  'heading-5',
+  'heading-6',
 ] as const satisfies readonly EditorToolbarAction[];
 
 const textAlignmentActions = [
@@ -59,6 +62,18 @@ const getActiveTextBlockAction = (
 
   if (node.attrs.level === 3) {
     return 'heading-3';
+  }
+
+  if (node.attrs.level === 4) {
+    return 'heading-4';
+  }
+
+  if (node.attrs.level === 5) {
+    return 'heading-5';
+  }
+
+  if (node.attrs.level === 6) {
+    return 'heading-6';
   }
 
   return undefined;
@@ -104,7 +119,12 @@ const updateButtonState = (
 ): void => {
   const button = toolbar.buttons.get(action);
   button?.classList.toggle('is-active', isActive);
-  button?.setAttribute('aria-pressed', String(isActive));
+
+  if (button?.getAttribute('role') === 'menuitemradio') {
+    button.setAttribute('aria-checked', String(isActive));
+  } else {
+    button?.setAttribute('aria-pressed', String(isActive));
+  }
 };
 
 const isSelectionInBlockquote = (
@@ -143,6 +163,15 @@ export const updateEditorToolbarState = (
   for (const action of textBlockActions) {
     updateButtonState(toolbar, action, action === activeAction);
   }
+
+  const activeHeadingLevel = activeAction === 'heading-4'
+    ? 4
+    : activeAction === 'heading-5'
+      ? 5
+      : activeAction === 'heading-6'
+        ? 6
+        : undefined;
+  toolbar.headingMenu.setActiveLevel(activeHeadingLevel);
 
   const textAlign = state.selection.$from.parent.attrs.textAlign as unknown;
 

@@ -270,6 +270,8 @@ const syncEditorToolbarState = (context: Ctx): void => {
     for (const button of editorToolbar.buttons.values()) {
       button.disabled = true;
     }
+    editorToolbar.headingMenu.button.disabled = true;
+    editorToolbar.headingMenu.close();
 
     return;
   }
@@ -532,6 +534,11 @@ const setVisualToolbarEnabled = (enabled: boolean): void => {
   for (const button of editorToolbar.buttons.values()) {
     button.disabled = !enabled;
   }
+  editorToolbar.headingMenu.button.disabled = !enabled;
+
+  if (!enabled) {
+    editorToolbar.headingMenu.close();
+  }
 
   if (enabled && crepe?.editor.status === EditorStatus.Created) {
     crepe.editor.action(syncEditorToolbarState);
@@ -775,6 +782,10 @@ const initializeEditor = async (
     editorToolbar.buttons.get('heading-1')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-2')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-3')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('heading-4')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('heading-5')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('heading-6')?.removeAttribute('disabled');
+    editorToolbar.headingMenu.button.removeAttribute('disabled');
     editorToolbar.buttons.get('align-left')?.removeAttribute('disabled');
     editorToolbar.buttons.get('align-center')?.removeAttribute('disabled');
     editorToolbar.buttons.get('align-right')?.removeAttribute('disabled');
