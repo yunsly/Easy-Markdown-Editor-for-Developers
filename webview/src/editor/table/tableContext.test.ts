@@ -5,14 +5,23 @@ import {
   NodeSelection,
   TextSelection,
 } from '@milkdown/kit/prose/state';
-import { tableNodes } from '@milkdown/kit/prose/tables';
+import {
+  CellSelection,
+  TableMap,
+  tableNodes,
+} from '@milkdown/kit/prose/tables';
 import { describe, expect, it } from 'vitest';
 
 import { deleteActiveTable } from './createTableDeleteTooltip';
-import { getActiveTableContext } from './tableContext';
+import {
+  getActiveTableColumnContext,
+  getActiveTableContext,
+} from './tableContext';
 
 const tableSpecs = tableNodes({
-  cellAttributes: {},
+  cellAttributes: {
+    alignment: { default: 'left' },
+  },
   cellContent: 'paragraph+',
   tableGroup: 'block',
 });
@@ -31,8 +40,11 @@ const paragraph = (text: string) =>
     null,
     text.length > 0 ? schema.text(text) : undefined,
   );
-const cell = (type: 'table_cell' | 'table_header', text: string) =>
-  schema.node(type, null, paragraph(text));
+const cell = (
+  type: 'table_cell' | 'table_header',
+  text: string,
+  alignment: 'center' | 'left' | 'right' = 'left',
+) => schema.node(type, { alignment }, paragraph(text));
 const row = (cells: ReturnType<typeof cell>[]) =>
   schema.node('table_row', null, cells);
 const table = schema.node('table', null, [
@@ -117,6 +129,122 @@ describe('getActiveTableContext', () => {
 
     expect(
       getActiveTableContext(nextState.selection, schema.nodes.table),
+    ).toBeUndefined();
+  });
+});
+
+describe('getActiveTableColumnContext', () => {
+  const alignedTable = schema.node('table', null, [
+    row([
+      cell('table_header', 'Left header'),
+      cell('table_header', 'Center header', 'center'),
+      cell('table_header', 'Right header', 'right'),
+    ]),
+    row([
+      cell('table_cell', '왼쪽'),
+      cell('table_cell', '가운데', 'center'),
+      cell('table_cell', '100', 'right'),
+    ]),
+  ]);
+  const alignedDocument = schema.node('doc', null, [
+    paragraph('Before'),
+    alignedTable,
+    paragraph('After'),
+  ]);
+  const alignedTableFrom = alignedDocument.child(0).nodeSize;
+  const findAlignedTextPosition = (text: string): number => {
+    let result: number | undefined;
+
+    alignedDocument.descendants((node, position) => {
+      if (node.isText && node.text === text) {
+        result = position;
+        return false;
+      }
+
+      return result === undefined;
+    });
+
+    if (result === undefined) {
+      throw new Error(`Missing aligned table text: ${text}`);
+    }
+
+    return result;
+  };
+
+  it.each([
+    ['Left header', 0, 'left'],
+    ['가운데', 1, 'center'],
+    ['100', 2, 'right'],
+  ] as const)(
+    'detects the column and %s alignment from a cursor',
+    (text, columnIndex, alignment) => {
+      const selection = TextSelection.create(
+        alignedDocument,
+        findAlignedTextPosition(text) + 1,
+      );
+
+      expect(
+        getActiveTableColumnContext(selection, schema.nodes.table),
+      ).toMatchObject({ alignment, columnIndex });
+    },
+  );
+
+  it('uses the CellSelection head column for a multi-column selection', () => {
+    const map = TableMap.get(alignedTable);
+    const firstColumnCell = alignedTableFrom + 1 +
+      map.positionAt(0, 0, alignedTable);
+    const lastColumnCell = alignedTableFrom + 1 +
+      map.positionAt(1, 2, alignedTable);
+    const selection = CellSelection.create(
+      alignedDocument,
+      firstColumnCell,
+      lastColumnCell,
+    );
+
+    expect(
+      getActiveTableColumnContext(selection, schema.nodes.table),
+    ).toMatchObject({ alignment: 'right', columnIndex: 2 });
+  });
+
+  it('reports no active alignment when cells in the column are mixed', () => {
+    const mixedTable = alignedTable.copy(
+      alignedTable.content.replaceChild(
+        1,
+        row([
+          cell('table_cell', '왼쪽'),
+          cell('table_cell', '가운데', 'right'),
+          cell('table_cell', '100', 'right'),
+        ]),
+      ),
+    );
+    const mixedDocument = schema.node('doc', null, [
+      paragraph('Before'),
+      mixedTable,
+    ]);
+    let centerPosition = 0;
+    mixedDocument.descendants((node, position) => {
+      if (node.isText && node.text === '가운데') {
+        centerPosition = position + 1;
+        return false;
+      }
+
+      return true;
+    });
+    const selection = TextSelection.create(mixedDocument, centerPosition);
+
+    expect(
+      getActiveTableColumnContext(selection, schema.nodes.table),
+    ).toMatchObject({ alignment: undefined, columnIndex: 1 });
+  });
+
+  it('does not infer a column from a whole-table node selection', () => {
+    const selection = NodeSelection.create(
+      alignedDocument,
+      alignedTableFrom,
+    );
+
+    expect(
+      getActiveTableColumnContext(selection, schema.nodes.table),
     ).toBeUndefined();
   });
 });

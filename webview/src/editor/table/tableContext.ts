@@ -5,11 +5,23 @@ import type {
 } from '@milkdown/kit/prose/model';
 import type { Selection } from '@milkdown/kit/prose/state';
 import { NodeSelection } from '@milkdown/kit/prose/state';
+import {
+  cellAround,
+  CellSelection,
+  TableMap,
+} from '@milkdown/kit/prose/tables';
 
 export interface ActiveTableContext {
   from: number;
   node: ProseMirrorNode;
   to: number;
+}
+
+export type TableColumnAlignment = 'center' | 'left' | 'right';
+
+export interface ActiveTableColumnContext extends ActiveTableContext {
+  alignment: TableColumnAlignment | undefined;
+  columnIndex: number;
 }
 
 const findTableAtPosition = (
@@ -65,4 +77,72 @@ export const getActiveTableContext = (
   }
 
   return activeTable;
+};
+
+const normalizeAlignment = (value: unknown): TableColumnAlignment => {
+  if (value === 'center' || value === 'right') {
+    return value;
+  }
+
+  return 'left';
+};
+
+export const getActiveTableColumnContext = (
+  selection: Selection,
+  tableType: NodeType,
+): ActiveTableColumnContext | undefined => {
+  const table = getActiveTableContext(selection, tableType);
+
+  if (table === undefined || selection instanceof NodeSelection) {
+    return undefined;
+  }
+
+  const $cell = selection instanceof CellSelection
+    ? selection.$headCell
+    : cellAround(selection.$head);
+
+  if ($cell === null) {
+    return undefined;
+  }
+
+  const map = TableMap.get(table.node);
+  const cellPosition = $cell.pos - table.from - 1;
+  let columnIndex: number;
+
+  try {
+    columnIndex = map.findCell(cellPosition).left;
+  } catch {
+    return undefined;
+  }
+
+  const cellPositions = map.cellsInRect({
+    bottom: map.height,
+    left: columnIndex,
+    right: columnIndex + 1,
+    top: 0,
+  });
+  let alignment: TableColumnAlignment | undefined;
+
+  for (const position of cellPositions) {
+    const cell = table.node.nodeAt(position);
+
+    if (cell === null) {
+      return undefined;
+    }
+
+    const cellAlignment = normalizeAlignment(cell.attrs.alignment);
+
+    if (alignment !== undefined && alignment !== cellAlignment) {
+      alignment = undefined;
+      break;
+    }
+
+    alignment = cellAlignment;
+  }
+
+  return {
+    ...table,
+    alignment,
+    columnIndex,
+  };
 };
