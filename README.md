@@ -1,86 +1,63 @@
 # Easy Markdown Editor for Developers
 
-Easy Markdown Editor for Developers is a VS Code custom editor for editing Markdown as a rendered document. Changes are written back to the original `.md` file through VS Code's document model, so saving, dirty-state tracking, undo, redo, and external file updates stay in the normal editor workflow.
+***
 
-## Features
+**Easy Markdown Editor f**or Developers 은 개발자들을 위한 `.md` 파일 편집기입니다.
 
-* Edit paragraphs, blockquotes, code blocks, bulleted lists, numbered lists, and task lists visually.
+VScode 테마에 맞춘 테마 및 편리한 편집과 함께 **Tech Stack 배지**와 **파일 첨부**가 가능합니다.
 
-* **Extended headings** — Edit Markdown headings from H1 through H6.
+### Features
 
-* Format selected text with bold, italic, strikethrough, inline code, and links.
+- **비주얼 마크다운 편집** — 렌더링된 문서를 바로 편집하고, 같은 탭에서 `Visual`과 `Source` 모드를 전환할 수 있습니다.
+- **테크 스택 배지 빌더** — 기술 프리셋을 검색하고 색상, 스타일, 라벨, 링크를 설정해 Shields.io 배지를 미리 본 뒤 삽입할 수 있습니다.
+- **파일 첨부** — 로컬 파일을 워크스페이스의 상대 경로로 복사하고 이미지 또는 링크로 삽입합니다. 같은 이름의 파일은 덮어쓰지 않고 자동으로 이름을 구분합니다.
+- **풍부한 마크다운 서식** — H1~H6 제목, 굵게, 기울임, 취소선, 인라인 코드, 링크, 목록, 작업 목록, 인용문, 코드 블록을 지원합니다.
+- **표 편집** — 크기를 선택해 표를 삽입하고 행과 열을 편집하며, 열 정렬과 표 삭제를 할 수 있습니다.
+- **VS Code에 자연스럽게 통합** — 저장, 실행 취소·다시 실행, 외부 변경 동기화, 라이트·다크 테마와 한글 IME 입력을 지원합니다.
 
-* Insert tables with a keyboard-accessible size picker and delete the active table from its contextual tooltip.
+### Shortcuts
 
-* **Table alignment** — Align table columns to the left, center, or right.
+아래 표의 `Cmd`는 macOS, `Ctrl`은 Windows와 Linux 기준입니다. 서식 단축키와 빠른 마크다운 입력은 `Visual` 모드에서 동작합니다.
 
-* Build Shields.io technology badges from presets, with optional labels and click-through links.
+#### 키보드 단축키
 
-* Attach one local file at the cursor as a relative Markdown image or link.
+| 단축키 | 역할 |
+| --- | --- |
+| `Cmd/Ctrl + B` | 굵게 전환 |
+| `Cmd/Ctrl + I` | 기울임 전환 |
+| `Cmd/Ctrl + E` | 인라인 코드 전환 |
+| `Cmd/Ctrl + Alt + X` | 취소선 전환 |
+| `Cmd/Ctrl + Shift + B` | 인용문 전환 |
+| `Cmd/Ctrl + Alt + 0` | 일반 문단으로 전환 |
+| `Cmd/Ctrl + Alt + 1~6` | H1~H6 제목으로 전환 |
+| `Cmd/Ctrl + Alt + 7` | 번호 목록으로 전환 |
+| `Cmd/Ctrl + Alt + 8` | 글머리 기호 목록으로 전환 |
+| `Cmd/Ctrl + Alt + C` | 코드 블록으로 전환 |
+| `Shift + Enter` | 줄바꿈 삽입 |
+| `Tab` / `Cmd/Ctrl + ]` | 목록 항목 들여쓰기 또는 다음 표 셀로 이동 |
+| `Shift + Tab` / `Cmd/Ctrl + [` | 목록 항목 내어쓰기 또는 이전 표 셀로 이동 |
+| `Enter` | 다음 목록 항목 생성 또는 표 아래 새 문단으로 이동 |
+| `Backspace` / `Delete` | 제목 단계 낮추기 또는 목록에서 빠져나오기 |
+| `Alt + F10` | 선택한 텍스트의 플로팅 서식 도구 모음으로 이동 |
+| `Esc` | 열린 메뉴나 도구 모음을 닫고 편집기로 복귀 |
+| `Cmd/Ctrl + Z` | 실행 취소 |
+| `Cmd/Ctrl + Shift + Z` / `Ctrl + Y` | 다시 실행 |
+| `Cmd/Ctrl + S` | 문서 저장 |
 
-* Switch between rendered Visual editing and syntax-highlighted Markdown Source editing in the same tab.
+#### 빠른 마크다운 입력
 
-* Keep multiple Markdown tabs synchronized with their own VS Code documents.
-
-* Follow VS Code light and dark themes.
-
-* Support Korean IME and mixed-language editing without replacing the editor during normal typing.
-
-## Usage
-
-1. Open a `.md` file in VS Code. The extension opens it in Visual mode by default.
-2. Use the **Visual | Source** control at the right of the toolbar to switch editing modes in the same tab.
-3. Edit the document and save with the standard VS Code save command.
-
-In Visual mode, place the cursor in any table cell to show the table actions
-above the whole table. Use the alignment buttons to align the current column
-left, center, or right, or use **Delete Table** to remove the table. Each action
-uses the normal editor transaction, so it participates in Undo and Redo. Row
-and column controls remain in the table UI.
-
-To attach a file, select **Attach** in the editor toolbar, choose one local
-file, confirm a workspace-relative destination and file name, then choose
-whether to insert it as an image or link. The default destination is an
-`assets/` folder beside the current Markdown document. Existing destination
-files are never overwritten; a numeric suffix is added automatically.
-
-The built-in Markdown text editor remains available from **Reopen Editor
-With...**. Select **Text Editor** there to bypass the custom editor for a file.
-
-## Install a VSIX
-
-1. Open the Command Palette in VS Code.
-2. Run **Extensions: Install from VSIX...**.
-3. Select the generated `.vsix` file.
-4. Reload VS Code if prompted.
-
-## Development
-
-Requirements:
-
-- Node.js 24 or later
-- VS Code 1.125.0 or later
-
-Install dependencies and run the checks:
-
-```bash
-npm install
-npm run typecheck
-npm run lint
-npm test
-npm run build
-```
-
-Create an installable VSIX:
-
-```bash
-npm run package:vsix
-```
-
-The package command runs a production build first and writes `easy-markdown-editor-for-developers-<version>.vsix` to the repository root.
-
-## Current Scope
-
-This project prioritizes Markdown data safety, document synchronization, and stable Korean IME input. Visual and Source modes keep separate editor Undo histories; switching modes flushes pending document changes but does not provide one continuous history across both editors. The last selected mode is not persisted, and split Visual/Source editing is not supported.
-
-Local attachment supports one file at a time in saved Markdown files inside local workspaces. Undo removes the inserted Markdown but intentionally keeps the copied file. Remote workspaces, multiple-file attachment, drag and drop, clipboard image capture, image processing, Mermaid, mathematics, slash commands, real-time collaboration, and split visual/source editing are outside the current scope.
+| 입력 | 역할 |
+| --- | --- |
+| `# + Space` ~ `###### + Space` | H1~H6 제목 생성 |
+| `> + Space` | 인용문 생성 |
+| `- + Space`, `+ + Space`, `* + Space` | 글머리 기호 목록 생성 |
+| `숫자. + Space` | 번호 목록 생성 |
+| `- [ ] + Space`, `- [x] + Space` | 미완료·완료 작업 항목 생성 |
+| `---`, `___ + Space`, `*** + Space` | 구분선 생성 |
+| <code>``` + Space</code> | 코드 블록 생성 |
+| <code>```언어 + Space</code> | 언어가 지정된 코드 블록 생성 (예: <code>```ts + Space</code>) |
+| `*텍스트*`, `_텍스트_` | 기울임 적용 |
+| `**텍스트**`, `__텍스트__` | 굵게 적용 |
+| `~~텍스트~~` | 취소선 적용 |
+| `` `텍스트` `` | 인라인 코드 적용 |
+| <code>&#124;열x행&#124; + Space</code> | 지정한 크기의 표 생성 (예: <code>&#124;2x3&#124; + Space</code>) |
