@@ -9,7 +9,6 @@ import {
   syntaxHighlighting,
 } from '@codemirror/language';
 import {
-  drawSelection,
   dropCursor,
   EditorView,
   highlightActiveLine,
@@ -77,7 +76,13 @@ const sourceTheme = EditorView.theme({
     color: 'var(--vscode-editorLineNumber-activeForeground)',
     backgroundColor: 'var(--vscode-editor-lineHighlightBackground)',
   },
-  '&.cm-focused .cm-selectionBackground, ::selection': {
+  '::selection': {
+    color: 'var(--vscode-editor-selectionForeground, '
+      + 'var(--vscode-editor-foreground))',
+    backgroundColor: 'var(--vscode-editor-inactiveSelectionBackground, '
+      + 'var(--vscode-editor-selectionBackground))',
+  },
+  '&.cm-focused ::selection': {
     backgroundColor: 'var(--vscode-editor-selectionBackground)',
   },
   '.cm-cursor, .cm-dropCursor': {
@@ -135,7 +140,6 @@ export const createMarkdownSourceEditor = (
       highlightActiveLine(),
       highlightSpecialChars(),
       history(),
-      drawSelection(),
       dropCursor(),
       markdown(),
       syntaxHighlighting(sourceHighlightStyle),
