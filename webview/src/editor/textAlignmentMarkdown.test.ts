@@ -1,12 +1,15 @@
 import type {
   MarkdownNode,
+  NodeSchema,
   Root as MarkdownRoot,
 } from '@milkdown/kit/transformer';
+import { Schema } from '@milkdown/kit/prose/model';
 import { remark } from 'remark';
 import { describe, expect, it } from 'vitest';
 
 import {
   getTextAlignmentDivTags,
+  replaceNodeSchemaPreservingOrder,
   restoreDivTextAlignment,
   type PersistedTextAlignment,
 } from './textAlignmentMarkdown';
@@ -35,6 +38,53 @@ const createMilkdownHtmlParagraph = (value: string): MarkdownNode => ({
 });
 
 describe('text alignment Markdown contract', () => {
+  it('keeps paragraph as the default block while extending its schema', () => {
+    const markdownSchema = {
+      parseMarkdown: {
+        match: () => false,
+        runner: () => undefined,
+      },
+      toMarkdown: {
+        match: () => false,
+        runner: () => undefined,
+      },
+    } satisfies Pick<NodeSchema, 'parseMarkdown' | 'toMarkdown'>;
+    const nodes: Array<[string, NodeSchema]> = [
+      ['doc', { ...markdownSchema, content: 'block+' }],
+      ['paragraph', {
+        ...markdownSchema,
+        content: 'inline*',
+        group: 'block',
+      }],
+      ['heading', {
+        ...markdownSchema,
+        content: 'inline*',
+        group: 'block',
+      }],
+      ['text', { ...markdownSchema, group: 'inline' }],
+    ];
+
+    const updated = replaceNodeSchemaPreservingOrder(
+      nodes,
+      'paragraph',
+      (schema) => ({
+        ...schema,
+        attrs: { textAlign: { default: null } },
+      }),
+    );
+    const proseSchema = new Schema({ nodes: Object.fromEntries(updated) });
+
+    expect(updated.map(([id]) => id)).toEqual([
+      'doc',
+      'paragraph',
+      'heading',
+      'text',
+    ]);
+    expect(proseSchema.nodes.doc?.contentMatch.defaultType).toBe(
+      proseSchema.nodes.paragraph,
+    );
+  });
+
   it.each<PersistedTextAlignment>(['center', 'right'])(
     'restores an exact %s wrapper around one paragraph',
     (alignment) => {
