@@ -103,6 +103,14 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
     ): Promise<void> => {
       try {
         await env.clipboard.writeText(message.text);
+
+        if (!isDisposed) {
+          const response: ExtensionToWebviewMessage = {
+            type: 'clipboardTextWritten',
+            requestId: message.requestId,
+          };
+          void webview.postMessage(response);
+        }
       } catch (error: unknown) {
         const detail = error instanceof Error ? ` ${error.message}` : '';
         reportError(

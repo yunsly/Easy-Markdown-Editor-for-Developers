@@ -41,6 +41,10 @@ export type ExtensionToWebviewMessage =
       type: 'attachmentFailed';
       requestId: string;
       message: string;
+    }
+  | {
+      type: 'clipboardTextWritten';
+      requestId: string;
     };
 
 export type WebviewToExtensionMessage =
@@ -73,6 +77,7 @@ export type WebviewToExtensionMessage =
     }
   | {
       type: 'writeClipboardText';
+      requestId: string;
       text: string;
     };
 
@@ -141,6 +146,8 @@ export function isExtensionToWebviewMessage(
       return hasRequestId(value);
     case 'attachmentFailed':
       return hasRequestId(value) && typeof value.message === 'string';
+    case 'clipboardTextWritten':
+      return hasRequestId(value);
     default:
       return false;
   }
@@ -175,7 +182,7 @@ export function isWebviewToExtensionMessage(
     case 'cancelAttachment':
       return hasRequestId(value);
     case 'writeClipboardText':
-      return typeof value.text === 'string';
+      return hasRequestId(value) && typeof value.text === 'string';
     default:
       return false;
   }

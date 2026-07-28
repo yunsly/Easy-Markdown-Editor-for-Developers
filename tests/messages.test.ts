@@ -23,10 +23,12 @@ describe('Webview message validation', () => {
     },
     {
       type: 'writeClipboardText',
+      requestId: 'clipboard-1',
       text: 'const greeting = "안녕하세요";',
     },
     {
       type: 'writeClipboardText',
+      requestId: 'clipboard-2',
       text: '',
     },
   ])('accepts a valid Webview message', (message) => {
@@ -41,7 +43,8 @@ describe('Webview message validation', () => {
       destinationFolder: 42,
       fileName: 'preview.png',
     },
-    { type: 'writeClipboardText', text: 42 },
+    { type: 'writeClipboardText', requestId: 'clipboard-1', text: 42 },
+    { type: 'writeClipboardText', requestId: '', text: 'code' },
   ])('rejects an invalid Webview message', (message) => {
     expect(isWebviewToExtensionMessage(message)).toBe(false);
   });
@@ -67,6 +70,10 @@ describe('Webview message validation', () => {
       requestId: 'request-1',
       message: 'Copy failed.',
     },
+    {
+      type: 'clipboardTextWritten',
+      requestId: 'clipboard-1',
+    },
   ])('accepts a valid Extension Host message', (message) => {
     expect(isExtensionToWebviewMessage(message)).toBe(true);
   });
@@ -86,6 +93,7 @@ describe('Webview message validation', () => {
       finalFileName: 'preview.png',
       detectedKind: 'image',
     },
+    { type: 'clipboardTextWritten', requestId: '' },
   ])('rejects an invalid Extension Host message', (message) => {
     expect(isExtensionToWebviewMessage(message)).toBe(false);
   });

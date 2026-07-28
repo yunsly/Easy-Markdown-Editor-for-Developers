@@ -54,6 +54,8 @@ import { registerTableDeleteTooltip } from './editor/table/createTableDeleteTool
 import { textAlignmentMarkdownPlugins } from './editor/textAlignmentMarkdown';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
+const COPY_CONFIRMATION_MS = 1200;
+const COPY_REQUEST_TIMEOUT_MS = 3000;
 
 interface PendingDocumentChange {
   changeId: number;
@@ -63,6 +65,13 @@ interface PendingDocumentChange {
 interface PendingExternalDocument {
   markdown: string;
   version: number;
+}
+
+interface PendingCopyButtonFeedback {
+  button: HTMLButtonElement;
+  originalAriaLabel: string | null;
+  originalHtml: string;
+  restoreTimer: number;
 }
 
 const container = document.querySelector<HTMLElement>('#app');
@@ -165,10 +174,7 @@ const copySelectedCodeKeymap = codeMirrorKeymap.of([{
       return false;
     }
 
-    postMessageToExtension({
-      type: 'writeClipboardText',
-      text: selectedText,
-    });
+    requestClipboardWrite(selectedText);
     return true;
   },
 }]);
@@ -203,6 +209,11 @@ let isReplacingDocument = false;
 let isSwitchingMode = false;
 let visualUserMutationObserved = false;
 let pendingAttachmentRequestId: string | undefined;
+let nextClipboardRequestId = 1;
+const pendingCopyButtonFeedback = new Map<
+  string,
+  PendingCopyButtonFeedback
+>();
 let restoreScrollFrame: number | undefined;
 const editorScrollPositions: Record<EditorMode, number> = {
   source: 0,
@@ -214,6 +225,68 @@ const reportEditorError = (error: unknown, fallback: string): void => {
 
   showError(message);
   postMessageToExtension({ type: 'reportError', message });
+};
+
+const restoreCopyButton = (requestId: string): void => {
+  const feedback = pendingCopyButtonFeedback.get(requestId);
+
+  if (feedback === undefined) {
+    return;
+  }
+
+  window.clearTimeout(feedback.restoreTimer);
+  feedback.button.innerHTML = feedback.originalHtml;
+  feedback.button.disabled = false;
+
+  if (feedback.originalAriaLabel === null) {
+    feedback.button.removeAttribute('aria-label');
+  } else {
+    feedback.button.setAttribute('aria-label', feedback.originalAriaLabel);
+  }
+
+  pendingCopyButtonFeedback.delete(requestId);
+};
+
+const requestClipboardWrite = (
+  text: string,
+  button?: HTMLButtonElement,
+): void => {
+  const requestId = `clipboard-${nextClipboardRequestId}`;
+  nextClipboardRequestId += 1;
+
+  if (button !== undefined) {
+    button.disabled = true;
+    const feedback: PendingCopyButtonFeedback = {
+      button,
+      originalAriaLabel: button.getAttribute('aria-label'),
+      originalHtml: button.innerHTML,
+      restoreTimer: window.setTimeout(
+        () => restoreCopyButton(requestId),
+        COPY_REQUEST_TIMEOUT_MS,
+      ),
+    };
+    button.textContent = 'Copying…';
+    button.setAttribute('aria-label', 'Copying code');
+    pendingCopyButtonFeedback.set(requestId, feedback);
+  }
+
+  postMessageToExtension({ type: 'writeClipboardText', requestId, text });
+};
+
+const confirmCopyButton = (requestId: string): void => {
+  const feedback = pendingCopyButtonFeedback.get(requestId);
+
+  if (feedback === undefined) {
+    return;
+  }
+
+  window.clearTimeout(feedback.restoreTimer);
+  feedback.button.textContent = 'Copied';
+  feedback.button.setAttribute('aria-label', 'Code copied');
+  feedback.restoreTimer = window.setTimeout(
+    () => restoreCopyButton(requestId),
+    COPY_CONFIRMATION_MS,
+  );
 };
 
 const markVisualUserMutation = (): void => {
@@ -773,7 +846,7 @@ const handleCodeBlockCopyClick = (event: MouseEvent): void => {
         throw new Error('Could not resolve the selected code block.');
       }
 
-      postMessageToExtension({ type: 'writeClipboardText', text: code });
+      requestClipboardWrite(code, button);
     });
   } catch (error: unknown) {
     reportEditorError(error, 'Failed to copy code block.');
@@ -951,6 +1024,8 @@ const disposeMessageListener = onMessageFromExtension((message) => {
     handleReplaceDocument(message.text, message.version);
   } else if (message.type === 'showError') {
     showError(message.message);
+  } else if (message.type === 'clipboardTextWritten') {
+    confirmCopyButton(message.requestId);
   } else if (message.type === 'attachmentSourceSelected') {
     if (message.requestId === pendingAttachmentRequestId) {
       attachmentDialog.open(message);
@@ -1042,6 +1117,9 @@ window.addEventListener(
     editorRoot.removeEventListener('click', handleCodeBlockCopyClick, {
       capture: true,
     });
+    for (const requestId of pendingCopyButtonFeedback.keys()) {
+      restoreCopyButton(requestId);
+    }
     isComposing = false;
     isReplacingDocument = false;
     isSwitchingMode = false;
