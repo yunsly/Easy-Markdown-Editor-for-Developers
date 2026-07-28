@@ -1,9 +1,6 @@
 import { nodesCtx } from '@milkdown/kit/core';
 import type { Ctx, MilkdownPlugin } from '@milkdown/kit/ctx';
-import {
-  paragraphAttr,
-  paragraphSchema,
-} from '@milkdown/kit/preset/commonmark';
+import { paragraphAttr } from '@milkdown/kit/preset/commonmark';
 import type {
   MarkdownNode,
   NodeSchema,
@@ -168,7 +165,7 @@ const addParagraphTextAlignment = (
   },
 });
 
-export const replaceNodeSchemaPreservingOrder = (
+const replaceNodeSchemaPreservingOrder = (
   nodes: Array<[string, NodeSchema]>,
   nodeId: string,
   update: (schema: NodeSchema) => NodeSchema,
@@ -190,10 +187,15 @@ export const replaceNodeSchemaPreservingOrder = (
   return updatedNodes;
 };
 
+export const replaceParagraphSchemaPreservingOrder = (
+  nodes: Array<[string, NodeSchema]>,
+  update: (schema: NodeSchema) => NodeSchema,
+): Array<[string, NodeSchema]> =>
+  replaceNodeSchemaPreservingOrder(nodes, 'paragraph', update);
+
 const paragraphTextAlignmentSchema: MilkdownPlugin = (context) => () => {
-  context.update(nodesCtx, (nodes) => replaceNodeSchemaPreservingOrder(
+  context.update(nodesCtx, (nodes) => replaceParagraphSchemaPreservingOrder(
     nodes,
-    paragraphSchema.id,
     (schema) => addParagraphTextAlignment(context, schema),
   ));
 };

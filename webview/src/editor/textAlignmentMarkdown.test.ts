@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getTextAlignmentDivTags,
-  replaceNodeSchemaPreservingOrder,
+  replaceParagraphSchemaPreservingOrder,
   restoreDivTextAlignment,
   type PersistedTextAlignment,
 } from './textAlignmentMarkdown';
@@ -64,9 +64,8 @@ describe('text alignment Markdown contract', () => {
       ['text', { ...markdownSchema, group: 'inline' }],
     ];
 
-    const updated = replaceNodeSchemaPreservingOrder(
+    const updated = replaceParagraphSchemaPreservingOrder(
       nodes,
-      'paragraph',
       (schema) => ({
         ...schema,
         attrs: { textAlign: { default: null } },
