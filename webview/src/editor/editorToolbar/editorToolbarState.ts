@@ -19,7 +19,9 @@ import { tableSchema } from '@milkdown/kit/preset/gfm';
 import type {
   EditorToolbar,
   EditorToolbarAction,
+  ParagraphAlignment,
 } from './createEditorToolbar';
+import { getSelectedTopLevelParagraphs } from './editorToolbarActions';
 
 const textBlockActions = [
   'paragraph',
@@ -30,6 +32,54 @@ const textBlockActions = [
   'heading-5',
   'heading-6',
 ] as const satisfies readonly EditorToolbarAction[];
+
+const alignmentActions = [
+  'align-left',
+  'align-center',
+  'align-right',
+] as const satisfies readonly EditorToolbarAction[];
+
+const getParagraphAlignment = (
+  value: unknown,
+): ParagraphAlignment =>
+  value === 'center' || value === 'right' ? value : 'left';
+
+interface ParagraphAlignmentState {
+  alignment: ParagraphAlignment | undefined;
+  hasParagraphs: boolean;
+}
+
+const getParagraphAlignmentState = (
+  context: Ctx,
+  state: EditorState,
+): ParagraphAlignmentState => {
+  const paragraphs = getSelectedTopLevelParagraphs(
+    state.doc,
+    state.selection,
+    paragraphSchema.type(context),
+  );
+  const first = paragraphs[0];
+
+  if (first === undefined) {
+    return { alignment: undefined, hasParagraphs: false };
+  }
+
+  const alignment = getParagraphAlignment(first.node.attrs.textAlign);
+  const isUniform = paragraphs.every(
+    ({ node }) => getParagraphAlignment(node.attrs.textAlign) === alignment,
+  );
+
+  return {
+    alignment: isUniform ? alignment : undefined,
+    hasParagraphs: true,
+  };
+};
+
+export const getActiveParagraphAlignment = (
+  context: Ctx,
+  state: EditorState,
+): ParagraphAlignment | undefined =>
+  getParagraphAlignmentState(context, state).alignment;
 
 export const getActiveTextBlockAction = (
   context: Ctx,
@@ -149,6 +199,7 @@ export const updateEditorToolbarState = (
 
   const { state } = editorView;
   const activeAction = getActiveTextBlockAction(context, state);
+  const paragraphAlignment = getParagraphAlignmentState(context, state);
   const listState = getSelectionListState(context, state);
   const isTableActive = isInTable(state) ||
     (state.selection instanceof NodeSelection &&
@@ -166,6 +217,30 @@ export const updateEditorToolbarState = (
         ? 6
         : undefined;
   toolbar.headingMenu.setActiveLevel(activeHeadingLevel);
+
+  for (const action of alignmentActions) {
+    const button = toolbar.buttons.get(action);
+    const alignment = action === 'align-left'
+      ? 'left'
+      : action === 'align-center'
+        ? 'center'
+        : 'right';
+    button?.toggleAttribute('disabled', !paragraphAlignment.hasParagraphs);
+    updateButtonState(
+      toolbar,
+      action,
+      alignment === paragraphAlignment.alignment,
+    );
+  }
+  toolbar.alignmentMenu.button.toggleAttribute(
+    'disabled',
+    !paragraphAlignment.hasParagraphs,
+  );
+  toolbar.alignmentMenu.setActiveAlignment(paragraphAlignment.alignment);
+
+  if (!paragraphAlignment.hasParagraphs) {
+    toolbar.alignmentMenu.close();
+  }
 
   updateButtonState(
     toolbar,

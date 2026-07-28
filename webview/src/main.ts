@@ -47,6 +47,7 @@ import {
   shouldReplaceVisualDocument,
 } from './editor/source/sourceDocumentUpdates';
 import { registerTableDeleteTooltip } from './editor/table/createTableDeleteTooltip';
+import { textAlignmentMarkdownPlugins } from './editor/textAlignmentMarkdown';
 
 const MARKDOWN_UPDATE_DEBOUNCE_MS = 300;
 
@@ -726,6 +727,8 @@ const initializeEditor = async (
     features,
     featureConfigs,
   });
+
+  editor.editor.use(textAlignmentMarkdownPlugins);
 
   if (resourceBaseUri !== undefined) {
     registerWorkspaceImageView(editor.editor, resourceBaseUri);

@@ -22,6 +22,7 @@ import {
   linkSchema,
   listItemSchema,
   orderedListSchema,
+  paragraphSchema,
   turnIntoTextCommand,
   wrapInBulletListCommand,
   wrapInBlockquoteCommand,
@@ -36,6 +37,7 @@ import {
 import type {
   EditorToolbarAction,
   EditorToolbarActionOptions,
+  ParagraphAlignment,
 } from './createEditorToolbar';
 
 export interface CopiedAttachment {
@@ -61,6 +63,62 @@ interface SelectedListNodes {
   items: ReadonlyMap<number, ProseMirrorNode>;
   lists: ReadonlyMap<number, ProseMirrorNode>;
 }
+
+export interface SelectedTopLevelParagraph {
+  node: ProseMirrorNode;
+  position: number;
+}
+
+export const getSelectedTopLevelParagraphs = (
+  doc: ProseMirrorNode,
+  selection: Selection,
+  paragraphType: NodeType,
+): readonly SelectedTopLevelParagraph[] => {
+  if (
+    selection.empty &&
+    selection.$from.depth === 1 &&
+    selection.$from.parent.type === paragraphType
+  ) {
+    return [{
+      node: selection.$from.parent,
+      position: selection.$from.before(1),
+    }];
+  }
+
+  const paragraphs: SelectedTopLevelParagraph[] = [];
+
+  doc.nodesBetween(selection.from, selection.to, (node, position, parent) => {
+    if (parent !== doc) {
+      return true;
+    }
+
+    if (node.type === paragraphType) {
+      paragraphs.push({ node, position });
+    }
+
+    return false;
+  });
+
+  return paragraphs;
+};
+
+const getRequestedParagraphAlignment = (
+  action: EditorToolbarAction,
+): ParagraphAlignment | undefined => {
+  if (action === 'align-left') {
+    return 'left';
+  }
+
+  if (action === 'align-center') {
+    return 'center';
+  }
+
+  if (action === 'align-right') {
+    return 'right';
+  }
+
+  return undefined;
+};
 
 const getSelectedListNodes = (
   doc: ProseMirrorNode,
@@ -113,6 +171,7 @@ export const runEditorToolbarAction = (
   editor.action((context) => {
     const commands = context.get(commandsCtx);
     const view = context.get(editorViewCtx);
+    const requestedParagraphAlignment = getRequestedParagraphAlignment(action);
 
     if (action === 'paragraph') {
       commands.call(turnIntoTextCommand.key);
@@ -128,6 +187,30 @@ export const runEditorToolbarAction = (
       commands.call(wrapInHeadingCommand.key, 5);
     } else if (action === 'heading-6') {
       commands.call(wrapInHeadingCommand.key, 6);
+    } else if (requestedParagraphAlignment !== undefined) {
+      const paragraphs = getSelectedTopLevelParagraphs(
+        view.state.doc,
+        view.state.selection,
+        paragraphSchema.type(context),
+      );
+      const textAlign = requestedParagraphAlignment === 'left'
+        ? null
+        : requestedParagraphAlignment;
+      let transaction = view.state.tr;
+
+      for (const { node, position } of paragraphs) {
+        if (node.attrs.textAlign !== textAlign) {
+          transaction = transaction.setNodeMarkup(
+            position,
+            undefined,
+            { ...node.attrs, textAlign },
+          );
+        }
+      }
+
+      if (transaction.docChanged) {
+        view.dispatch(transaction.scrollIntoView());
+      }
     } else if (
       action === 'bullet-list' ||
       action === 'ordered-list'
