@@ -1,9 +1,16 @@
-import { commandsCtx, schemaCtx } from '@milkdown/kit/core';
+import {
+  commandsCtx,
+  editorViewCtx,
+  schemaCtx,
+} from '@milkdown/kit/core';
 import type { Editor } from '@milkdown/kit/core';
 import type { Ctx } from '@milkdown/kit/ctx';
 import { setBlockType } from '@milkdown/kit/prose/commands';
 import { history, redo, undo } from '@milkdown/kit/prose/history';
-import { Schema } from '@milkdown/kit/prose/model';
+import {
+  type Node as ProseMirrorNode,
+  Schema,
+} from '@milkdown/kit/prose/model';
 import {
   EditorState,
   TextSelection,
@@ -30,6 +37,30 @@ const schema = new Schema({
       group: 'block',
     },
     paragraph: { content: 'inline*', group: 'block' },
+    bullet_list: {
+      attrs: { spread: { default: false } },
+      content: 'listItem+',
+      group: 'block',
+    },
+    ordered_list: {
+      attrs: {
+        order: { default: 1 },
+        spread: { default: false },
+      },
+      content: 'listItem+',
+      group: 'block',
+    },
+    list_item: {
+      attrs: {
+        checked: { default: null },
+        label: { default: '•' },
+        listType: { default: 'bullet' },
+        spread: { default: true },
+      },
+      content: 'paragraph block*',
+      defining: true,
+      group: 'listItem',
+    },
     text: { group: 'inline' },
   },
 });
@@ -212,4 +243,169 @@ describe('extended heading active state', () => {
       );
     },
   );
+});
+
+type ListKind = 'bullet_list' | 'ordered_list';
+
+interface ListHarness {
+  getState: () => EditorState;
+  run: (action: EditorToolbarAction) => void;
+  undo: () => boolean;
+}
+
+const createListItem = (text: string, checked: boolean | null = null) =>
+  schema.node('list_item', { checked }, [
+    schema.node('paragraph', undefined, schema.text(text)),
+  ]);
+
+const selectAllParagraphText = (doc: ProseMirrorNode) => {
+  const positions: Array<{ from: number; to: number }> = [];
+
+  doc.descendants((node, position) => {
+    if (node.type === schema.nodes.paragraph) {
+      positions.push({
+        from: position + 1,
+        to: position + 1 + node.content.size,
+      });
+      return false;
+    }
+
+    return true;
+  });
+
+  const first = positions[0];
+  const last = positions.at(-1);
+
+  if (first === undefined || last === undefined) {
+    throw new Error('Expected the document to contain paragraph text.');
+  }
+
+  return TextSelection.create(doc, first.from, last.to);
+};
+
+const createListHarness = (
+  kind: ListKind | 'paragraphs',
+  checkedValues: readonly (boolean | null)[] = [null, null, null],
+): ListHarness => {
+  const paragraphs = checkedValues.map((_, index) =>
+    schema.node('paragraph', undefined, schema.text(`item ${index + 1}`))
+  );
+  const blocks = kind === 'paragraphs'
+    ? paragraphs
+    : [
+      schema.node(
+        kind,
+        undefined,
+        checkedValues.map((checked, index) =>
+          createListItem(`item ${index + 1}`, checked)
+        ),
+      ),
+    ];
+  const doc = schema.node('doc', undefined, blocks);
+  let state = EditorState.create({
+    doc,
+    plugins: [history()],
+    selection: selectAllParagraphText(doc),
+  });
+  const dispatch = (transaction: Transaction): void => {
+    state = state.apply(transaction);
+  };
+  const view = {
+    dispatch,
+    focus: vi.fn(),
+    get state() {
+      return state;
+    },
+  };
+  const commands = { call: vi.fn(() => false) };
+  const context = {
+    get: (slice: unknown) => {
+      if (slice === commandsCtx) return commands;
+      if (slice === editorViewCtx) return view;
+      if (slice === schemaCtx) return schema;
+      return undefined;
+    },
+  } as unknown as Ctx;
+  const editor = {
+    action: (action: (currentContext: Ctx) => void) => action(context),
+  } as unknown as Editor;
+
+  return {
+    getState: () => state,
+    run: (action) => runEditorToolbarAction(editor, action),
+    undo: () => undo(state, dispatch),
+  };
+};
+
+const getListItemCheckedValues = (state: EditorState) => {
+  const values: Array<boolean | null> = [];
+
+  state.doc.descendants((node) => {
+    if (node.type === schema.nodes.list_item) {
+      values.push(node.attrs.checked as boolean | null);
+    }
+  });
+
+  return values;
+};
+
+describe('multi-selection list toolbar actions', () => {
+  it.each<ListKind>(['bullet_list', 'ordered_list'])(
+    'turns every selected %s item into a task item',
+    (kind) => {
+      const harness = createListHarness(kind);
+
+      harness.run('task-list');
+
+      expect(harness.getState().doc.firstChild?.type).toBe(
+        schema.nodes.bullet_list,
+      );
+      expect(getListItemCheckedValues(harness.getState())).toEqual([
+        false,
+        false,
+        false,
+      ]);
+
+      expect(harness.undo()).toBe(true);
+      expect(harness.getState().doc.firstChild?.type).toBe(schema.nodes[kind]);
+      expect(getListItemCheckedValues(harness.getState())).toEqual([
+        null,
+        null,
+        null,
+      ]);
+    },
+  );
+
+  it.each([
+    ['bullet-list', 'bullet_list'],
+    ['ordered-list', 'ordered_list'],
+  ] as const)(
+    'turns every selected task item into a %s',
+    (action, expectedType) => {
+      const harness = createListHarness('bullet_list', [false, true, false]);
+
+      harness.run(action);
+
+      expect(harness.getState().doc.firstChild?.type).toBe(
+        schema.nodes[expectedType],
+      );
+      expect(getListItemCheckedValues(harness.getState())).toEqual([
+        null,
+        null,
+        null,
+      ]);
+    },
+  );
+
+  it('preserves paragraph wrapping while marking the result as a task', () => {
+    const harness = createListHarness('paragraphs');
+
+    harness.run('task-list');
+
+    expect(harness.getState().doc.firstChild?.type).toBe(
+      schema.nodes.bullet_list,
+    );
+    expect(getListItemCheckedValues(harness.getState())).toEqual([false]);
+    expect(harness.getState().doc.firstChild?.firstChild?.childCount).toBe(3);
+  });
 });

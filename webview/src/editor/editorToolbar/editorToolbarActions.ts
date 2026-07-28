@@ -2,10 +2,14 @@ import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
 import type { Editor } from '@milkdown/kit/core';
 import { lift, wrapIn } from '@milkdown/kit/prose/commands';
 import type {
+  Node as ProseMirrorNode,
   NodeType,
   ResolvedPos,
 } from '@milkdown/kit/prose/model';
-import { NodeSelection } from '@milkdown/kit/prose/state';
+import {
+  NodeSelection,
+  type Selection,
+} from '@milkdown/kit/prose/state';
 import { isInTable } from '@milkdown/kit/prose/tables';
 import {
   blockquoteSchema,
@@ -53,6 +57,54 @@ const findAncestorDepth = (
   return undefined;
 };
 
+interface SelectedListNodes {
+  items: ReadonlyMap<number, ProseMirrorNode>;
+  lists: ReadonlyMap<number, ProseMirrorNode>;
+}
+
+const getSelectedListNodes = (
+  doc: ProseMirrorNode,
+  selection: Selection,
+  listItemType: NodeType,
+  listTypes: readonly NodeType[],
+): SelectedListNodes => {
+  const items = new Map<number, ProseMirrorNode>();
+  const lists = new Map<number, ProseMirrorNode>();
+
+  if (selection.empty) {
+    const listItemDepth = findAncestorDepth(selection.$from, [listItemType]);
+    const listDepth = findAncestorDepth(selection.$from, listTypes);
+
+    if (listItemDepth !== undefined) {
+      items.set(
+        selection.$from.before(listItemDepth),
+        selection.$from.node(listItemDepth),
+      );
+    }
+
+    if (listDepth !== undefined) {
+      lists.set(
+        selection.$from.before(listDepth),
+        selection.$from.node(listDepth),
+      );
+    }
+
+    return { items, lists };
+  }
+
+  doc.nodesBetween(selection.from, selection.to, (node, position) => {
+    if (node.type === listItemType) {
+      items.set(position, node);
+    } else if (listTypes.includes(node.type)) {
+      lists.set(position, node);
+    }
+
+    return true;
+  });
+
+  return { items, lists };
+};
+
 export const runEditorToolbarAction = (
   editor: Editor,
   action: EditorToolbarAction,
@@ -85,87 +137,112 @@ export const runEditorToolbarAction = (
       const orderedListType = orderedListSchema.type(context);
       const listItemType = listItemSchema.type(context);
       const listType = isBulletList ? bulletListType : orderedListType;
-      const { $from } = view.state.selection;
-      const currentListDepth = findAncestorDepth(
-        $from,
+      const selected = getSelectedListNodes(
+        view.state.doc,
+        view.state.selection,
+        listItemType,
         [bulletListType, orderedListType],
       );
-      const listItemDepth = findAncestorDepth($from, [listItemType]);
-      const listItem = listItemDepth === undefined
-        ? undefined
-        : $from.node(listItemDepth);
-      const isTaskItem = listItem?.attrs.checked != null;
 
-      if (currentListDepth === undefined) {
+      if (selected.lists.size === 0) {
         commands.call(
           isBulletList
             ? wrapInBulletListCommand.key
             : wrapInOrderedListCommand.key,
         );
       } else if (
-        $from.node(currentListDepth).type === listType &&
-        !isTaskItem
+        [...selected.lists.values()].every((list) => list.type === listType) &&
+        [...selected.items.values()].every(
+          (item) => item.attrs.checked == null,
+        )
       ) {
         commands.call(liftListItemCommand.key);
       } else {
         let transaction = view.state.tr;
 
-        if (isTaskItem && listItemDepth !== undefined && listItem) {
-          transaction = transaction.setNodeMarkup(
-            $from.before(listItemDepth),
-            undefined,
-            { ...listItem.attrs, checked: null },
-          );
+        for (const [position, item] of selected.items) {
+          if (item.attrs.checked != null) {
+            transaction = transaction.setNodeMarkup(
+              position,
+              undefined,
+              { ...item.attrs, checked: null },
+            );
+          }
         }
 
-        if ($from.node(currentListDepth).type !== listType) {
-          transaction = transaction.setNodeMarkup(
-            $from.before(currentListDepth),
-            listType,
-          );
+        for (const [position, list] of selected.lists) {
+          if (list.type !== listType) {
+            transaction = transaction.setNodeMarkup(position, listType);
+          }
         }
 
-        view.dispatch(transaction);
+        if (transaction.docChanged) {
+          view.dispatch(transaction);
+        }
       }
     } else if (action === 'task-list') {
       const bulletListType = bulletListSchema.type(context);
+      const orderedListType = orderedListSchema.type(context);
       const listItemType = listItemSchema.type(context);
-      const { $from } = view.state.selection;
-      const listItemDepth = findAncestorDepth($from, [listItemType]);
-      const listItem = listItemDepth === undefined
-        ? undefined
-        : $from.node(listItemDepth);
-
-      if (listItem?.attrs.checked != null) {
-        commands.call(liftListItemCommand.key);
-      } else if (listItemDepth !== undefined && listItem) {
-        view.dispatch(
-          view.state.tr.setNodeMarkup(
-            $from.before(listItemDepth),
-            undefined,
-            { ...listItem.attrs, checked: false },
-          ),
+      const selected = getSelectedListNodes(
+        view.state.doc,
+        view.state.selection,
+        listItemType,
+        [bulletListType, orderedListType],
+      );
+      const allItemsAreTasks = selected.items.size > 0 &&
+        [...selected.items.values()].every(
+          (item) => item.attrs.checked != null,
         );
+
+      if (allItemsAreTasks) {
+        commands.call(liftListItemCommand.key);
+      } else if (selected.items.size > 0) {
+        let transaction = view.state.tr;
+
+        for (const [position, item] of selected.items) {
+          if (item.attrs.checked == null) {
+            transaction = transaction.setNodeMarkup(
+              position,
+              undefined,
+              { ...item.attrs, checked: false },
+            );
+          }
+        }
+
+        for (const [position, list] of selected.lists) {
+          if (list.type !== bulletListType) {
+            transaction = transaction.setNodeMarkup(position, bulletListType);
+          }
+        }
+
+        if (transaction.docChanged) {
+          view.dispatch(transaction);
+        }
       } else {
         wrapIn(bulletListType)(view.state, (transaction) => {
-          const wrappedPosition = transaction.selection.$from;
-          const wrappedItemDepth = findAncestorDepth(
-            wrappedPosition,
-            [listItemType],
+          const wrapped = getSelectedListNodes(
+            transaction.doc,
+            transaction.selection,
+            listItemType,
+            [bulletListType],
           );
 
-          if (wrappedItemDepth === undefined) {
+          if (wrapped.items.size === 0) {
             return;
           }
 
-          const wrappedItem = wrappedPosition.node(wrappedItemDepth);
-          view.dispatch(
-            transaction.setNodeMarkup(
-              wrappedPosition.before(wrappedItemDepth),
+          let taskTransaction = transaction;
+
+          for (const [position, item] of wrapped.items) {
+            taskTransaction = taskTransaction.setNodeMarkup(
+              position,
               undefined,
-              { ...wrappedItem.attrs, checked: false },
-            ),
-          );
+              { ...item.attrs, checked: false },
+            );
+          }
+
+          view.dispatch(taskTransaction);
         });
       }
     } else if (action === 'blockquote') {
