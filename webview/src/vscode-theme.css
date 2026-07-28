@@ -117,6 +117,33 @@
   opacity: 1;
 }
 
+.editor-root .milkdown .milkdown-code-block
+  .copy-button[data-copy-state] {
+  min-width: 76px;
+  color: var(
+    --vscode-button-foreground,
+    var(--vscode-editor-foreground)
+  );
+  background: var(
+    --vscode-button-background,
+    var(--vscode-editor-background)
+  );
+  opacity: 1;
+  cursor: default;
+}
+
+.editor-root .milkdown .milkdown-code-block
+  .copy-button[data-copy-state='copied'] {
+  color: var(
+    --vscode-button-foreground,
+    var(--vscode-editor-foreground)
+  );
+  background: var(
+    --vscode-button-hoverBackground,
+    var(--vscode-button-background)
+  );
+}
+
 .editor-root .milkdown .cm-editor:not(.cm-focused) :is(
   .cm-activeLine,
   .cm-activeLineGutter

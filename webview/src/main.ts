@@ -69,6 +69,7 @@ interface PendingExternalDocument {
 
 interface PendingCopyButtonFeedback {
   button: HTMLButtonElement;
+  originalAriaDisabled: string | null;
   originalAriaLabel: string | null;
   originalHtml: string;
   restoreTimer: number;
@@ -236,7 +237,16 @@ const restoreCopyButton = (requestId: string): void => {
 
   window.clearTimeout(feedback.restoreTimer);
   feedback.button.innerHTML = feedback.originalHtml;
-  feedback.button.disabled = false;
+  delete feedback.button.dataset.copyState;
+
+  if (feedback.originalAriaDisabled === null) {
+    feedback.button.removeAttribute('aria-disabled');
+  } else {
+    feedback.button.setAttribute(
+      'aria-disabled',
+      feedback.originalAriaDisabled,
+    );
+  }
 
   if (feedback.originalAriaLabel === null) {
     feedback.button.removeAttribute('aria-label');
@@ -251,13 +261,17 @@ const requestClipboardWrite = (
   text: string,
   button?: HTMLButtonElement,
 ): void => {
+  if (button?.dataset.copyState !== undefined) {
+    return;
+  }
+
   const requestId = `clipboard-${nextClipboardRequestId}`;
   nextClipboardRequestId += 1;
 
   if (button !== undefined) {
-    button.disabled = true;
     const feedback: PendingCopyButtonFeedback = {
       button,
+      originalAriaDisabled: button.getAttribute('aria-disabled'),
       originalAriaLabel: button.getAttribute('aria-label'),
       originalHtml: button.innerHTML,
       restoreTimer: window.setTimeout(
@@ -266,6 +280,8 @@ const requestClipboardWrite = (
       ),
     };
     button.textContent = 'Copying…';
+    button.dataset.copyState = 'copying';
+    button.setAttribute('aria-disabled', 'true');
     button.setAttribute('aria-label', 'Copying code');
     pendingCopyButtonFeedback.set(requestId, feedback);
   }
@@ -282,6 +298,7 @@ const confirmCopyButton = (requestId: string): void => {
 
   window.clearTimeout(feedback.restoreTimer);
   feedback.button.textContent = 'Copied';
+  feedback.button.dataset.copyState = 'copied';
   feedback.button.setAttribute('aria-label', 'Code copied');
   feedback.restoreTimer = window.setTimeout(
     () => restoreCopyButton(requestId),
