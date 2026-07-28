@@ -11,6 +11,9 @@ import {
 } from './createTableSizePicker';
 
 export type EditorToolbarAction =
+  | 'align-center'
+  | 'align-left'
+  | 'align-right'
   | 'attach'
   | 'badge'
   | 'blockquote'
@@ -46,6 +49,7 @@ interface ToolbarButtonDefinition {
 }
 
 export interface EditorToolbar {
+  alignmentMenu: TextAlignmentMenu;
   buttons: ReadonlyMap<EditorToolbarAction, HTMLButtonElement>;
   destroy: () => void;
   element: HTMLElement;
@@ -58,6 +62,32 @@ export interface ExtendedHeadingMenu {
   close: () => void;
   destroy: () => void;
   setActiveLevel: (level: 4 | 5 | 6 | undefined) => void;
+}
+
+export type ParagraphAlignment = 'center' | 'left' | 'right';
+
+export interface TextAlignmentMenu {
+  button: HTMLButtonElement;
+  close: () => void;
+  destroy: () => void;
+  setActiveAlignment: (alignment: ParagraphAlignment | undefined) => void;
+}
+
+interface ToolbarRadioMenu {
+  button: HTMLButtonElement;
+  close: () => void;
+  destroy: () => void;
+  itemButtons: ReadonlyMap<EditorToolbarAction, HTMLButtonElement>;
+}
+
+interface ToolbarRadioMenuOptions {
+  buttonLabel: string;
+  buttonText: string;
+  definitions: readonly ToolbarButtonDefinition[];
+  menuId: string;
+  menuLabel: string;
+  onBeforeOpen: () => void;
+  runAction: (action: EditorToolbarAction) => void;
 }
 
 const toolbarButtons: readonly ToolbarButtonDefinition[] = [
@@ -79,6 +109,12 @@ const extendedHeadingButtons: readonly ToolbarButtonDefinition[] = [
   { action: 'heading-4', label: 'Heading 4', text: 'H4' },
   { action: 'heading-5', label: 'Heading 5', text: 'H5' },
   { action: 'heading-6', label: 'Heading 6', text: 'H6' },
+];
+
+const alignmentButtons: readonly ToolbarButtonDefinition[] = [
+  { action: 'align-left', label: 'Align Left', text: 'Left' },
+  { action: 'align-center', label: 'Align Center', text: 'Center' },
+  { action: 'align-right', label: 'Align Right', text: 'Right' },
 ];
 
 const createToolbarButton = (
@@ -109,11 +145,15 @@ const createToolbarButton = (
   return button;
 };
 
-const createExtendedHeadingMenu = (
-  runAction: (action: EditorToolbarAction) => void,
-): ExtendedHeadingMenu & {
-  itemButtons: ReadonlyMap<EditorToolbarAction, HTMLButtonElement>;
-} => {
+const createToolbarRadioMenu = ({
+  buttonLabel,
+  buttonText,
+  definitions,
+  menuId,
+  menuLabel,
+  onBeforeOpen,
+  runAction,
+}: ToolbarRadioMenuOptions): ToolbarRadioMenu => {
   const button = document.createElement('button');
   const menu = document.createElement('div');
   const itemButtons = new Map<EditorToolbarAction, HTMLButtonElement>();
@@ -121,18 +161,18 @@ const createExtendedHeadingMenu = (
   button.className = 'editor-toolbar__button';
   button.type = 'button';
   button.disabled = true;
-  button.title = 'More headings';
-  button.textContent = 'H4–H6 ▾';
-  button.setAttribute('aria-label', 'More headings');
+  button.title = buttonLabel;
+  button.textContent = buttonText;
+  button.setAttribute('aria-label', buttonLabel);
   button.setAttribute('aria-haspopup', 'menu');
-  button.setAttribute('aria-controls', 'editor-heading-menu');
+  button.setAttribute('aria-controls', menuId);
   button.setAttribute('aria-expanded', 'false');
   button.setAttribute('aria-pressed', 'false');
-  menu.id = 'editor-heading-menu';
-  menu.className = 'editor-heading-menu';
+  menu.id = menuId;
+  menu.className = 'editor-toolbar-menu';
   menu.hidden = true;
   menu.setAttribute('role', 'menu');
-  menu.setAttribute('aria-label', 'More headings');
+  menu.setAttribute('aria-label', menuLabel);
 
   const positionMenu = (): void => {
     if (menu.hidden) {
@@ -175,12 +215,12 @@ const createExtendedHeadingMenu = (
     });
   };
 
-  for (const definition of extendedHeadingButtons) {
+  for (const definition of definitions) {
     const item = createToolbarButton(definition, (action) => {
       close();
       runAction(action);
     });
-    item.classList.add('editor-heading-menu__item');
+    item.classList.add('editor-toolbar-menu__item');
     item.setAttribute('role', 'menuitemradio');
     item.setAttribute('aria-checked', 'false');
     item.addEventListener('keydown', (event) => {
@@ -215,6 +255,7 @@ const createExtendedHeadingMenu = (
       return;
     }
 
+    onBeforeOpen();
     menu.hidden = false;
     button.setAttribute('aria-expanded', 'true');
     positionMenu();
@@ -285,14 +326,62 @@ const createExtendedHeadingMenu = (
       menu.remove();
     },
     itemButtons,
+  };
+};
+
+const createExtendedHeadingMenu = (
+  runAction: (action: EditorToolbarAction) => void,
+  onBeforeOpen: () => void,
+): ExtendedHeadingMenu & ToolbarRadioMenu => {
+  const menu = createToolbarRadioMenu({
+    buttonLabel: 'More headings',
+    buttonText: 'H4–H6 ▾',
+    definitions: extendedHeadingButtons,
+    menuId: 'editor-heading-menu',
+    menuLabel: 'More headings',
+    onBeforeOpen,
+    runAction,
+  });
+
+  return {
+    ...menu,
     setActiveLevel: (level) => {
       const isActive = level !== undefined;
       const label = isActive ? `Heading ${level}` : 'More headings';
-      button.classList.toggle('is-active', isActive);
-      button.setAttribute('aria-pressed', String(isActive));
-      button.setAttribute('aria-label', label);
-      button.title = label;
-      button.textContent = isActive ? `H${level} ▾` : 'H4–H6 ▾';
+      menu.button.classList.toggle('is-active', isActive);
+      menu.button.setAttribute('aria-pressed', String(isActive));
+      menu.button.setAttribute('aria-label', label);
+      menu.button.title = label;
+      menu.button.textContent = isActive ? `H${level} ▾` : 'H4–H6 ▾';
+    },
+  };
+};
+
+const createTextAlignmentMenu = (
+  runAction: (action: EditorToolbarAction) => void,
+  onBeforeOpen: () => void,
+): TextAlignmentMenu & ToolbarRadioMenu => {
+  const menu = createToolbarRadioMenu({
+    buttonLabel: 'Text alignment',
+    buttonText: 'Align ▾',
+    definitions: alignmentButtons,
+    menuId: 'editor-alignment-menu',
+    menuLabel: 'Text alignment',
+    onBeforeOpen,
+    runAction,
+  });
+
+  return {
+    ...menu,
+    setActiveAlignment: (alignment) => {
+      const activeLabel = alignment === undefined
+        ? 'Text alignment'
+        : `Text alignment: ${alignment}`;
+      const isActive = alignment === 'center' || alignment === 'right';
+      menu.button.classList.toggle('is-active', isActive);
+      menu.button.setAttribute('aria-pressed', String(isActive));
+      menu.button.setAttribute('aria-label', activeLabel);
+      menu.button.title = activeLabel;
     },
   };
 };
@@ -309,8 +398,20 @@ export const createEditorToolbar = (
   const buttons = new Map<EditorToolbarAction, HTMLButtonElement>();
   const modeControl = createEditorModeControl({ selectMode });
   const headingMenu = createExtendedHeadingMenu((action) => {
+    alignmentMenu.close();
     tableSizePicker?.close();
     runAction(action);
+  }, () => {
+    alignmentMenu.close();
+    tableSizePicker?.close();
+  });
+  const alignmentMenu = createTextAlignmentMenu((action) => {
+    headingMenu.close();
+    tableSizePicker?.close();
+    runAction(action);
+  }, () => {
+    headingMenu.close();
+    tableSizePicker?.close();
   });
   let tableSizePicker: TableSizePicker | undefined;
   toolbar.className = 'editor-toolbar';
@@ -323,10 +424,14 @@ export const createEditorToolbar = (
       definition,
       (action, focusPopup) => {
         if (action === 'table') {
+          headingMenu.close();
+          alignmentMenu.close();
           tableSizePicker?.toggle(focusPopup);
           return;
         }
 
+        headingMenu.close();
+        alignmentMenu.close();
         tableSizePicker?.close();
         runAction(action);
       },
@@ -335,11 +440,14 @@ export const createEditorToolbar = (
     toolbar.append(button);
 
     if (definition.action === 'heading-3') {
-      toolbar.append(headingMenu.button);
+      toolbar.append(headingMenu.button, alignmentMenu.button);
     }
   }
 
   for (const [action, button] of headingMenu.itemButtons) {
+    buttons.set(action, button);
+  }
+  for (const [action, button] of alignmentMenu.itemButtons) {
     buttons.set(action, button);
   }
 
@@ -356,8 +464,10 @@ export const createEditorToolbar = (
   }
 
   return {
+    alignmentMenu,
     buttons,
     destroy: () => {
+      alignmentMenu.destroy();
       headingMenu.destroy();
       tableSizePicker?.destroy();
       modeControl.destroy();

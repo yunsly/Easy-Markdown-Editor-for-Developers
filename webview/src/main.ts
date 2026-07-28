@@ -269,6 +269,8 @@ const syncEditorToolbarState = (context: Ctx): void => {
     for (const button of editorToolbar.buttons.values()) {
       button.disabled = true;
     }
+    editorToolbar.alignmentMenu.button.disabled = true;
+    editorToolbar.alignmentMenu.close();
     editorToolbar.headingMenu.button.disabled = true;
     editorToolbar.headingMenu.close();
 
@@ -533,9 +535,11 @@ const setVisualToolbarEnabled = (enabled: boolean): void => {
   for (const button of editorToolbar.buttons.values()) {
     button.disabled = !enabled;
   }
+  editorToolbar.alignmentMenu.button.disabled = !enabled;
   editorToolbar.headingMenu.button.disabled = !enabled;
 
   if (!enabled) {
+    editorToolbar.alignmentMenu.close();
     editorToolbar.headingMenu.close();
   }
 
@@ -782,6 +786,10 @@ const initializeEditor = async (
     editorToolbar.buttons.get('heading-4')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-5')?.removeAttribute('disabled');
     editorToolbar.buttons.get('heading-6')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('align-left')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('align-center')?.removeAttribute('disabled');
+    editorToolbar.buttons.get('align-right')?.removeAttribute('disabled');
+    editorToolbar.alignmentMenu.button.removeAttribute('disabled');
     editorToolbar.headingMenu.button.removeAttribute('disabled');
     editorToolbar.buttons.get('bullet-list')?.removeAttribute('disabled');
     editorToolbar.buttons.get('ordered-list')?.removeAttribute('disabled');

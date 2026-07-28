@@ -54,7 +54,7 @@
   background: var(--vscode-toolbar-activeBackground);
 }
 
-.editor-heading-menu {
+.editor-toolbar-menu {
   position: fixed;
   z-index: 100;
   box-sizing: border-box;
@@ -70,11 +70,11 @@
   box-shadow: 0 2px 8px var(--vscode-widget-shadow);
 }
 
-.editor-heading-menu[hidden] {
+.editor-toolbar-menu[hidden] {
   display: none;
 }
 
-.editor-heading-menu__item {
+.editor-toolbar-menu__item {
   display: block;
   width: 100%;
   text-align: left;
