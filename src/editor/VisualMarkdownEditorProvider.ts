@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 
-import { Uri, window, workspace } from 'vscode';
+import { env, Uri, window, workspace } from 'vscode';
 import type {
   CancellationToken,
   CustomTextEditorProvider,
@@ -37,6 +37,11 @@ type RequestAttachmentSourceMessage = Extract<
 type CopyAttachmentMessage = Extract<
   WebviewToExtensionMessage,
   { type: 'copyAttachment' }
+>;
+
+type WriteClipboardTextMessage = Extract<
+  WebviewToExtensionMessage,
+  { type: 'writeClipboardText' }
 >;
 
 interface PendingDocumentApply {
@@ -91,6 +96,19 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
 
       void window.showErrorMessage(errorMessage);
       void webview.postMessage(showErrorMessage);
+    };
+
+    const handleWriteClipboardText = async (
+      message: WriteClipboardTextMessage,
+    ): Promise<void> => {
+      try {
+        await env.clipboard.writeText(message.text);
+      } catch (error: unknown) {
+        const detail = error instanceof Error ? ` ${error.message}` : '';
+        reportError(
+          `Easy Markdown Editor for Developers failed to copy code.${detail}`,
+        );
+      }
     };
 
     const handleDocumentChanged = async (
@@ -445,6 +463,11 @@ export class VisualMarkdownEditorProvider implements CustomTextEditorProvider {
 
         if (message.type === 'cancelAttachment') {
           pendingAttachmentSources.delete(message.requestId);
+          return;
+        }
+
+        if (message.type === 'writeClipboardText') {
+          void handleWriteClipboardText(message);
           return;
         }
 

@@ -5,7 +5,7 @@ import {
   isWebviewToExtensionMessage,
 } from '../src/shared/messages';
 
-describe('attachment message validation', () => {
+describe('Webview message validation', () => {
   it.each([
     {
       type: 'requestAttachmentSource',
@@ -21,6 +21,14 @@ describe('attachment message validation', () => {
       type: 'cancelAttachment',
       requestId: 'request-1',
     },
+    {
+      type: 'writeClipboardText',
+      text: 'const greeting = "안녕하세요";',
+    },
+    {
+      type: 'writeClipboardText',
+      text: '',
+    },
   ])('accepts a valid Webview message', (message) => {
     expect(isWebviewToExtensionMessage(message)).toBe(true);
   });
@@ -33,6 +41,7 @@ describe('attachment message validation', () => {
       destinationFolder: 42,
       fileName: 'preview.png',
     },
+    { type: 'writeClipboardText', text: 42 },
   ])('rejects an invalid Webview message', (message) => {
     expect(isWebviewToExtensionMessage(message)).toBe(false);
   });

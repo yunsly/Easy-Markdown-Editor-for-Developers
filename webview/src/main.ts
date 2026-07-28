@@ -3,13 +3,17 @@ import {
   CrepeFeature,
   type CrepeConfig,
 } from '@milkdown/crepe';
-import { EditorView as CodeMirrorView } from '@codemirror/view';
+import {
+  EditorView as CodeMirrorView,
+  keymap as codeMirrorKeymap,
+} from '@codemirror/view';
 import type { Ctx } from '@milkdown/kit/ctx';
 import { editorViewCtx, EditorStatus } from '@milkdown/kit/core';
 import {
   redoCommand,
   undoCommand,
 } from '@milkdown/kit/plugin/history';
+import { codeBlockSchema } from '@milkdown/kit/preset/commonmark';
 import { callCommand, replaceAll } from '@milkdown/kit/utils';
 
 import './styles.css';
@@ -149,9 +153,32 @@ const features = {
   [CrepeFeature.TopBar]: false,
 } satisfies NonNullable<CrepeConfig['features']>;
 
+const copySelectedCodeKeymap = codeMirrorKeymap.of([{
+  key: 'Mod-c',
+  run: (view) => {
+    const selectedText = view.state.selection.ranges
+      .filter((range) => !range.empty)
+      .map((range) => view.state.sliceDoc(range.from, range.to))
+      .join('\n');
+
+    if (selectedText.length === 0) {
+      return false;
+    }
+
+    postMessageToExtension({
+      type: 'writeClipboardText',
+      text: selectedText,
+    });
+    return true;
+  },
+}]);
+
 const featureConfigs = {
   [CrepeFeature.CodeMirror]: {
-    extensions: [CodeMirrorView.cspNonce.of(styleNonce)],
+    extensions: [
+      CodeMirrorView.cspNonce.of(styleNonce),
+      copySelectedCodeKeymap,
+    ],
   },
   [CrepeFeature.Placeholder]: {
     mode: 'doc',
@@ -697,6 +724,62 @@ const handleWorkbenchShortcutKeydown = (event: KeyboardEvent): void => {
   event.stopImmediatePropagation();
 };
 
+const handleCodeBlockCopyClick = (event: MouseEvent): void => {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+
+  const button = event.target.closest<HTMLButtonElement>(
+    '.milkdown-code-block .copy-button',
+  );
+  const codeBlockElement = button?.closest<HTMLElement>(
+    '.milkdown-code-block',
+  );
+
+  if (
+    button === null ||
+    button === undefined ||
+    codeBlockElement === null ||
+    crepe === undefined
+  ) {
+    return;
+  }
+
+  // Crepe does not await the Clipboard API before entering its fallback.
+  // Intercept its button while the click still has a user activation.
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+
+  try {
+    crepe.editor.action((context) => {
+      const view = context.get(editorViewCtx);
+      const codeBlockType = codeBlockSchema.type(context);
+      let code: string | undefined;
+
+      view.state.doc.descendants((node, position) => {
+        if (node.type !== codeBlockType) {
+          return true;
+        }
+
+        if (view.nodeDOM(position) === codeBlockElement) {
+          code = node.textContent;
+        }
+
+        return false;
+      });
+
+      if (code === undefined) {
+        throw new Error('Could not resolve the selected code block.');
+      }
+
+      postMessageToExtension({ type: 'writeClipboardText', text: code });
+    });
+  } catch (error: unknown) {
+    reportEditorError(error, 'Failed to copy code block.');
+  }
+};
+
 editorRoot.addEventListener('compositionstart', handleCompositionStart);
 editorRoot.addEventListener('compositionend', handleCompositionEnd);
 editorRoot.addEventListener('beforeinput', markVisualUserMutation);
@@ -709,6 +792,9 @@ editorRoot.addEventListener('keydown', handleHistoryKeydown, {
   capture: true,
 });
 editorRoot.addEventListener('keydown', handleWorkbenchShortcutKeydown);
+editorRoot.addEventListener('click', handleCodeBlockCopyClick, {
+  capture: true,
+});
 
 const initializeEditor = async (
   markdown: string,
@@ -953,6 +1039,9 @@ window.addEventListener(
       capture: true,
     });
     editorRoot.removeEventListener('keydown', handleWorkbenchShortcutKeydown);
+    editorRoot.removeEventListener('click', handleCodeBlockCopyClick, {
+      capture: true,
+    });
     isComposing = false;
     isReplacingDocument = false;
     isSwitchingMode = false;

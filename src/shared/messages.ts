@@ -70,6 +70,10 @@ export type WebviewToExtensionMessage =
   | {
       type: 'cancelAttachment';
       requestId: string;
+    }
+  | {
+      type: 'writeClipboardText';
+      text: string;
     };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -170,6 +174,8 @@ export function isWebviewToExtensionMessage(
       );
     case 'cancelAttachment':
       return hasRequestId(value);
+    case 'writeClipboardText':
+      return typeof value.text === 'string';
     default:
       return false;
   }
