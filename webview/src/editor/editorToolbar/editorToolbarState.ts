@@ -21,7 +21,7 @@ import type {
   EditorToolbarAction,
   ParagraphAlignment,
 } from './createEditorToolbar';
-import { getSelectedTopLevelParagraphs } from './editorToolbarActions';
+import { getSelectedTopLevelTextBlocks } from './editorToolbarActions';
 
 const textBlockActions = [
   'paragraph',
@@ -44,42 +44,42 @@ const getParagraphAlignment = (
 ): ParagraphAlignment =>
   value === 'center' || value === 'right' ? value : 'left';
 
-interface ParagraphAlignmentState {
+interface TextBlockAlignmentState {
   alignment: ParagraphAlignment | undefined;
-  hasParagraphs: boolean;
+  hasTextBlocks: boolean;
 }
 
-const getParagraphAlignmentState = (
+const getTextBlockAlignmentState = (
   context: Ctx,
   state: EditorState,
-): ParagraphAlignmentState => {
-  const paragraphs = getSelectedTopLevelParagraphs(
+): TextBlockAlignmentState => {
+  const textBlocks = getSelectedTopLevelTextBlocks(
     state.doc,
     state.selection,
-    paragraphSchema.type(context),
+    [paragraphSchema.type(context), headingSchema.type(context)],
   );
-  const first = paragraphs[0];
+  const first = textBlocks[0];
 
   if (first === undefined) {
-    return { alignment: undefined, hasParagraphs: false };
+    return { alignment: undefined, hasTextBlocks: false };
   }
 
   const alignment = getParagraphAlignment(first.node.attrs.textAlign);
-  const isUniform = paragraphs.every(
+  const isUniform = textBlocks.every(
     ({ node }) => getParagraphAlignment(node.attrs.textAlign) === alignment,
   );
 
   return {
     alignment: isUniform ? alignment : undefined,
-    hasParagraphs: true,
+    hasTextBlocks: true,
   };
 };
 
-export const getActiveParagraphAlignment = (
+export const getActiveTextBlockAlignment = (
   context: Ctx,
   state: EditorState,
 ): ParagraphAlignment | undefined =>
-  getParagraphAlignmentState(context, state).alignment;
+  getTextBlockAlignmentState(context, state).alignment;
 
 export const getActiveTextBlockAction = (
   context: Ctx,
@@ -199,7 +199,7 @@ export const updateEditorToolbarState = (
 
   const { state } = editorView;
   const activeAction = getActiveTextBlockAction(context, state);
-  const paragraphAlignment = getParagraphAlignmentState(context, state);
+  const textBlockAlignment = getTextBlockAlignmentState(context, state);
   const listState = getSelectionListState(context, state);
   const isTableActive = isInTable(state) ||
     (state.selection instanceof NodeSelection &&
@@ -225,20 +225,20 @@ export const updateEditorToolbarState = (
       : action === 'align-center'
         ? 'center'
         : 'right';
-    button?.toggleAttribute('disabled', !paragraphAlignment.hasParagraphs);
+    button?.toggleAttribute('disabled', !textBlockAlignment.hasTextBlocks);
     updateButtonState(
       toolbar,
       action,
-      alignment === paragraphAlignment.alignment,
+      alignment === textBlockAlignment.alignment,
     );
   }
   toolbar.alignmentMenu.button.toggleAttribute(
     'disabled',
-    !paragraphAlignment.hasParagraphs,
+    !textBlockAlignment.hasTextBlocks,
   );
-  toolbar.alignmentMenu.setActiveAlignment(paragraphAlignment.alignment);
+  toolbar.alignmentMenu.setActiveAlignment(textBlockAlignment.alignment);
 
-  if (!paragraphAlignment.hasParagraphs) {
+  if (!textBlockAlignment.hasTextBlocks) {
     toolbar.alignmentMenu.close();
   }
 

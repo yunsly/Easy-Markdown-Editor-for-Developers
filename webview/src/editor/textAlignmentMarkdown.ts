@@ -1,6 +1,5 @@
 import { nodesCtx } from '@milkdown/kit/core';
-import type { Ctx, MilkdownPlugin } from '@milkdown/kit/ctx';
-import { paragraphAttr } from '@milkdown/kit/preset/commonmark';
+import type { MilkdownPlugin } from '@milkdown/kit/ctx';
 import type {
   MarkdownNode,
   NodeSchema,
@@ -59,7 +58,7 @@ export const getTextAlignmentDivTags = (
 
 /**
  * Restores only the exact wrapper emitted by this editor:
- * opening div, one top-level paragraph, then closing div.
+ * opening div, one top-level paragraph or heading, then closing div.
  *
  * Nested containers and more permissive HTML forms deliberately remain raw
  * Markdown so that unrelated user-authored HTML is not reinterpreted.
@@ -73,7 +72,7 @@ export const restoreDivTextAlignment = (root: MarkdownNode): void => {
 
   for (let index = 0; index <= children.length - 3;) {
     const openingNode = children[index];
-    const paragraph = children[index + 1];
+    const textBlock = children[index + 1];
     const closingNode = children[index + 2];
     const alignment = openingNode === undefined
       ? undefined
@@ -81,12 +80,12 @@ export const restoreDivTextAlignment = (root: MarkdownNode): void => {
 
     if (
       alignment !== undefined &&
-      paragraph?.type === 'paragraph' &&
+      (textBlock?.type === 'paragraph' || textBlock?.type === 'heading') &&
       closingNode !== undefined &&
       isClosingDiv(closingNode)
     ) {
-      (paragraph as AlignedMarkdownNode).textAlign = alignment;
-      children.splice(index, 3, paragraph);
+      (textBlock as AlignedMarkdownNode).textAlign = alignment;
+      children.splice(index, 3, textBlock);
       index += 1;
       continue;
     }
@@ -107,63 +106,104 @@ const getPersistedTextAlignment = (
 ): PersistedTextAlignment | null =>
   value === 'center' || value === 'right' ? value : null;
 
-const addParagraphTextAlignment = (
-  context: Ctx,
+const addTextAlignment = (
   schema: NodeSchema,
-): NodeSchema => ({
-  ...schema,
-  attrs: {
-    ...schema.attrs,
-    textAlign: {
-      default: null,
-      validate: 'string|null',
+  parseAttributes: (node: MarkdownNode) => Record<string, unknown>,
+): NodeSchema => {
+  const originalToDOM = schema.toDOM;
+
+  if (originalToDOM === undefined) {
+    throw new Error('Cannot extend a text block schema without toDOM.');
+  }
+
+  return {
+    ...schema,
+    attrs: {
+      ...schema.attrs,
+      textAlign: {
+        default: null,
+        validate: 'string|null',
+      },
     },
-  },
-  toDOM: (node) => {
-    const alignment = getPersistedTextAlignment(node.attrs.textAlign);
-    const attributes = context.get(paragraphAttr.key)(node);
-
-    return [
-      'p',
-      alignment === null
-        ? attributes
-        : { ...attributes, align: alignment },
-      0,
-    ];
-  },
-  parseMarkdown: {
-    ...schema.parseMarkdown,
-    runner: (state, node, type) => {
-      const alignment = getPersistedTextAlignment(node.textAlign);
-
-      state.openNode(type, { textAlign: alignment });
-
-      if (Array.isArray(node.children)) {
-        state.next(node.children);
-      } else {
-        state.addText(typeof node.value === 'string' ? node.value : '');
-      }
-
-      state.closeNode();
-    },
-  },
-  toMarkdown: {
-    ...schema.toMarkdown,
-    runner: (state, node) => {
+    toDOM: (node) => {
+      const output = originalToDOM(node);
       const alignment = getPersistedTextAlignment(node.attrs.textAlign);
 
-      if (alignment !== null) {
-        const tags = getTextAlignmentDivTags(alignment);
-        state.addNode('html', undefined, tags.open);
-        schema.toMarkdown.runner(state, node);
-        state.addNode('html', undefined, tags.close);
-        return;
+      if (alignment === null || !Array.isArray(output)) {
+        return output;
       }
 
-      schema.toMarkdown.runner(state, node);
+      const outputParts: readonly unknown[] = output;
+      const [tagName, attributes, contentHole] = outputParts;
+
+      if (
+        outputParts.length !== 3 ||
+        typeof tagName !== 'string' ||
+        attributes === null ||
+        typeof attributes !== 'object' ||
+        Array.isArray(attributes) ||
+        contentHole !== 0
+      ) {
+        return output;
+      }
+
+      return [
+        tagName,
+        { ...(attributes as Record<string, unknown>), align: alignment },
+        0,
+      ];
     },
-  },
-});
+    parseMarkdown: {
+      ...schema.parseMarkdown,
+      runner: (state, node, type) => {
+        const alignment = getPersistedTextAlignment(node.textAlign);
+
+        state.openNode(type, {
+          ...parseAttributes(node),
+          textAlign: alignment,
+        });
+
+        if (Array.isArray(node.children)) {
+          state.next(node.children);
+        } else {
+          state.addText(typeof node.value === 'string' ? node.value : '');
+        }
+
+        state.closeNode();
+      },
+    },
+    toMarkdown: {
+      ...schema.toMarkdown,
+      runner: (state, node) => {
+        const alignment = getPersistedTextAlignment(node.attrs.textAlign);
+
+        if (alignment !== null) {
+          const tags = getTextAlignmentDivTags(alignment);
+          state.addNode('html', undefined, tags.open);
+          schema.toMarkdown.runner(state, node);
+          state.addNode('html', undefined, tags.close);
+          return;
+        }
+
+        schema.toMarkdown.runner(state, node);
+      },
+    },
+  };
+};
+
+const addParagraphTextAlignment = (
+  schema: NodeSchema,
+): NodeSchema => addTextAlignment(
+  schema,
+  () => ({}),
+);
+
+const addHeadingTextAlignment = (
+  schema: NodeSchema,
+): NodeSchema => addTextAlignment(
+  schema,
+  (node) => ({ level: node.depth }),
+);
 
 const replaceNodeSchemaPreservingOrder = (
   nodes: Array<[string, NodeSchema]>,
@@ -193,14 +233,27 @@ export const replaceParagraphSchemaPreservingOrder = (
 ): Array<[string, NodeSchema]> =>
   replaceNodeSchemaPreservingOrder(nodes, 'paragraph', update);
 
-const paragraphTextAlignmentSchema: MilkdownPlugin = (context) => () => {
-  context.update(nodesCtx, (nodes) => replaceParagraphSchemaPreservingOrder(
-    nodes,
-    (schema) => addParagraphTextAlignment(context, schema),
-  ));
+export const replaceHeadingSchemaPreservingOrder = (
+  nodes: Array<[string, NodeSchema]>,
+  update: (schema: NodeSchema) => NodeSchema,
+): Array<[string, NodeSchema]> =>
+  replaceNodeSchemaPreservingOrder(nodes, 'heading', update);
+
+const textBlockAlignmentSchema: MilkdownPlugin = (context) => () => {
+  context.update(nodesCtx, (nodes) => {
+    const withParagraphAlignment = replaceParagraphSchemaPreservingOrder(
+      nodes,
+      (schema) => addParagraphTextAlignment(schema),
+    );
+
+    return replaceHeadingSchemaPreservingOrder(
+      withParagraphAlignment,
+      (schema) => addHeadingTextAlignment(schema),
+    );
+  });
 };
 
 export const textAlignmentMarkdownPlugins: MilkdownPlugin[] = [
   remarkDivTextAlignment,
-  paragraphTextAlignmentSchema,
+  textBlockAlignmentSchema,
 ].flat();

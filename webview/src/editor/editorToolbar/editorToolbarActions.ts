@@ -11,11 +11,13 @@ import {
   type Selection,
 } from '@milkdown/kit/prose/state';
 import { isInTable } from '@milkdown/kit/prose/tables';
+import type { EditorView } from '@milkdown/kit/prose/view';
 import {
   blockquoteSchema,
   bulletListSchema,
   codeBlockSchema,
   createCodeBlockCommand,
+  headingSchema,
   imageSchema,
   insertImageCommand,
   liftListItemCommand,
@@ -26,7 +28,6 @@ import {
   turnIntoTextCommand,
   wrapInBulletListCommand,
   wrapInBlockquoteCommand,
-  wrapInHeadingCommand,
   wrapInOrderedListCommand,
 } from '@milkdown/kit/preset/commonmark';
 import {
@@ -64,20 +65,20 @@ interface SelectedListNodes {
   lists: ReadonlyMap<number, ProseMirrorNode>;
 }
 
-export interface SelectedTopLevelParagraph {
+export interface SelectedTopLevelTextBlock {
   node: ProseMirrorNode;
   position: number;
 }
 
-export const getSelectedTopLevelParagraphs = (
+export const getSelectedTopLevelTextBlocks = (
   doc: ProseMirrorNode,
   selection: Selection,
-  paragraphType: NodeType,
-): readonly SelectedTopLevelParagraph[] => {
+  textBlockTypes: readonly NodeType[],
+): readonly SelectedTopLevelTextBlock[] => {
   if (
     selection.empty &&
     selection.$from.depth === 1 &&
-    selection.$from.parent.type === paragraphType
+    textBlockTypes.includes(selection.$from.parent.type)
   ) {
     return [{
       node: selection.$from.parent,
@@ -85,24 +86,24 @@ export const getSelectedTopLevelParagraphs = (
     }];
   }
 
-  const paragraphs: SelectedTopLevelParagraph[] = [];
+  const textBlocks: SelectedTopLevelTextBlock[] = [];
 
   doc.nodesBetween(selection.from, selection.to, (node, position, parent) => {
     if (parent !== doc) {
       return true;
     }
 
-    if (node.type === paragraphType) {
-      paragraphs.push({ node, position });
+    if (textBlockTypes.includes(node.type)) {
+      textBlocks.push({ node, position });
     }
 
     return false;
   });
 
-  return paragraphs;
+  return textBlocks;
 };
 
-const getRequestedParagraphAlignment = (
+const getRequestedTextAlignment = (
   action: EditorToolbarAction,
 ): ParagraphAlignment | undefined => {
   if (action === 'align-left') {
@@ -118,6 +119,41 @@ const getRequestedParagraphAlignment = (
   }
 
   return undefined;
+};
+
+const getRequestedHeadingLevel = (
+  action: EditorToolbarAction,
+): number | undefined => {
+  if (!action.startsWith('heading-')) {
+    return undefined;
+  }
+
+  const level = Number(action.slice('heading-'.length));
+
+  return Number.isInteger(level) && level >= 1 && level <= 6
+    ? level
+    : undefined;
+};
+
+const setSelectedTextBlockType = (
+  view: EditorView,
+  nodeType: NodeType,
+  attributes: Readonly<Record<string, unknown>> = {},
+): void => {
+  let transaction = view.state.tr;
+
+  for (const { $from, $to } of view.state.selection.ranges) {
+    transaction = transaction.setBlockType(
+      $from.pos,
+      $to.pos,
+      nodeType,
+      (node) => ({ ...node.attrs, ...attributes }),
+    );
+  }
+
+  if (transaction.docChanged) {
+    view.dispatch(transaction.scrollIntoView());
+  }
 };
 
 const getSelectedListNodes = (
@@ -171,34 +207,29 @@ export const runEditorToolbarAction = (
   editor.action((context) => {
     const commands = context.get(commandsCtx);
     const view = context.get(editorViewCtx);
-    const requestedParagraphAlignment = getRequestedParagraphAlignment(action);
+    const requestedTextAlignment = getRequestedTextAlignment(action);
+    const requestedHeadingLevel = getRequestedHeadingLevel(action);
 
     if (action === 'paragraph') {
-      commands.call(turnIntoTextCommand.key);
-    } else if (action === 'heading-1') {
-      commands.call(wrapInHeadingCommand.key, 1);
-    } else if (action === 'heading-2') {
-      commands.call(wrapInHeadingCommand.key, 2);
-    } else if (action === 'heading-3') {
-      commands.call(wrapInHeadingCommand.key, 3);
-    } else if (action === 'heading-4') {
-      commands.call(wrapInHeadingCommand.key, 4);
-    } else if (action === 'heading-5') {
-      commands.call(wrapInHeadingCommand.key, 5);
-    } else if (action === 'heading-6') {
-      commands.call(wrapInHeadingCommand.key, 6);
-    } else if (requestedParagraphAlignment !== undefined) {
-      const paragraphs = getSelectedTopLevelParagraphs(
+      setSelectedTextBlockType(view, paragraphSchema.type(context));
+    } else if (requestedHeadingLevel !== undefined) {
+      setSelectedTextBlockType(
+        view,
+        headingSchema.type(context),
+        { level: requestedHeadingLevel },
+      );
+    } else if (requestedTextAlignment !== undefined) {
+      const textBlocks = getSelectedTopLevelTextBlocks(
         view.state.doc,
         view.state.selection,
-        paragraphSchema.type(context),
+        [paragraphSchema.type(context), headingSchema.type(context)],
       );
-      const textAlign = requestedParagraphAlignment === 'left'
+      const textAlign = requestedTextAlignment === 'left'
         ? null
-        : requestedParagraphAlignment;
+        : requestedTextAlignment;
       let transaction = view.state.tr;
 
-      for (const { node, position } of paragraphs) {
+      for (const { node, position } of textBlocks) {
         if (node.attrs.textAlign !== textAlign) {
           transaction = transaction.setNodeMarkup(
             position,

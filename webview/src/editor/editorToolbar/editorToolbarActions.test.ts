@@ -17,12 +17,19 @@ import {
   TextSelection,
   type Transaction,
 } from '@milkdown/kit/prose/state';
+import type { MarkdownNode } from '@milkdown/kit/transformer';
+import { remark } from 'remark';
 import { describe, expect, it, vi } from 'vitest';
 
+import {
+  replaceHeadingSchemaPreservingOrder,
+  restoreDivTextAlignment,
+  type PersistedTextAlignment,
+} from '../textAlignmentMarkdown';
 import type { EditorToolbarAction } from './createEditorToolbar';
 import { runEditorToolbarAction } from './editorToolbarActions';
 import {
-  getActiveParagraphAlignment,
+  getActiveTextBlockAlignment,
   getActiveTextBlockAction,
 } from './editorToolbarState';
 
@@ -36,7 +43,10 @@ const schema = new Schema({
   nodes: {
     doc: { content: 'block+' },
     heading: {
-      attrs: { level: { default: 1 } },
+      attrs: {
+        level: { default: 1 },
+        textAlign: { default: null },
+      },
       content: 'inline*',
       group: 'block',
     },
@@ -148,7 +158,12 @@ const createHeadingHarness = (
     },
   };
   const context = {
-    get: (slice: unknown) => slice === commandsCtx ? commands : view,
+    get: (slice: unknown) => {
+      if (slice === commandsCtx) return commands;
+      if (slice === editorViewCtx) return view;
+      if (slice === schemaCtx) return schema;
+      return undefined;
+    },
   } as unknown as Ctx;
   const editor = {
     action: (action: (context: Ctx) => void) => action(context),
@@ -275,11 +290,14 @@ const createListItem = (text: string, checked: boolean | null = null) =>
     schema.node('paragraph', undefined, schema.text(text)),
   ]);
 
-const selectAllParagraphText = (doc: ProseMirrorNode) => {
+const selectAllTextBlockText = (doc: ProseMirrorNode) => {
   const positions: Array<{ from: number; to: number }> = [];
 
   doc.descendants((node, position) => {
-    if (node.type === schema.nodes.paragraph) {
+    if (
+      node.type === schema.nodes.paragraph ||
+      node.type === schema.nodes.heading
+    ) {
       positions.push({
         from: position + 1,
         to: position + 1 + node.content.size,
@@ -294,7 +312,7 @@ const selectAllParagraphText = (doc: ProseMirrorNode) => {
   const last = positions.at(-1);
 
   if (first === undefined || last === undefined) {
-    throw new Error('Expected the document to contain paragraph text.');
+    throw new Error('Expected the document to contain text block content.');
   }
 
   return TextSelection.create(doc, first.from, last.to);
@@ -319,6 +337,16 @@ const alignedParagraph = (
   schema.text(text),
 );
 
+const alignedHeading = (
+  text: string,
+  level = 2,
+  textAlign: 'center' | 'right' | null = null,
+) => schema.node(
+  'heading',
+  { level, textAlign },
+  schema.text(text),
+);
+
 const imageParagraph = (
   textAlign: 'center' | 'right' | null = null,
 ) => schema.node('paragraph', { textAlign }, [
@@ -331,7 +359,7 @@ const imageParagraph = (
 
 const createAlignmentHarness = (
   blocks: readonly ProseMirrorNode[],
-  createSelection: AlignmentSelection = selectAllParagraphText,
+  createSelection: AlignmentSelection = selectAllTextBlockText,
 ): AlignmentHarness => {
   const doc = schema.node('doc', undefined, blocks);
   let state = EditorState.create({
@@ -384,7 +412,7 @@ const topLevelParagraphAlignments = (
   return alignments;
 };
 
-describe('paragraph alignment toolbar actions', () => {
+describe('text block alignment toolbar actions', () => {
   it('aligns selected text and image paragraphs in one transaction', () => {
     const harness = createAlignmentHarness([
       textBlock('paragraph'),
@@ -443,14 +471,66 @@ describe('paragraph alignment toolbar actions', () => {
     ]);
   });
 
-  it('skips headings and paragraphs nested in lists', () => {
+  it('aligns selected headings and paragraphs together', () => {
+    const harness = createAlignmentHarness([
+      alignedHeading('제목', 2),
+      alignedParagraph('일반 문단'),
+    ]);
+
+    harness.run('align-right');
+
+    expect(harness.getState().doc.child(0).attrs).toMatchObject({
+      level: 2,
+      textAlign: 'right',
+    });
+    expect(harness.getState().doc.child(1).attrs.textAlign).toBe('right');
+  });
+
+  it('uses left alignment to remove heading alignment', () => {
+    const harness = createAlignmentHarness([
+      alignedHeading('제목', 4, 'center'),
+    ]);
+
+    harness.run('align-left');
+
+    expect(harness.getState().doc.firstChild?.attrs).toMatchObject({
+      level: 4,
+      textAlign: null,
+    });
+  });
+
+  it('preserves alignment while changing text block types and levels', () => {
+    const headingHarness = createAlignmentHarness([
+      alignedHeading('제목', 2, 'right'),
+    ]);
+    const paragraphHarness = createAlignmentHarness([
+      alignedParagraph('문단', 'center'),
+    ]);
+
+    headingHarness.run('heading-5');
+    expect(headingHarness.getState().doc.firstChild?.attrs).toMatchObject({
+      level: 5,
+      textAlign: 'right',
+    });
+
+    headingHarness.run('paragraph');
+    expect(headingHarness.getState().doc.firstChild?.attrs.textAlign).toBe(
+      'right',
+    );
+
+    paragraphHarness.run('heading-3');
+    expect(paragraphHarness.getState().doc.firstChild?.attrs).toMatchObject({
+      level: 3,
+      textAlign: 'center',
+    });
+  });
+
+  it('skips paragraphs nested in lists', () => {
     const list = schema.node('bullet_list', undefined, [
       schema.node('list_item', undefined, [alignedParagraph('목록 문단')]),
     ]);
-    const heading = textBlock('heading', 2);
     const harness = createAlignmentHarness([
       list,
-      heading,
       alignedParagraph('일반 문단'),
     ]);
 
@@ -459,12 +539,11 @@ describe('paragraph alignment toolbar actions', () => {
     expect(
       harness.getState().doc.child(0).firstChild?.firstChild?.attrs.textAlign,
     ).toBeNull();
-    expect(harness.getState().doc.child(1).attrs.textAlign).toBeUndefined();
-    expect(harness.getState().doc.child(2).attrs.textAlign).toBe('center');
+    expect(harness.getState().doc.child(1).attrs.textAlign).toBe('center');
   });
 });
 
-describe('paragraph alignment active state', () => {
+describe('text block alignment active state', () => {
   const context = {
     get: (slice: unknown) => slice === schemaCtx ? schema : undefined,
   } as unknown as Ctx;
@@ -484,7 +563,7 @@ describe('paragraph alignment active state', () => {
       selection: TextSelection.create(doc, 1),
     });
 
-    expect(getActiveParagraphAlignment(context, state)).toBe(expected);
+    expect(getActiveTextBlockAlignment(context, state)).toBe(expected);
   });
 
   it('reports no active value for a mixed selection', () => {
@@ -494,10 +573,31 @@ describe('paragraph alignment active state', () => {
     ]);
     const state = EditorState.create({
       doc,
-      selection: selectAllParagraphText(doc),
+      selection: selectAllTextBlockText(doc),
     });
 
-    expect(getActiveParagraphAlignment(context, state)).toBeUndefined();
+    expect(getActiveTextBlockAlignment(context, state)).toBeUndefined();
+  });
+
+  it('reports a heading alignment and a uniform mixed-block alignment', () => {
+    const headingDoc = schema.node('doc', undefined, [
+      alignedHeading('제목', 3, 'right'),
+    ]);
+    const headingState = EditorState.create({
+      doc: headingDoc,
+      selection: TextSelection.create(headingDoc, 1),
+    });
+    const mixedDoc = schema.node('doc', undefined, [
+      alignedHeading('제목', 3, 'center'),
+      alignedParagraph('문단', 'center'),
+    ]);
+    const mixedState = EditorState.create({
+      doc: mixedDoc,
+      selection: selectAllTextBlockText(mixedDoc),
+    });
+
+    expect(getActiveTextBlockAlignment(context, headingState)).toBe('right');
+    expect(getActiveTextBlockAlignment(context, mixedState)).toBe('center');
   });
 
   it('reports no active value inside a list', () => {
@@ -508,10 +608,80 @@ describe('paragraph alignment active state', () => {
     ]);
     const state = EditorState.create({
       doc,
-      selection: selectAllParagraphText(doc),
+      selection: selectAllTextBlockText(doc),
     });
 
-    expect(getActiveParagraphAlignment(context, state)).toBeUndefined();
+    expect(getActiveTextBlockAlignment(context, state)).toBeUndefined();
+  });
+});
+
+describe('heading alignment Markdown contract', () => {
+  it.each<PersistedTextAlignment>(['center', 'right'])(
+    'restores an exact %s wrapper around one heading',
+    (alignment) => {
+      const root = remark().parse([
+        `<div align="${alignment}">`,
+        '',
+        '#### 제목',
+        '',
+        '</div>',
+        '',
+      ].join('\n')) as MarkdownNode;
+
+      restoreDivTextAlignment(root);
+
+      const children = root.children ?? [];
+
+      expect(children).toHaveLength(1);
+      expect(children[0]).toMatchObject({
+        depth: 4,
+        textAlign: alignment,
+        type: 'heading',
+      });
+    },
+  );
+
+  it('extends heading in place without changing the default paragraph', () => {
+    const markdownSchema = {
+      parseMarkdown: { match: () => false, runner: () => undefined },
+      toMarkdown: { match: () => false, runner: () => undefined },
+    };
+    const nodes = [
+      ['doc', { ...markdownSchema, content: 'block+' }],
+      ['paragraph', {
+        ...markdownSchema,
+        content: 'inline*',
+        group: 'block',
+      }],
+      ['heading', {
+        ...markdownSchema,
+        content: 'inline*',
+        group: 'block',
+      }],
+      ['text', { ...markdownSchema, group: 'inline' }],
+    ] as Parameters<typeof replaceHeadingSchemaPreservingOrder>[0];
+
+    const updated = replaceHeadingSchemaPreservingOrder(
+      nodes,
+      (heading) => ({
+        ...heading,
+        attrs: { textAlign: { default: null } },
+      }),
+    );
+    const updatedSchema = new Schema({ nodes: Object.fromEntries(updated) });
+
+    expect(updated.map(([id]) => id)).toEqual([
+      'doc',
+      'paragraph',
+      'heading',
+      'text',
+    ]);
+    expect(updatedSchema.nodes.doc?.contentMatch.defaultType).toBe(
+      updatedSchema.nodes.paragraph,
+    );
+    expect(updatedSchema.nodes.heading?.spec.attrs?.textAlign?.default).toBe(
+      null,
+    );
   });
 });
 
@@ -537,7 +707,7 @@ const createListHarness = (
   let state = EditorState.create({
     doc,
     plugins: [history()],
-    selection: selectAllParagraphText(doc),
+    selection: selectAllTextBlockText(doc),
   });
   const dispatch = (transaction: Transaction): void => {
     state = state.apply(transaction);
