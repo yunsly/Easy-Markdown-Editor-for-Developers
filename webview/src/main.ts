@@ -69,9 +69,10 @@ interface PendingExternalDocument {
 
 interface PendingCopyButtonFeedback {
   button: HTMLButtonElement;
+  labelNode: Text;
   originalAriaDisabled: string | null;
   originalAriaLabel: string | null;
-  originalHtml: string;
+  originalLabel: string;
   restoreTimer: number;
 }
 
@@ -228,6 +229,21 @@ const reportEditorError = (error: unknown, fallback: string): void => {
   postMessageToExtension({ type: 'reportError', message });
 };
 
+const getCopyButtonLabelNode = (button: HTMLButtonElement): Text => {
+  const labelNode = [...button.childNodes].find(
+    (node): node is Text =>
+      node instanceof Text && node.data.trim().length > 0,
+  );
+
+  if (labelNode !== undefined) {
+    return labelNode;
+  }
+
+  const createdLabelNode = document.createTextNode('');
+  button.append(createdLabelNode);
+  return createdLabelNode;
+};
+
 const restoreCopyButton = (requestId: string): void => {
   const feedback = pendingCopyButtonFeedback.get(requestId);
 
@@ -236,7 +252,7 @@ const restoreCopyButton = (requestId: string): void => {
   }
 
   window.clearTimeout(feedback.restoreTimer);
-  feedback.button.innerHTML = feedback.originalHtml;
+  feedback.labelNode.data = feedback.originalLabel;
   delete feedback.button.dataset.copyState;
 
   if (feedback.originalAriaDisabled === null) {
@@ -269,17 +285,19 @@ const requestClipboardWrite = (
   nextClipboardRequestId += 1;
 
   if (button !== undefined) {
+    const labelNode = getCopyButtonLabelNode(button);
     const feedback: PendingCopyButtonFeedback = {
       button,
+      labelNode,
       originalAriaDisabled: button.getAttribute('aria-disabled'),
       originalAriaLabel: button.getAttribute('aria-label'),
-      originalHtml: button.innerHTML,
+      originalLabel: labelNode.data,
       restoreTimer: window.setTimeout(
         () => restoreCopyButton(requestId),
         COPY_REQUEST_TIMEOUT_MS,
       ),
     };
-    button.textContent = 'Copying…';
+    labelNode.data = 'Copying…';
     button.dataset.copyState = 'copying';
     button.setAttribute('aria-disabled', 'true');
     button.setAttribute('aria-label', 'Copying code');
@@ -297,7 +315,7 @@ const confirmCopyButton = (requestId: string): void => {
   }
 
   window.clearTimeout(feedback.restoreTimer);
-  feedback.button.textContent = 'Copied';
+  feedback.labelNode.data = 'Copied';
   feedback.button.dataset.copyState = 'copied';
   feedback.button.setAttribute('aria-label', 'Code copied');
   feedback.restoreTimer = window.setTimeout(
