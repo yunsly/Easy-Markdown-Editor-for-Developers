@@ -93,7 +93,10 @@ export const getActiveTableColumnContext = (
 ): ActiveTableColumnContext | undefined => {
   const table = getActiveTableContext(selection, tableType);
 
-  if (table === undefined || selection instanceof NodeSelection) {
+  if (
+    table === undefined ||
+    (selection instanceof NodeSelection && selection.node.type === tableType)
+  ) {
     return undefined;
   }
 

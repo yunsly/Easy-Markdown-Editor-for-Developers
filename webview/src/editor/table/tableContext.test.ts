@@ -254,6 +254,19 @@ describe('getActiveTableColumnContext', () => {
       getActiveTableColumnContext(selection, schema.nodes.table),
     ).toBeUndefined();
   });
+
+  it('detects the column from a node selection inside a table cell', () => {
+    const paragraphPosition = findAlignedTextPosition('가운데') - 1;
+    const selection = NodeSelection.create(
+      alignedDocument,
+      paragraphPosition,
+    );
+
+    expect(selection.node.type).toBe(schema.nodes.paragraph);
+    expect(
+      getActiveTableColumnContext(selection, schema.nodes.table),
+    ).toMatchObject({ alignment: 'center', columnIndex: 1 });
+  });
 });
 
 describe('alignActiveTableColumn', () => {
