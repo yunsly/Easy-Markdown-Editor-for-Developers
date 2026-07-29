@@ -9,6 +9,11 @@ export function activate(context: ExtensionContext): void {
     window.registerCustomEditorProvider(
       VisualMarkdownEditorProvider.viewType,
       provider,
+      {
+        webviewOptions: {
+          retainContextWhenHidden: true,
+        },
+      },
     ),
   );
 }
