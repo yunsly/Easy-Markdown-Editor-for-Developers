@@ -10,7 +10,7 @@ VScode 테마에 맞춘 테마 및 편리한 편집과 함께 **Tech Stack 배�
 
 ### Features
 
-![editing-gif.gif](gifs/editing-gif-2.gif "editing-gif.gif")
+![final\_gif.gif](gifs/final_gif.gif "final_gif.gif")
 
 * **비주얼 마크다운 편집** — 문서를 바로 편집하고,  `Visual`과 `Source` 모드 쉽게 전환
 
