@@ -1,8 +1,8 @@
+# Easy Markdown Editor for Developers
+
 **English** | [한국어](./README.ko.md)
 
-# Easy Markdown Editor for Developersd
-
-<br />
+***
 
 **Easy Markdown Editor for Developers** is a `.md` file editor built for developers.
 
@@ -10,7 +10,7 @@ It provides a comfortable editing experience that follows your VS Code theme, wi
 
 ### Features
 
-![editing-gif.gif](gifs/editing-gif-2.gif)
+![final\_gif.gif](gifs/final_gif.gif)
 
 * **Visual Markdown Editing** — Edit documents directly and switch easily between `Visual` and `Source` modes.
 
