@@ -65,6 +65,7 @@ export const createAttachmentDialog = (
   let activeSource: AttachmentSource | undefined;
   let isCopying = false;
   let isDestroyed = false;
+  let lastDestinationFolder: string | undefined;
   let shouldRestoreAnchorFocus = true;
 
   dialog.className = 'attachment-dialog';
@@ -247,6 +248,7 @@ export const createAttachmentDialog = (
         return undefined;
       }
 
+      lastDestinationFolder = destinationInput.value.trim();
       const insertion = { kind: getKind(), text: textInput.value.trim() };
       shouldRestoreAnchorFocus = false;
       close();
@@ -285,7 +287,8 @@ export const createAttachmentDialog = (
 
       activeSource = source;
       sourceValue.textContent = source.originalFileName;
-      destinationInput.value = source.defaultDestinationFolder;
+      destinationInput.value = lastDestinationFolder ??
+        source.defaultDestinationFolder;
       fileNameInput.value = source.originalFileName;
       imageKindInput.checked = source.detectedKind === 'image';
       linkKindInput.checked = source.detectedKind === 'file';
