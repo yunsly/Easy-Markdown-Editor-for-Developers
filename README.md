@@ -10,6 +10,8 @@ It provides a comfortable editing experience that follows your VS Code theme, wi
 
 ### Features
 
+![editing-gif.gif](gifs/editing-gif-2.gif)
+
 * **Visual Markdown Editing** — Edit documents directly and switch easily between `Visual` and `Source` modes.
 
   * H1–H6 headings, bold, italic, strikethrough, inline code, links, lists, task lists, blockquotes, and code blocks

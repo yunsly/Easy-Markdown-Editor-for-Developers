@@ -10,6 +10,8 @@ VScode 테마에 맞춘 테마 및 편리한 편집과 함께 **Tech Stack 배�
 
 ### Features
 
+![editing-gif.gif](gifs/editing-gif-2.gif "editing-gif.gif")
+
 * **비주얼 마크다운 편집** — 문서를 바로 편집하고,  `Visual`과 `Source` 모드 쉽게 전환
 
   * H1\~H6 제목, 굵게, 기울임, 취소선, 인라인 코드, 링크, 목록, 작업 목록, 인용문, 코드 블록 지원
